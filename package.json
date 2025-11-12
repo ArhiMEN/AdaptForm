@@ -7,7 +7,12 @@
     "validation",
     "typescript"
   ],
-  "author": "ArhiMEN",
+  "author": {
+    "name": "Stanislav Orlov",
+    "nickname": "ArhiMEN",
+    "email": "stanislav1426@gmai.com",
+    "url": "https://github.com/ArhiMEN"
+  },
   "type": "module",
   "main": "dist/index.mjs",
   "module": "dist/index.mjs",
@@ -19,7 +24,9 @@
     },
     "./*": "./dist/*"
   },
-  "files": ["dist/**/*"],
+  "files": [
+    "dist/**/*"
+  ],
   "sideEffects": false,
   "scripts": {
     "dev": "vite",
