@@ -1,0 +1,27 @@
+# Node modules
+node_modules/
+
+# Сборка / дистрибутивы
+dist/
+node_modules/
+
+# Логи
+logs/
+
+# Локальные конфигурации редакторов/IDE (пример)
+.vscode/
+.idea/
+
+# Файлы окружения с секретами
+.env
+.env.local
+.env.*.local
+
+# Кэш и временные файлы
+*.log
+*.tmp
+*.temp
+
+# OS системные файлы (опционально)
+.DS_Store
+Thumbs.db
