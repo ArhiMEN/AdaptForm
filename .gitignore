@@ -3,7 +3,8 @@ node_modules/
 
 # Сборка / дистрибутивы
 dist/
-node_modules/
+*.tsbuildinfo
+coverage
 
 # Логи
 logs/

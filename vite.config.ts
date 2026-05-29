@@ -1,23 +1,26 @@
-import { defineConfig } from 'vite'
-import dts from 'vite-plugin-dts'
+import {defineConfig} from 'vite';
+import {resolve} from 'path';
 
-export default defineConfig({
+export defineConfig({
+  resolve: {
+    alias: {
+      '@core': resolve(__dirname, 'src/core')
+    }
+  },
   build: {
     lib: {
-      entry: 'src/index.ts',
-      name: 'AdaptForm',
-      formats: ['es'],          // только ESM
-      fileName: () => `index.mjs`,
+      entry: resolve(__dirname, 'src/index.ts'),
+      name: 'adaptform',
+      formats: ['es', 'umd'],
+      fileName: (format) => `index.${format}.js`
     },
-    outDir: 'dist',             // dist/index.mjs + dist/index.d.ts
-    rollupOptions: {
-      external: [],             // зависимости, которые не нужно бандлить
-    },
-  },
-  plugins: [
-    dts({
-      outputDir: 'dist',        // декларации .d.ts рядом с esm
-      insertTypesEntry: true,   // создаёт index.d.ts для root
-    })
-  ]
+    rolldownOptions: {
+      external: ['luxon'],
+      output: {
+        globals: {
+          luxon: 'luxon'
+        }
+      }
+    }
+  }
 })

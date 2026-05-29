@@ -1,43 +1,81 @@
 {
   "name": "adaptform",
-  "version": "1.1.8",
+  "version": "2.0.4",
   "description": "Library of adaptive forms of validation",
   "keywords": [
     "form",
     "validation",
     "typescript",
-    "pydentic"
+    "pydantic",
+    "luxon"
   ],
   "author": {
     "name": "Stanislav Orlov",
-    "nickname": "ArhiMEN",
-    "email": "stanislav1426@gmail.com",
+    "email": "stasioniks@gmail.com",
     "url": "https://github.com/ArhiMEN"
   },
   "license": "MIT",
   "type": "module",
-  "main": "dist/index.mjs",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     },
-    "./*": "./dist/*"
+    "./luxon": {
+      "types": "./dist/luxon.d.ts",
+      "import": "./dist/luxon.mjs",
+      "require": "./dist/luxon.cjs"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      ".": ["./dist/index.d.ts"],
+      "luxon": ["./dist/luxon.d.ts"]
+    }
   },
   "files": [
-    "dist/**/*"
+    "dist",
+    "README.md",
+    "LICENSE.md",
+    "CHANGELOG.md"
   ],
   "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ArhiMEN/adaptform.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ArhiMEN/adaptform/issues"
+  },
+  "homepage": "https://github.com/ArhiMEN/adaptform#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsup",
+    "test": "vitest",
+    "lint": "eslint src --ext .ts",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
-    "vite": "^7.1.1",
-    "vite-plugin-dts": "^4.0.0",
-    "typescript": "^5.2.2"
+    "@types/luxon": "^3.5.0",
+    "@types/node": "^20.0.0",
+    "luxon": "^3.5.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "peerDependencies": {
+    "luxon": ">=3.5.0"
+  },
+  "peerDependenciesMeta": {
+    "luxon": {
+      "optional": true
+    }
   }
 }

@@ -1,18 +1,23 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "ES2020",
     "module": "ESNext",
-    "outDir": "./dist",
-    "declaration": true,
-    "declarationDir": "./dist",
+    "lib": ["ES2020", "DOM"],
+    "moduleResolution": "bundler",
     "strict": true,
     "esModuleInterop": true,
-    "moduleResolution": "node",
-    "baseUrl": "./",
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": ".",
     "paths": {
       "@core/*": ["src/core/*"]
     },
+    "types": ["luxon"]
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules"]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "tests"]
 }
