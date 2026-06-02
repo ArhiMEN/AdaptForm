@@ -6,20 +6,86 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
-TypeScript-first adaptive form validation library with plugin system, input masks, and optional Luxon integration.
-Lightweight, tree-shakeable, and fully typed.
+AdaptForm is a TypeScript-first form modeling framework inspired by Django Forms and Pydantic.
+
+Instead of describing validation schemas, you describe forms as classes with typed fields. Each field is responsible for
+its own state lifecycle, validation, transformation pipeline, and serialization logic.
+
+## AdaptForm provides:
+
+- Typed form models
+- Field-level validation
+- Cross-field validation
+- Input transformation plugins
+- Nested forms and arrays
+- Automatic TypeScript inference
+- Framework-agnostic integration
 
 ## Features
 
-- **Full TypeScript Inference** - All types are inferred automatically
-- **Plugin System** - Extend functionality with plugins (masks, decorators, custom validators)
-- **Input Masks** - Built-in MaskPlugin for formatted input (phone, date, etc.)
-- **Date Handling** - Optional Luxon integration via `adaptform/luxon`
-- **Array Fields** - Support for arrays of fields and nested forms
-- **Tree-shakeable** - Import only what you need
-- **Strict Validation** - Rich validation rules with custom messages
-- **Framework Agnostic** - Works with Vue, React, Angular, or vanilla JS
-- **Zero Dependencies** - Luxon is optional and importable separately
+- Form-as-a-domain-model architecture
+- Field-level state + validation ownership
+- Cross-field validation support
+- Plugin-based transformation pipeline
+- Strong TypeScript inference
+- Nested forms & collections
+- Built-in serialization (JSON / FormData)
+- Optional date engine (Luxon)
+- Framework-agnostic design
+- Zero-core-dependencies
+
+## Philosophy
+
+Most form libraries treat forms as validation schemas:
+
+```TypeScript
+const schema = z.object({
+  login: z.string(),
+  password: z.string(),
+})
+````
+
+AdaptForm treats forms as stateful domain models:
+
+```TypeScript
+class LoginForm extends Form {
+  login = new Field(StringType)
+  password = new Field(StringType)
+}
+```
+
+field is not just a validator — it is a state container that owns:
+
+- value
+- validation
+- errors
+- transformation
+- plugins
+- type casting
+
+The form itself becomes a single source of truth.
+
+Simple Vue:
+
+## Without AdaptForm
+
+A typical Vue form consists of multiple disconnected parts:
+
+- reactive state
+- validation schema
+- error store
+- input masks
+- submission mapping
+
+## With AdaptForm
+
+Everything is unified into a single form model:
+
+```TypeScript
+class RegistrationForm extends Form {
+  phone = new Field(StringType)
+}
+````
 
 ## Installation
 

@@ -6,7 +6,7 @@ type FieldTypeConstructor<T, O extends FieldOptions = FieldOptions> = new (optio
 export class Field<T = any, O extends FieldOptions = FieldOptions> {
   protected _rawValue: any = null
   protected _valueClear: T | null = null
-  protected filed_type: FieldType<T, O>
+  protected fieldType: FieldType<T, O>
   protected defaultValue: T | null
   protected _errors: string[] = []
 
@@ -18,7 +18,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
     defaultValue?: T | null,
     options?: O | null,
   ) {
-    this.filed_type = new TypeConstructor(options ?? {} as O)
+    this.fieldType = new TypeConstructor(options ?? {} as O)
     this.defaultValue = defaultValue ?? null
 
     for (const plugin of this.options.plugins ?? []) {
@@ -43,12 +43,12 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
   }
 
   get options() {
-    return this.filed_type.options
+    return this.fieldType.options
   }
 
   set options(options: O) {
-    let cur_options = this.filed_type.options
-    this.filed_type.options = Object.assign(cur_options, options)
+    let cur_options = this.fieldType.options
+    this.fieldType.options = Object.assign(cur_options, options)
   }
 
   get rawValue(): T | null {
@@ -73,7 +73,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
     }
 
     this._rawValue = rawValue
-    this._valueClear = this.filed_type.cast(valueClear)
+    this._valueClear = this.fieldType.cast(valueClear)
 
     this._errors = []
     this.isTouched = true
@@ -130,13 +130,13 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
     if (this._valueClear === null) {
       this._errors.push(
         this.options.messages?.type ??
-        `Ожидается ${this.filed_type.getTypeName()}`
+        `Ожидается ${this.fieldType.getTypeName()}`
       )
       return false
     }
 
     // 3. Специфичная валидация типа
-    const typeErrors = this.filed_type.validate(this._valueClear, form)
+    const typeErrors = this.fieldType.validate(this._valueClear, form)
     if (typeErrors.length > 0) {
       this._errors.push(...typeErrors)
       return false
@@ -176,7 +176,6 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
   reset(): void {
     if (this.defaultValue !== null && this.defaultValue !== undefined) {
       this.rawValue = this.defaultValue
-      this.isValid = true
     } else {
       this._rawValue = null
       this._valueClear = null
