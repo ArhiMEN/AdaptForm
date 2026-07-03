@@ -26,3 +26,12 @@ logs/
 # OS системные файлы (опционально)
 .DS_Store
 Thumbs.db
+
+# AI
+.gigacode/
+
+# Vitest
+.vitest/
+
+# TypeScript
+*.tsbuildinfo

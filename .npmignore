@@ -6,6 +6,9 @@ tsconfig.json
 tsconfig.build.json
 vite.config.ts
 tsup.config.ts
+vitest.config.ts
+test/
+.gigacode/
 .gitignore
 .eslintrc
 .prettierrc

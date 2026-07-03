@@ -20,6 +20,7 @@ export class ArrayField<T = any> {
       ...options
     } as ArrayFieldOptions
     this._items = initial.map(v => this.factory(v))
+    this.checkValid()
   }
 
   // ===== value =====
@@ -112,7 +113,8 @@ export class ArrayField<T = any> {
     }
 
     if (this.options.validate) {
-      const result = this.options.validate(this._items, form)
+      const values = this._items.map(i => i.valueClear)
+      const result = this.options.validate(values, form)
 
       if (result === false) {
         this._errors.push(
@@ -135,10 +137,11 @@ export class ArrayField<T = any> {
   }
 
   get isValid(): boolean {
-    return (
-      this._errors.length === 0 &&
-      this._items.every(i => i.isValid === true)
-    )
+    // Если есть ошибки массива - не валиден
+    if (this._errors.length > 0) return false
+    
+    // Проверяем, что все элементы валидны (isValid === true)
+    return this._items.every(i => i.isValid === true)
   }
 
   get error(): string {

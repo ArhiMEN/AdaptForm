@@ -17,6 +17,7 @@ export class ArrayFormField<T extends Form = Form> {
       form.fields = data
       return form
     })
+    this.checkValid()
   }
 
 
@@ -143,10 +144,11 @@ export class ArrayFormField<T extends Form = Form> {
   }
 
   get isValid(): boolean {
-    return (
-      this._errors.length === 0 &&
-      this._forms.every(i => i.checkValid() === true)
-    )
+    // Если есть ошибки массива форм - не валиден
+    if (this._errors.length > 0) return false
+    
+    // Проверяем, что все формы валидны (checkValid() === true)
+    return this._forms.every(i => i.checkValid() === true)
   }
 
   get errors(): string[] {

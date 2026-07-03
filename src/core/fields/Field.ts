@@ -30,6 +30,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
     } else {
       this._rawValue = null
       this._valueClear = null
+      // Пока не вызвали checkValid, isValid = null
       this.isValid = null
     }
   }

@@ -33,8 +33,12 @@
   },
   "typesVersions": {
     "*": {
-      ".": ["./dist/index.d.ts"],
-      "luxon": ["./dist/luxon.d.ts"]
+      ".": [
+        "./dist/index.d.ts"
+      ],
+      "luxon": [
+        "./dist/luxon.d.ts"
+      ]
     }
   },
   "files": [
@@ -58,13 +62,17 @@
   "scripts": {
     "dev": "vite",
     "build": "tsup",
-    "test": "vitest",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint src --ext .ts",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
     "@types/luxon": "^3.5.0",
     "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^1.6.1",
+    "jsdom": "^29.1.1",
     "luxon": "^3.5.0",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
