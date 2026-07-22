@@ -1,7 +1,7 @@
 import {defineConfig} from 'vite';
 import {resolve} from 'path';
 
-export defineConfig({
+export default defineConfig({
   resolve: {
     alias: {
       '@core': resolve(__dirname, 'src/core')
@@ -14,7 +14,7 @@ export defineConfig({
       formats: ['es', 'umd'],
       fileName: (format) => `index.${format}.js`
     },
-    rolldownOptions: {
+    rollupOptions: {
       external: ['luxon'],
       output: {
         globals: {

@@ -1,6 +1,6 @@
-import {DateTime} from "luxon";
-import {FieldType} from "@core/types/FieldType";
-import {FieldOptions, messagesOptions} from "@core/options";
+import {DateTime} from "luxon"
+import {FieldType} from "@core/types/FieldType"
+import {FieldOptions, messagesOptions} from "@core/options"
 
 export interface messagesDateLuxonOptions extends messagesOptions {
   minDate?: string

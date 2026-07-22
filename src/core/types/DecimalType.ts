@@ -1,5 +1,5 @@
-import {FieldType} from "@core/types/FieldType";
-import {DecimalOptions} from "@core/options";
+import {FieldType} from "@core/types/FieldType"
+import {DecimalOptions} from "@core/options"
 
 export class DecimalType extends FieldType<number | string, DecimalOptions> {
   constructor(options: DecimalOptions = {} as DecimalOptions) {

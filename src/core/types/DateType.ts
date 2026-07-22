@@ -1,5 +1,5 @@
-import {FieldType} from "@core/types/FieldType";
-import {DateOptions} from "@core/options";
+import {FieldType} from "@core/types/FieldType"
+import {DateOptions} from "@core/options"
 
 export class DateType extends FieldType<Date, DateOptions> {
   constructor(options: DateOptions = {}) {

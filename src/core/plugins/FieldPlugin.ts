@@ -1,5 +1,5 @@
-import {PluginOptions} from "@core/options";
-import {Field} from "@core/fields/Field";
+import {PluginOptions} from "@core/options"
+import {Field} from "@core/fields/Field"
 
 export interface FieldPlugin<T = any> {
   pluginOptions?: PluginOptions

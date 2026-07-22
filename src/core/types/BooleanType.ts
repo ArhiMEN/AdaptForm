@@ -1,5 +1,5 @@
-import {FieldType} from "@core/types/FieldType";
-import {BooleanOptions} from "@core/options";
+import {FieldType} from "@core/types/FieldType"
+import {BooleanOptions} from "@core/options"
 
 export class BooleanType extends FieldType<boolean, BooleanOptions> {
   cast(rawValue: any): boolean | null {

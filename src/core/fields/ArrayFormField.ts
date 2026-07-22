@@ -1,5 +1,5 @@
-import {Form} from "@core/Form";
-import {ArrayFormFieldOptions} from "@core/options";
+import {Form} from "@core/Form"
+import {ArrayFormFieldOptions} from "@core/options"
 
 export class ArrayFormField<T extends Form = Form> {
   private _forms: T[] = []

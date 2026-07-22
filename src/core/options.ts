@@ -1,4 +1,4 @@
-import {FieldPlugin} from "@core/plugins";
+import {FieldPlugin} from "@core/plugins"
 
 // region messages
 

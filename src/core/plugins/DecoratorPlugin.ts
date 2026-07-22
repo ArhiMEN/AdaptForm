@@ -1,6 +1,6 @@
-import {Field} from "@core/fields/Field";
-import {BasePlugin} from "@core/plugins/FieldPlugin";
-import {PluginOptions} from "@core/options";
+import {Field} from "@core/fields/Field"
+import {BasePlugin} from "@core/plugins/FieldPlugin"
+import {PluginOptions} from "@core/options"
 
 type SymbolPosition = 'prefix' | 'postfix'
 

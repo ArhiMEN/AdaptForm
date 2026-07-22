@@ -1,5 +1,5 @@
-import {FieldType} from "@core/types/FieldType";
-import {StringOptions} from "@core/options";
+import {FieldType} from "@core/types/FieldType"
+import {StringOptions} from "@core/options"
 
 export class StringType extends FieldType<string, StringOptions> {
   cast(rawValue: any): string | null {

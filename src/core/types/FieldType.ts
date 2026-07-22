@@ -1,5 +1,5 @@
-import {FieldOptions} from "@core/options";
-import {Form} from "@core/Form";
+import {FieldOptions} from "@core/options"
+import {Form} from "@core/Form"
 
 export abstract class FieldType<T, O extends FieldOptions = FieldOptions> {
   options: O

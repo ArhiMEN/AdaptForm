@@ -1,6 +1,6 @@
-import {ArrayFieldOptions} from "@core/options";
-import {Field} from "@core/fields/Field";
-import {Form} from "@core/Form";
+import {ArrayFieldOptions} from "@core/options"
+import {Field} from "@core/fields/Field"
+import {Form} from "@core/Form"
 
 export class ArrayField<T = any> {
   protected options: ArrayFieldOptions

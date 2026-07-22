@@ -1,6 +1,6 @@
-import {FieldOptions} from "@core/options";
-import {FieldType} from "@core/types/FieldType";
-import {Form} from "@core/Form";
+import {FieldOptions} from "@core/options"
+import {FieldType} from "@core/types/FieldType"
+import {Form} from "@core/Form"
 type FieldTypeConstructor<T, O extends FieldOptions = FieldOptions> = new (options: O) => FieldType<T, O>
 
 export class Field<T = any, O extends FieldOptions = FieldOptions> {

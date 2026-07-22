@@ -1,9 +1,11 @@
-import {Field} from "@core/fields/Field";
-import {ArrayField} from "@core/fields/ArrayField";
-import {ArrayFormField} from "@core/fields/ArrayFormField";
+import {Field} from "@core/fields/Field"
+import {ArrayField} from "@core/fields/ArrayField"
+import {ArrayFormField} from "@core/fields/ArrayFormField"
+import {DefaultErrorsSchema, ErrorsSchema} from "@core/ErrorsShema"
 
 export abstract class Form {
   private _globalErrors: Record<string, string> = {}
+  errorsShema: ErrorsSchema = DefaultErrorsSchema
 
   protected get _fields(): Record<string, Field<any> | ArrayField<any> | ArrayFormField<any>> {
     const fields: Record<string, Field<any> | ArrayField<any> | ArrayFormField<any>> = {}
@@ -18,7 +20,7 @@ export abstract class Form {
     return fields
   }
 
-  checkValid(form?: this): boolean {  // ✅ Form → this
+  checkValid(form?: this): boolean {
     let isFormValid = true
     const fields = this._fields
 
@@ -68,9 +70,20 @@ export abstract class Form {
     const fields = this._fields
 
     for (const key of Object.keys(fields)) {
-      const fieldErrors = fields[key].errors
-      if (fieldErrors.length > 0) {
-        errors[key] = fieldErrors
+      const field = fields[key]
+
+      if (field instanceof ArrayFormField) {
+        // Для ArrayFormField собираем ошибки из всех вложенных форм
+        const formErrors = this.collectArrayFormErrors(field)
+        if (formErrors.length > 0) {
+          errors[key] = formErrors
+        }
+      } else {
+        // Для Field и ArrayField берем их собственные ошибки
+        const fieldErrors = field.errors
+        if (fieldErrors.length > 0) {
+          errors[key] = fieldErrors
+        }
       }
     }
 
@@ -85,23 +98,130 @@ export abstract class Form {
     return errors
   }
 
+  /**
+   * Рекурсивно собирает все ошибки из ArrayFormField
+   */
+  private collectArrayFormErrors(arrayField: ArrayFormField): string[] {
+    const allErrors: string[] = []
+
+    // Ошибки самого ArrayFormField
+    allErrors.push(...arrayField.errors)
+
+    // Ошибки из каждой формы в массиве
+    for (let i = 0; i < arrayField.forms.length; i++) {
+      const form = arrayField.forms[i]
+      const formAllErrors = form.allErrors
+
+      for (const [fieldName, fieldErrors] of Object.entries(formAllErrors)) {
+        for (const error of fieldErrors) {
+          allErrors.push(`Форма ${i + 1}, ${fieldName}: ${error}`)
+        }
+      }
+    }
+
+    return allErrors
+  }
+
   get globalErrors(): Record<string, string> {
     return {...this._globalErrors}
   }
 
-  set errors(errors: Record<string, string>) {
+  set errors(errors: Record<string, any>) {
     const fields = this._fields
     this._globalErrors = {}
 
-    for (const key of Object.keys(errors)) {
-      const keys = key.split('.')
-      const cleanKey = keys.length > 1 ? keys[1] : key
+    // Очищаем все ошибки полей перед установкой новых
+    for (const key of Object.keys(fields)) {
+      fields[key].error = null
+    }
 
-      if (cleanKey in fields && fields[cleanKey]) {
-        fields[cleanKey].error = errors[key]
-      } else {
-        this._globalErrors[key] = errors[key]
+    // Используем схему для парсинга ошибок
+    const parsedErrors = this.errorsShema.parseErrors(errors)
+
+    // Обрабатываем распарсенные ошибки
+    for (const [fieldName, errorMessage] of Object.entries(parsedErrors)) {
+      this.applyErrorToField(fieldName, errorMessage, fields, this)
+    }
+  }
+
+  /**
+   * Применяет ошибку к соответствующему полю
+   * Поддерживает вложенные поля через точечную нотацию
+   */
+  private applyErrorToField(
+    fieldPath: string,
+    errorMessage: string,
+    fields: Record<string, Field<any> | ArrayField<any> | ArrayFormField<any>>,
+    targetForm: Form
+  ): void {
+    // Защита от undefined targetForm
+    if (!targetForm) {
+      console.error('applyErrorToField: targetForm is undefined')
+      return
+    }
+
+    // Сначала проверяем прямое совпадение с полем
+    if (fieldPath in fields && fields[fieldPath]) {
+      fields[fieldPath].error = errorMessage
+      return
+    }
+
+    // Если прямого совпадения нет, разбираем как вложенный путь
+    const parts = fieldPath.split('.')
+    const rootField = parts[0]
+
+    if (rootField in fields && fields[rootField]) {
+      const field = fields[rootField]
+
+      if (parts.length === 1) {
+        field.error = errorMessage
+      } else if (parts.length > 1) {
+        this.applyNestedError(field, parts.slice(1), errorMessage, fieldPath, targetForm)
       }
+    } else {
+      // Если поле не найдено, добавляем в глобальные ошибки целевой формы
+      targetForm.setGlobalError(fieldPath, errorMessage)
+    }
+  }
+
+  private applyNestedError(
+    field: Field<any> | ArrayField<any> | ArrayFormField<any>,
+    pathParts: string[],
+    errorMessage: string,
+    fullPath: string,
+    targetForm: Form
+  ): void {
+    // Защита от undefined targetForm
+    if (!targetForm) {
+      console.error('applyNestedError: targetForm is undefined')
+      return
+    }
+
+    const [currentPart, ...remainingParts] = pathParts
+
+    // Обработка ArrayFormField (массив форм)
+    if (field instanceof ArrayFormField) {
+      const index = parseInt(currentPart)
+      if (!isNaN(index) && index >= 0 && index < field.forms.length) {
+        const form = field.forms[index]
+        if (remainingParts.length > 0) {
+          // Рекурсивно применяем к полю внутри формы
+          const formFields = form['_fields']
+          // Передаем form как целевую форму для глобальных ошибок
+          this.applyErrorToField(remainingParts.join('.'), errorMessage, formFields, form)
+        } else {
+          // Если это индекс без указания конкретного поля,
+          // добавляем как глобальную ошибку формы
+          form.setGlobalError(`index_${index}`, errorMessage)
+        }
+      } else {
+        // Индекс вне диапазона - добавляем в глобальные ошибки целевой формы
+        targetForm.setGlobalError(fullPath, errorMessage)
+      }
+    }
+    // Для ArrayField и Field - добавляем в глобальные ошибки целевой формы
+    else {
+      targetForm.setGlobalError(fullPath, errorMessage)
     }
   }
 

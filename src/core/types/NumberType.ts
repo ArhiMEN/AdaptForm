@@ -1,5 +1,5 @@
-import {FieldType} from "@core/types/FieldType";
-import {NumberOptions} from "@core/options";
+import {FieldType} from "@core/types/FieldType"
+import {NumberOptions} from "@core/options"
 
 export class NumberType extends FieldType<number, NumberOptions> {
   cast(rawValue: any): number | null {

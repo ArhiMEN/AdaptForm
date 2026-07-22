@@ -1,6 +1,6 @@
-import {BasePlugin} from "@core/plugins/FieldPlugin";
-import {MaskPluginOptions, PluginOptions} from "@core/options";
-import {Field} from "@core/fields";
+import {BasePlugin} from "@core/plugins/FieldPlugin"
+import {MaskPluginOptions, PluginOptions} from "@core/options"
+import {Field} from "@core/fields"
 
 interface MaskPart {
   char: string                   // символ для отображения
