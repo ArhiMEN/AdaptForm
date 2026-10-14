@@ -34,6 +34,14 @@ describe('ArrayField', () => {
       expect(arrayField.items.length).toBe(2)
     })
 
+    it('should preserve null values in the collection', () => {
+      const arrayField = new ArrayField(
+        (value?: string) => new Field(StringType, value)
+      )
+      arrayField.itemsValue = [null, 'value']
+      expect(arrayField.itemsValue).toEqual([null, 'value'])
+    })
+
     it('should validate on set', () => {
       const factory = (value?: number) => new Field(NumberType, value, { gt: 0 })
       const arrayField = new ArrayField(factory, {}, [1, 2])
