@@ -357,7 +357,7 @@ export class ErrorsSchema {
       const match = key.match(rule.pattern)
       if (match) {
         if (typeof rule.mapping === 'function') {
-          const fieldName = rule.mapping(match)
+          const fieldName = rule.mapping(match, value)
           return fieldName
         }
         return rule.mapping
