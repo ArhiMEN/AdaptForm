@@ -1,4 +1,5 @@
 import {fileURLToPath} from 'node:url'
+import process from 'node:process'
 import {resolve} from 'node:path'
 import {defineConfig} from 'vite'
 
@@ -7,7 +8,7 @@ const sourceRoot = resolve(demoRoot, '../src')
 
 export default defineConfig({
   root: demoRoot,
-  base: '/AdaptForm/',
+  base: process.env.NODE_ENV === 'production' ? '/AdaptForm/' : '/',
   resolve: {
     alias: {
       '@core': resolve(sourceRoot, 'core'),
