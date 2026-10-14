@@ -2,11 +2,11 @@
 
 [English](CHANGELOG.md) · [Русский](CHANGELOG.ru.md)
 
-All notable changes to AdaptForm are documented here. The `2.1.0` section is prepared for release; it remains unreleased until the maintainer publishes it.
+All notable changes to AdaptForm are documented here. Version `2.1.0` was published to npm on 2026-10-14.
 
 **[Interactive demo](https://arhimen.github.io/AdaptForm/)** · [Demo source](https://github.com/ArhiMEN/AdaptForm/tree/master/demo) · [Documentation](https://github.com/ArhiMEN/AdaptForm/blob/master/README.md)
 
-## [2.1.0] - Unreleased
+## [2.1.0] - 2026-10-14
 
 ### Added
 
@@ -57,9 +57,9 @@ All notable changes to AdaptForm are documented here. The `2.1.0` section is pre
 
 ### Compatibility notes
 
-- Built-in library validation messages and their language have not been changed in this release candidate. Localization and any structured error-code contract are deferred to a separate coordinated task.
+- Built-in library validation messages and their language have not been changed in this release. Localization and any structured error-code contract are deferred to a separate coordinated task.
 - PlayLease-specific integration work is explicitly out of scope for this branch.
-- This changelog describes the release candidate in branch `v2.1.0`; npm publication and the GitHub release are still maintainer actions.
+- Version `2.1.0` was published manually to npm. No GitHub release or release tag has been created.
 
 ## [2.0.5] - 2026-07-22
 

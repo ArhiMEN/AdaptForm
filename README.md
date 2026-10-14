@@ -40,7 +40,7 @@ Luxon integration is optional:
 npm install luxon
 ```
 
-The [interactive demo](https://arhimen.github.io/AdaptForm/) runs from repository source, with automatic deployment from `v2.1.0` and `master`. Version `2.1.0` is prepared in the repository; npm continues to serve the last published version until the maintainer publishes the release.
+The [interactive demo](https://arhimen.github.io/AdaptForm/) runs from repository source, with automatic deployment from `v2.1.0` and `master`. Version `2.1.0` is available on npm.
 
 The demo supports English and Russian with a persistent language selector: [English](https://arhimen.github.io/AdaptForm/?lang=en) · [Русский](https://arhimen.github.io/AdaptForm/?lang=ru). Switching languages preserves form data and validation state.
 

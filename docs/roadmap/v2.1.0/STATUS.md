@@ -4,13 +4,13 @@
 
 ## Current stage
 
-**Stage 3 — Source delivery complete; release publication pending**
+**Stage 4 — Version 2.1.0 published to npm; automatic publication setup pending**
 
 Branch: `v2.1.0` (merged into `master`)
 Baseline branch: `master`  
 Starting package version: `2.0.5`  
-Package version in this branch: `2.1.0` (prepared for maintainer release; not published)  
-Release status: Source merged into `master`; npm publication, GitHub release, and release tagging have not been performed.
+Package version in `master`: `2.1.0` (published to npm on 2026-10-14)
+Release status: Source merged into `master` and manually published to npm; no GitHub release or release tag has been created.
 
 Interactive demo: [https://arhimen.github.io/AdaptForm/](https://arhimen.github.io/AdaptForm/) — live in English and Russian, verified after deployment from `master`; deployment permissions allow `v2.1.0` and `master`.
 
@@ -108,7 +108,7 @@ The required source type-check and demo type-check pass. An additional explorato
 - Validation-message localization and any change to the public message contract.
 - Structured error codes/parameters for localization.
 - PlayLease integration tests, adapter changes, and application-specific compatibility checks.
-- Package version bump, npm publication, and release tagging. These require explicit approval.
+- Future package version bumps and release tagging require separate authorization.
 
 ## Known limitations
 
@@ -116,14 +116,19 @@ The required source type-check and demo type-check pass. An additional explorato
 
 The maintainer requested automatic npm publication after merges into `master`, using the version in `package.json`. The guarded workflow and release preflight are prepared, with seven new regression tests. Activation remains pending: npm rejected Trusted Publisher management with HTTP 403, asking the account owner to enable 2FA. No GitHub npm secret is configured. The workflow skips publication until either the npm Trusted Publisher or a granular `NPM_TOKEN` secret is configured and `NPM_PUBLISH_ENABLED=true`. This setup does not create tags or GitHub releases. See [setup instructions](../../NPM_PUBLISH.md).
 
-Delivered by [PR #2](https://github.com/ArhiMEN/AdaptForm/pull/2), merged as `391db730`. Branch CI and [master CI 38546431178](https://github.com/ArhiMEN/AdaptForm/actions/runs/38546431178) passed. The [publication run 38546494455](https://github.com/ArhiMEN/AdaptForm/actions/runs/38546494455) was skipped as intended because `NPM_PUBLISH_ENABLED=false`. Local verification passed 374 tests, lint, audit, library/demo build and type checks, and package-content validation. The new preflight has 95% statement, 96.4% branch, and 100% function coverage. The current npm release remains 2.0.5.
+Delivered by [PR #2](https://github.com/ArhiMEN/AdaptForm/pull/2), merged as `391db730`. Branch CI and [master CI 38546431178](https://github.com/ArhiMEN/AdaptForm/actions/runs/38546431178) passed. The [publication run 38546494455](https://github.com/ArhiMEN/AdaptForm/actions/runs/38546494455) was skipped as intended because `NPM_PUBLISH_ENABLED=false`. Local verification passed 374 tests, lint, audit, library/demo build and type checks, and package-content validation. The new preflight has 95% statement, 96.4% branch, and 100% function coverage. At the time of that run, the current npm release was 2.0.5.
+
+### Manual npm publication — 2026-10-14
+
+The maintainer published `adaptform@2.1.0` with `npm publish`. npm initially reported that the package was being processed; the authenticated version-status endpoint returned `validating`. The status later became `published`, and the public registry returned version `2.1.0` with the `latest` dist-tag pointing to `2.1.0`. No GitHub release or tag was created. Automatic publication remains disabled pending Trusted Publisher or `NPM_TOKEN` setup.
 
 
 - Both permitted branches share one live demo URL; the latest successful deployment replaces the previous site. Automatic deployment from `master` has been verified.
 
 - Legacy callback APIs still contain some `any` types where replacing them with `unknown` would cause a source-compatibility change. Form value inference, serialization results, and nested collection values have been made more precise without broad callback API changes.
 - No PlayLease application runtime or integration suite was run, by explicit scope decision.
-- The latest published npm version remains `2.0.5`; this branch is prepared as `2.1.0` but has not been released.
+- Automatic npm publication remains disabled until authentication is configured and `NPM_PUBLISH_ENABLED=true`.
+- The already published `2.1.0` tarball contains the pre-publication README and changelog text. The repository copies are corrected here; npm does not allow replacing a published version's contents.
 
 ## Final checklist
 
@@ -135,4 +140,5 @@ Delivered by [PR #2](https://github.com/ArhiMEN/AdaptForm/pull/2), merged as `39
 - [x] Confirm the final branch CI after the last code and documentation updates.
 - [x] Prepare version `2.1.0` in package metadata and changelog without publishing or tagging.
 - [x] Enable GitHub Pages in repository settings, allow both deployment branches, rerun deployment, and verify the live demo URL and assets.
-- [ ] Obtain explicit approval before creating a GitHub release, tag, or npm publication.
+- [x] Maintainer manually published `2.1.0` to npm; registry version and `latest` tag were verified.
+- [ ] Obtain separate authorization before creating a GitHub release or release tag.
