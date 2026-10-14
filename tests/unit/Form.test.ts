@@ -240,6 +240,11 @@ describe('Form', () => {
         tags: ['alpha', 'beta'],
         items: [{ name: 'Ada' }],
       }
+      const typedValues: {
+        tags: (string | null)[]
+        items: { name: string | null }[]
+      } = form.fieldsValue
+      expect(typedValues.items[0].name).toBe('Ada')
 
       const formData = form.toFormData()
       expect(formData.get('tags')).toBe('["alpha","beta"]')
