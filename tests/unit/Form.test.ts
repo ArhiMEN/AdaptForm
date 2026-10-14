@@ -135,6 +135,26 @@ describe('Form', () => {
       form.errors = { name: 'Error 2' }
       expect(form.name.error).toBe('Error 2')
     })
+
+    it('should clear previous errors from nested array forms', () => {
+      class ItemForm extends Form {
+        name = new Field(StringType)
+      }
+
+      class CollectionForm extends Form {
+        items = new ArrayFormField(ItemForm)
+      }
+
+      const form = new CollectionForm()
+      form.fields = { items: [{ name: 'Ada' }] }
+      form.errors = { 'items.0.name': 'Old server error' }
+      expect(form.items.forms[0].allErrors.name).toContain('Old server error')
+
+      form.errors = {}
+
+      expect(form.items.forms[0].allErrors).toEqual({})
+      expect(form.items.forms[0].globalErrors).toEqual({})
+    })
   })
 
   describe('setGlobalError', () => {
