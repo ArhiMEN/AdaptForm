@@ -17,7 +17,10 @@
         </a>
         <nav class="top-links" aria-label="Project links">
           <a href="https://github.com/ArhiMEN/AdaptForm" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
-          <a href="https://github.com/ArhiMEN/AdaptForm/blob/v2.1.0/README.md" target="_blank" rel="noreferrer">Documentation <span aria-hidden="true">↗</span></a>
+          <a data-document="README" href="https://github.com/ArhiMEN/AdaptForm/blob/master/README.md" target="_blank" rel="noreferrer">Documentation <span aria-hidden="true">↗</span></a>
+          <label class="language-picker" for="language"><span>Language</span>
+            <select id="language" data-no-translate><option value="en">English</option><option value="ru">Русский</option></select>
+          </label>
         </nav>
       </header>
 
@@ -29,7 +32,7 @@
             <p>Explore validation, field state, nested collections, server errors, and serialization — powered by the source in this branch.</p>
             <div class="hero-actions">
               <a class="button button-primary" href="#basic-form">Try the form <span aria-hidden="true">↓</span></a>
-              <a class="button button-quiet" href="https://github.com/ArhiMEN/AdaptForm/tree/v2.1.0" target="_blank" rel="noreferrer">Browse source <span aria-hidden="true">↗</span></a>
+              <a class="button button-quiet" href="https://github.com/ArhiMEN/AdaptForm/tree/master" target="_blank" rel="noreferrer">Browse source <span aria-hidden="true">↗</span></a>
             </div>
           </div>
           <div class="hero-card" aria-label="Demo capabilities">
@@ -158,11 +161,7 @@ form.toJSON()</code></pre>
         <section class="two-column">
           <article class="panel">
             <div class="panel-heading"><div><h3>Server error payload</h3><p>Example response from an API</p></div><span class="panel-icon">↳</span></div>
-            <pre class="payload-code"><code>{
-  "email": "This email is already registered.",
-  "region": "This region is not available.",
-  "profile_id": "The profile could not be updated."
-}</code></pre>
+            <pre class="payload-code"><code id="server-payload"></code></pre>
             <div class="form-actions"><button class="button button-primary" type="button" id="apply-server-errors">Apply server errors</button><button class="button button-secondary" type="button" id="clear-server-errors">Clear server errors</button></div>
             <div class="form-result" id="server-result" role="status" aria-live="polite">No simulated server errors applied.</div>
           </article>
@@ -184,8 +183,8 @@ form.toJSON()</code></pre>
 
         <footer class="footer">
           <a class="brand footer-brand" href="#top"><span class="brand-mark">A</span><span>AdaptForm</span></a>
-          <p>Interactive playground for the <code>v2.1.0</code> branch. Form values stay in your browser; nothing is submitted.</p>
-          <div class="footer-links"><a href="https://github.com/ArhiMEN/AdaptForm/tree/v2.1.0" target="_blank" rel="noreferrer">Source</a><a href="https://github.com/ArhiMEN/AdaptForm/blob/v2.1.0/CHANGELOG.md" target="_blank" rel="noreferrer">Changelog</a><a href="https://www.npmjs.com/package/adaptform" target="_blank" rel="noreferrer">npm</a></div>
+          <p>Interactive playground for AdaptForm <code>2.1.0</code>. Form values stay in your browser; nothing is submitted.</p>
+          <div class="footer-links"><a href="https://github.com/ArhiMEN/AdaptForm/tree/master" target="_blank" rel="noreferrer">Source</a><a data-document="CHANGELOG" href="https://github.com/ArhiMEN/AdaptForm/blob/master/CHANGELOG.md" target="_blank" rel="noreferrer">Changelog</a><a href="https://www.npmjs.com/package/adaptform" target="_blank" rel="noreferrer">npm</a></div>
         </footer>
       </main>
     </div>

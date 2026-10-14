@@ -1,4 +1,5 @@
 import './style.css'
+import {getLanguage, setLanguage, translate as t, translatePage} from './i18n'
 
 import {
   ArrayField,
@@ -151,12 +152,12 @@ let addressesValidated = false
 let activeSerializationTab: 'json' | 'formdata' = 'json'
 const profileKeys: ProfileKey[] = ['name', 'email', 'age', 'birthDate', 'country', 'region', 'terms']
 
-const getField = (key: ProfileKey): Field<any> => profile[key] as Field<any>
+const getField = (key: ProfileKey) => profile[key]
 const formFieldError = (key: ProfileKey): string[] => getField(key).errors
 
 function updateProfileInspector(): void {
   $('#profile-values').textContent = pretty(profile.fieldsValue)
-  $('#profile-errors').textContent = pretty(profile.allErrors)
+  $('#profile-errors').textContent = pretty(Object.fromEntries(Object.entries(profile.allErrors).map(([key, messages]) => [key, messages.map(t)])))
 
   const valid = profile.isValid
   const status = $('#profile-status')
@@ -180,7 +181,7 @@ function renderFieldError(key: ProfileKey): void {
   const errors = validatedProfile || serverErrorsApplied ? formFieldError(key) : []
   const field = document.querySelector<HTMLElement>(`[data-field="${key}"]`)
   const error = document.querySelector<HTMLElement>(`#error-${key}`)
-  if (error) error.textContent = errors.join(' ')
+  if (error) error.textContent = errors.map(t).join(' ')
   if (field) {
     field.classList.toggle('has-error', errors.length > 0)
     field.classList.toggle('is-valid', validatedProfile && errors.length === 0 && getField(key).isValid === true)
@@ -209,6 +210,7 @@ function renderProfile(): void {
   }
   updateProfileInspector()
   renderMappedErrors()
+  translatePage()
 }
 
 function syncProfileFromInputs(event?: Event): void {
@@ -275,20 +277,22 @@ $('#reset-profile').addEventListener('click', () => {
   renderProfile()
   $('#server-result').textContent = 'No simulated server errors applied.'
   $('#server-result').className = 'form-result'
+  translatePage()
 })
 
 function renderTags(): void {
   $('#tags-list').innerHTML = tags.items.map((item, index) => `
     <div class="dynamic-item ${item.errors.length ? 'has-error' : ''}">
       <span class="item-index">${String(index + 1).padStart(2, '0')}</span>
-      <div class="dynamic-input-wrap"><input aria-label="Tag ${index + 1}" data-tag-index="${index}" value="${escapeHtml(item.rawValue)}" placeholder="Enter a tag" /><small class="inline-error">${escapeHtml(item.errors.join(' '))}</small></div>
-      <button type="button" class="icon-button" data-remove-tag="${index}" aria-label="Remove tag ${index + 1}" title="Remove tag">×</button>
+      <div class="dynamic-input-wrap"><input aria-label="${t('Tag')} ${index + 1}" data-tag-index="${index}" value="${escapeHtml(item.rawValue)}" placeholder="Enter a tag" /><small class="inline-error">${escapeHtml(item.errors.map(t).join(' '))}</small></div>
+      <button type="button" class="icon-button" data-remove-tag="${index}" aria-label="${t('Remove tag')} ${index + 1}" title="${t('Remove tag')}">×</button>
     </div>
   `).join('')
-  $('#tags-error').textContent = tagsInteracted ? tags.errors.join(' ') : ''
+  $('#tags-error').textContent = tagsInteracted ? tags.errors.map(t).join(' ') : ''
   $('#tags-values').textContent = pretty(tags.itemsValue)
   const addButton = $('#add-tag') as HTMLButtonElement
   addButton.disabled = tags.items.length >= 4
+  translatePage()
 }
 
 $('#tags-list').addEventListener('input', event => {
@@ -326,14 +330,15 @@ $('#clear-tags').addEventListener('click', () => {
 function renderAddresses(): void {
   $('#addresses-list').innerHTML = addresses.forms.map((form, index) => `
     <div class="nested-form">
-      <div class="nested-form-heading"><strong>Address ${index + 1}</strong><button type="button" class="text-button" data-remove-address="${index}">Remove</button></div>
-      <div class="form-field ${form.city.errors.length ? 'has-error' : ''}"><label for="address-city-${index}">City</label><input id="address-city-${index}" data-address-city="${index}" value="${escapeHtml(form.city.rawValue)}" placeholder="e.g. Berlin" /><p class="field-error">${escapeHtml(form.city.errors.join(' '))}</p></div>
-      <div class="form-field ${form.postalCode.errors.length ? 'has-error' : ''}"><label for="address-postal-${index}">Postal code</label><input id="address-postal-${index}" data-address-postal="${index}" value="${escapeHtml(form.postalCode.rawValue)}" inputmode="numeric" placeholder="12345" /><p class="field-error">${escapeHtml(form.postalCode.errors.join(' '))}</p></div>
+      <div class="nested-form-heading"><strong>${t('Address')} ${index + 1}</strong><button type="button" class="text-button" data-remove-address="${index}">Remove</button></div>
+      <div class="form-field ${form.city.errors.length ? 'has-error' : ''}"><label for="address-city-${index}">City</label><input id="address-city-${index}" data-address-city="${index}" value="${escapeHtml(form.city.rawValue)}" placeholder="e.g. Berlin" /><p class="field-error">${escapeHtml(form.city.errors.map(t).join(' '))}</p></div>
+      <div class="form-field ${form.postalCode.errors.length ? 'has-error' : ''}"><label for="address-postal-${index}">Postal code</label><input id="address-postal-${index}" data-address-postal="${index}" value="${escapeHtml(form.postalCode.rawValue)}" inputmode="numeric" placeholder="12345" /><p class="field-error">${escapeHtml(form.postalCode.errors.map(t).join(' '))}</p></div>
     </div>
   `).join('')
-  $('#addresses-error').textContent = addressesValidated ? addresses.errors.join(' ') : ''
+  $('#addresses-error').textContent = addressesValidated ? addresses.errors.map(t).join(' ') : ''
   $('#addresses-values').textContent = pretty(addresses.formsFieldsValue)
   ;($('#add-address') as HTMLButtonElement).disabled = addresses.forms.length >= 3
+  translatePage()
 }
 
 $('#addresses-list').addEventListener('input', event => {
@@ -374,17 +379,20 @@ $('#validate-addresses').addEventListener('click', () => {
   renderAddresses()
 })
 
+const serverPayload = {
+  email: 'This email is already registered.',
+  region: 'This region is not available.',
+  profile_id: 'The profile could not be updated.',
+}
+
 $('#apply-server-errors').addEventListener('click', () => {
   syncProfileFromInputs()
-  profile.errors = {
-    email: 'This email is already registered.',
-    region: 'This region is not available.',
-    profile_id: 'The profile could not be updated.',
-  }
+  profile.errors = serverPayload
   serverErrorsApplied = true
   renderProfile()
   $('#server-result').className = 'form-result result-error'
   $('#server-result').textContent = 'Server errors applied to the live form instance.'
+  translatePage()
 })
 $('#clear-server-errors').addEventListener('click', () => {
   profile.errors = {}
@@ -392,6 +400,7 @@ $('#clear-server-errors').addEventListener('click', () => {
   renderProfile()
   $('#server-result').className = 'form-result result-success'
   $('#server-result').textContent = 'Server errors cleared. Run validation to refresh field validity.'
+  translatePage()
 })
 
 function renderMappedErrors(): void {
@@ -403,7 +412,7 @@ function renderMappedErrors(): void {
     return
   }
   container.innerHTML = entries.map(([key, messages]) => `
-    <div class="mapped-error-row"><span class="mapped-error-key">${escapeHtml(key)}</span><div>${messages.map(message => `<p>${escapeHtml(message)}</p>`).join('')}</div></div>
+    <div class="mapped-error-row"><span class="mapped-error-key">${escapeHtml(key)}</span><div>${messages.map(message => `<p>${escapeHtml(t(message))}</p>`).join('')}</div></div>
   `).join('')
 }
 
@@ -422,6 +431,7 @@ function renderSerialization(): void {
     output.textContent = pretty(preview)
     $('#serialization-note').textContent = 'FormData values shown as a readable key/value preview; null and undefined values are omitted.'
   }
+  translatePage()
 }
 
 document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(button => {
@@ -443,7 +453,8 @@ $('#copy-output').addEventListener('click', async () => {
   } catch {
     button.textContent = 'Select and copy'
   }
-  window.setTimeout(() => { button.textContent = 'Copy output' }, 1600)
+  translatePage()
+  window.setTimeout(() => { button.textContent = 'Copy output'; translatePage() }, 1600)
 })
 
 $('#masked-phone').addEventListener('input', event => {
@@ -456,7 +467,20 @@ $('#masked-phone').addEventListener('input', event => {
   })
 })
 
-renderProfile()
-renderTags()
-renderAddresses()
+function renderDemo(): void {
+  renderProfile()
+  renderTags()
+  renderAddresses()
+  $('#server-payload').textContent = pretty(Object.fromEntries(Object.entries(serverPayload).map(([key, message]) => [key, t(message)])))
+  translatePage()
+}
+
+const languageSelect = $<HTMLSelectElement>('#language')
+languageSelect.value = getLanguage()
+languageSelect.addEventListener('change', () => {
+  setLanguage(languageSelect.value === 'ru' ? 'ru' : 'en')
+  renderDemo()
+})
+
+renderDemo()
 $('#masked-phone').dispatchEvent(new Event('input'))
