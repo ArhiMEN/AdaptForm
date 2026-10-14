@@ -3,6 +3,7 @@ node_modules/
 
 # Build artifacts
 dist/
+dist-demo/
 *.tsbuildinfo
 coverage
 
