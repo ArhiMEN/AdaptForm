@@ -59,9 +59,9 @@ export class DateType extends FieldType<Date, DateOptions> {
     if (this.options.isDatetime) {
       // Compare exact timestamps when time matters.
       if (type === 'min') {
-        return value >= boundary // value должен быть >= minDate
+        return value >= boundary // value must be >= minDate
       } else {
-        return value <= boundary // value должен быть <= maxDate
+        return value <= boundary // value must be <= maxDate
       }
     } else {
       // Compare calendar dates only when time does not matter.
