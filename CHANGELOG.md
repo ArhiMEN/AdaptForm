@@ -14,14 +14,15 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - Upgrade Vitest, Vite, ESLint, and TypeScript lint tooling; pin patched transitive dependencies and run CI on Node.js 22.
-- `Form.fields` validates after bulk assignment; `Form.checkValid()` includes global server errors.
-- Array collections revalidate on mutation, validity reads avoid hidden repeated validation, and invalid removal indices are ignored.
+- `Form.fields` batches direct field values before form-level validation; `Form.setFields()` and `Field.setRawValue()` allow advanced callers to defer validation explicitly. `Form.checkValid()` includes global server errors.
+- Array collections revalidate on mutation, validity reads avoid hidden repeated validation, invalid removal indices are ignored, and collection validity is left unvalidated after reset until the next check.
+- Resetting a field restores its default without running custom validators, clears errors, and leaves validity unset until the next check. Replacing server errors also clears stale errors recursively in nested forms and array items.
 - Constructor defaults start untouched; whitespace-only strings are treated as empty; global/sticky regex validation is deterministic.
 - Number parsing rejects blank/non-finite values, and decimal precision checks no longer silently round numeric input.
 - `Field.valueClear` now exposes its actual `T | null` type; `ArrayField.itemsValue` reflects nullable item values.
 - `Form.toFormData()` JSON-encodes arrays and nested objects and omits `null`/`undefined` values.
 - `Form.toJSON()` recursively converts `Date` values to ISO 8601 strings, including dates inside arrays and plain objects.
-- CI uses `npm ci` with a lockfile aligned to the package version.
+- CI uses `npm ci` with a lockfile aligned to the package version and verifies the npm package file list after building.
 
 ### Fixed
 
