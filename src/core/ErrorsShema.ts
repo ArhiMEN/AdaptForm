@@ -94,20 +94,24 @@ export class ErrorsSchema {
 
     const escapedArrayFieldName = arrayFieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-    // Accept bracket, angle-bracket, and dotted index notations.
+    // Accept bracket and dotted indices by default; custom formats use indexExtractor.
+    const indexPattern = indexExtractor
+      ? '(.+?)'
+      : '(?:\\[(\\d+)\\]|\\.(\\d+))'
+
     schema.dynamicKey(
-      new RegExp(`^${escapedArrayFieldName}(.+?)\\.(.+)$`),
+      new RegExp(`^${escapedArrayFieldName}${indexPattern}\\.(.+)$`),
       (match, value) => {
         const sourceKey = match[0]
         const index = indexExtractor
           ? indexExtractor(sourceKey)
-          : Number(match[1].match(/\d+/)?.[0] ?? NaN)
+          : Number(match[1] ?? match[2])
 
         if (!Number.isInteger(index) || index < 0) {
           return ''
         }
 
-        const fieldPath = match[2]
+        const fieldPath = match[indexExtractor ? 2 : 3]
         const itemMapping = itemSchema.findMapping(fieldPath, value)
         const mappedFieldPath = itemMapping
           ? typeof itemMapping === 'function'
