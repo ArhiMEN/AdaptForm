@@ -9,7 +9,7 @@ export interface ParsedError {
 
 export interface DynamicRule {
   pattern: RegExp
-  mapping: ErrorFieldMapping | ((match: RegExpMatchArray) => string)
+  mapping: ErrorFieldMapping | ((match: RegExpMatchArray, value?: any) => string)
   priority: number
 }
 
@@ -20,9 +20,9 @@ export class ErrorsSchema {
   private _valueTransformers: Array<(value: any) => any> = []
 
   /**
-   * Добавляет статическое правило - точное соответствие ключа ошибки
-   * @param errorKey - точный ключ ошибки из ответа сервера
-   * @param fieldName - имя поля в форме или функция для динамического определения
+   * Add a static rule that matches an exact error key.
+   * @param errorKey - Exact error key returned by the server.
+   * @param fieldName - Form field name or a function that resolves it dynamically.
    */
   staticKey(errorKey: string, fieldName: string | ((errorValue: any) => string)): this {
     this._staticRules.set(errorKey, fieldName)
@@ -30,14 +30,14 @@ export class ErrorsSchema {
   }
 
   /**
-   * Добавляет динамическое правило с регулярным выражением
-   * @param pattern - регулярное выражение для сопоставления ключа ошибки
-   * @param mapping - имя поля или функция для извлечения имени поля из совпадения
-   * @param options - дополнительные опции (приоритет и т.д.)
+   * Add a dynamic rule using a regular expression.
+   * @param pattern - Regular expression used to match an error key.
+   * @param mapping - Field name or function that derives it from the match.
+   * @param options - Additional options, such as rule priority.
    */
   dynamicKey(
     pattern: RegExp,
-    mapping: string | ((match: RegExpMatchArray) => string),
+    mapping: string | ((match: RegExpMatchArray, value?: any) => string),
     options?: { priority?: number }
   ): this {
     this._dynamicRules.push({
@@ -45,13 +45,13 @@ export class ErrorsSchema {
       mapping,
       priority: options?.priority ?? 0
     })
-    // Сортируем по приоритету (высший приоритет первым)
+    // Sort by priority, highest first.
     this._dynamicRules.sort((a, b) => b.priority - a.priority)
     return this
   }
 
   /**
-   * Устанавливает обработчик для ошибок, которые не подошли ни под одно правило
+   * Set a handler for errors that do not match any rule.
    */
   fallback(handler: (key: string, value: any) => string | null): this {
     this._fallbackHandler = handler
@@ -59,8 +59,8 @@ export class ErrorsSchema {
   }
 
   /**
-   * Добавляет трансформер для значений ошибок
-   * Полезно для нормализации сообщений (например, если сервер возвращает массив ошибок)
+   * Add a transformer for error values.
+   * Useful for normalizing messages, such as server responses containing arrays.
    */
   transformValue(transformer: (value: any) => any): this {
     this._valueTransformers.push(transformer)
@@ -68,7 +68,7 @@ export class ErrorsSchema {
   }
 
   /**
-   * Быстрый метод для создания схемы из простого объекта маппинга
+   * Create a schema from a simple mapping object.
    */
   static fromObject(mapping: Record<string, string>): ErrorsSchema {
     const schema = new ErrorsSchema()
@@ -79,7 +79,7 @@ export class ErrorsSchema {
   }
 
   /**
-   * Создает схему для массива однотипных форм
+   * Create a schema for an array of similarly structured forms.
    */
   static forArray(
     itemSchema: ErrorsSchema,
@@ -88,18 +88,38 @@ export class ErrorsSchema {
   ): ErrorsSchema {
     const schema = new ErrorsSchema()
 
-    const extractIndex = indexExtractor || ((key: string) => {
-      const match = key.match(/\[(\d+)\]/)
-      return match ? parseInt(match[1]) : -1
-    })
+    for (const transformer of itemSchema._valueTransformers) {
+      schema.transformValue(transformer)
+    }
 
-    // Динамически обрабатывает ошибки массива
+    const escapedArrayFieldName = arrayFieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+    // Accept bracket and dotted indices by default; custom formats use indexExtractor.
+    const indexPattern = indexExtractor
+      ? '(.+?)'
+      : '(?:\\[(\\d+)\\]|\\.(\\d+))'
+
     schema.dynamicKey(
-      new RegExp(`^${arrayFieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\[(\\d+)\\]\\.(.+)$`),
-      (match) => {
-        const index = match[1]
-        const fieldName = match[2]
-        return `${arrayFieldName}.${index}.${fieldName}`
+      new RegExp(`^${escapedArrayFieldName}${indexPattern}\\.(.+)$`),
+      (match, value) => {
+        const sourceKey = match[0]
+        const index = indexExtractor
+          ? indexExtractor(sourceKey)
+          : Number(match[1] ?? match[2])
+
+        if (!Number.isInteger(index) || index < 0) {
+          return ''
+        }
+
+        const fieldPath = match[indexExtractor ? 2 : 3]
+        const itemMapping = itemSchema.findMapping(fieldPath, value)
+        const mappedFieldPath = itemMapping
+          ? typeof itemMapping === 'function'
+            ? itemMapping(value)
+            : itemMapping
+          : fieldPath
+
+        return `${arrayFieldName}.${index}.${mappedFieldPath}`
       },
       {priority: 100}
     )
@@ -109,8 +129,8 @@ export class ErrorsSchema {
 
 
   /**
-   * Основной метод парсинга ошибок с поддержкой трансформеров
-   * Поддерживает вложенные структуры через точечную нотацию
+   * Parse errors while applying configured value transformers.
+   * Supports nested structures using dot notation.
    */
   parseErrors(errors: Record<string, any>, prefix: string = ''): Record<string, string> {
     const result: Record<string, string> = {}
@@ -118,19 +138,19 @@ export class ErrorsSchema {
     for (const [key, value] of Object.entries(errors)) {
       const fullKey = prefix ? `${prefix}.${key}` : key
 
-      // Если значение - объект, рекурсивно парсим вложенные ошибки
+      // Recursively parse nested error objects.
       if (this.isNestedObject(value)) {
         const nestedErrors = this.parseErrors(value, fullKey)
         Object.assign(result, nestedErrors)
         continue
       }
 
-      // Пропускаем null и undefined значения
+      // Skip null and undefined values.
       if (value === null || value === undefined) {
         continue
       }
 
-      // Применяем трансформеры к значению
+      // Apply value transformers.
       let transformedValue = value
       for (const transformer of this._valueTransformers) {
         transformedValue = transformer(transformedValue)
@@ -151,13 +171,6 @@ export class ErrorsSchema {
             ? transformedValue
             : JSON.stringify(transformedValue)
         }
-      } else if (this._fallbackHandler) {
-        const fieldName = this._fallbackHandler(fullKey, transformedValue)
-        if (fieldName) {
-          result[fieldName] = typeof transformedValue === 'string'
-            ? transformedValue
-            : JSON.stringify(transformedValue)
-        }
       }
     }
 
@@ -165,7 +178,7 @@ export class ErrorsSchema {
   }
 
   /**
-   * Парсит ошибки сервера и возвращает расширенную информацию
+   * Parse server errors and return detailed metadata.
    */
   parseErrorsDetailed(errors: Record<string, any>, prefix: string = ''): Record<string, ParsedError> {
     const result: Record<string, ParsedError> = {}
@@ -173,19 +186,19 @@ export class ErrorsSchema {
     for (const [key, value] of Object.entries(errors)) {
       const fullKey = prefix ? `${prefix}.${key}` : key
 
-      // Рекурсивно обрабатываем вложенные объекты
+      // Recursively process nested objects.
       if (this.isNestedObject(value)) {
         const nestedErrors = this.parseErrorsDetailed(value, fullKey)
         Object.assign(result, nestedErrors)
         continue
       }
 
-      // Пропускаем null и undefined значения
+      // Skip null and undefined values.
       if (value === null || value === undefined) {
         continue
       }
 
-      // Применяем трансформеры к значению
+      // Apply value transformers.
       let transformedValue = value
       for (const transformer of this._valueTransformers) {
         transformedValue = transformer(transformedValue)
@@ -211,28 +224,28 @@ export class ErrorsSchema {
   }
 
   /**
-   * Создает схему для вложенной формы
+   * Create a schema for a nested form.
    */
   nest(prefix: string): ErrorsSchema {
     const nestedSchema = new ErrorsSchema()
 
-    // Проксируем статические правила с префиксом
+    // Forward static rules with the prefix.
     for (const [key, mapping] of this._staticRules.entries()) {
       nestedSchema.staticKey(`${prefix}.${key}`, mapping)
     }
 
-    // Проксируем динамические правила с префиксом
+    // Forward dynamic rules with the prefix.
     for (const rule of this._dynamicRules) {
       const newPattern = new RegExp(`^${prefix}\\.${rule.pattern.source.replace(/^\^/, '')}`)
       nestedSchema.dynamicKey(newPattern, rule.mapping, {priority: rule.priority})
     }
 
-    // Проксируем трансформеры
+    // Forward value transformers.
     for (const transformer of this._valueTransformers) {
       nestedSchema.transformValue(transformer)
     }
 
-    // Проксируем fallback с обработкой префикса
+    // Forward the fallback handler while removing the prefix.
     if (this._fallbackHandler) {
       nestedSchema.fallback((key, value) => {
         if (key.startsWith(`${prefix}.`)) {
@@ -246,22 +259,22 @@ export class ErrorsSchema {
   }
 
   /**
-   * Клонирует текущую схему
+   * Clone the current schema.
    */
   clone(): ErrorsSchema {
     const cloned = new ErrorsSchema()
 
-    // Копируем статические правила
+    // Copy static rules.
     for (const [key, mapping] of this._staticRules.entries()) {
       cloned._staticRules.set(key, mapping)
     }
 
-    // Копируем динамические правила
+    // Copy dynamic rules.
     for (const rule of this._dynamicRules) {
       cloned._dynamicRules.push({...rule})
     }
 
-    // Копируем fallback и трансформеры
+    // Copy the fallback handler and value transformers.
     cloned._fallbackHandler = this._fallbackHandler
     cloned._valueTransformers = [...this._valueTransformers]
 
@@ -269,24 +282,24 @@ export class ErrorsSchema {
   }
 
   /**
-   * Объединяет текущую схему с другой
+   * Merge the current schema with another schema.
    */
   merge(other: ErrorsSchema): ErrorsSchema {
     const merged = this.clone()
 
-    // Добавляем статические правила из другой схемы
+    // Add static rules from the other schema.
     for (const [key, mapping] of other._staticRules.entries()) {
       merged._staticRules.set(key, mapping)
     }
 
-    // Добавляем динамические правила
+    // Add dynamic rules.
     merged._dynamicRules.push(...other._dynamicRules)
     merged._dynamicRules.sort((a, b) => b.priority - a.priority)
 
-    // Добавляем трансформеры
+    // Add value transformers.
     merged._valueTransformers.push(...other._valueTransformers)
 
-    // Заменяем fallback если есть в другой схеме
+    // Replace the fallback handler when the other schema defines one.
     if (other._fallbackHandler) {
       merged._fallbackHandler = other._fallbackHandler
     }
@@ -302,19 +315,19 @@ export class ErrorsSchema {
     fieldName: string
     matchedBy: 'static' | 'dynamic' | 'fallback'
   } | null {
-    // Проверяем статические правила (Map)
+    // Check static rules (Map).
     if (this._staticRules.has(key)) {
       const mapping = this._staticRules.get(key)!
       const fieldName = typeof mapping === 'function' ? mapping(value) : mapping
       return fieldName ? {fieldName, matchedBy: 'static'} : null
     }
 
-    // Проверяем динамические правила
+    // Check dynamic rules.
     for (const rule of this._dynamicRules) {
       const match = key.match(rule.pattern)
       if (match) {
         const fieldName = typeof rule.mapping === 'function'
-          ? rule.mapping(match)
+          ? rule.mapping(match, value)
           : rule.mapping
         return fieldName ? {fieldName, matchedBy: 'dynamic'} : null
       }
@@ -330,17 +343,17 @@ export class ErrorsSchema {
   }
 
   private findMapping(key: string, value: any): ErrorFieldMapping | null {
-    // Проверяем статические правила (Map)
+    // Check static rules (Map).
     if (this._staticRules.has(key)) {
       return this._staticRules.get(key)!
     }
 
-    // Проверяем динамические правила
+    // Check dynamic rules.
     for (const rule of this._dynamicRules) {
       const match = key.match(rule.pattern)
       if (match) {
         if (typeof rule.mapping === 'function') {
-          const fieldName = rule.mapping(match)
+          const fieldName = rule.mapping(match, value)
           return fieldName
         }
         return rule.mapping
@@ -358,7 +371,7 @@ export class ErrorsSchema {
 }
 
 /**
- * Базовая схема по умолчанию
+ * Default base schema.
  */
 export const DefaultErrorsSchema = new ErrorsSchema()
   .fallback((key) => key)

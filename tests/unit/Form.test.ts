@@ -1,9 +1,12 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { Form } from '@core/Form'
 import { Field } from '@core/fields/Field'
 import { StringType } from '@core/types/StringType'
 import { NumberType } from '@core/types/NumberType'
+import { DateType } from '@core/types/DateType'
+import { FieldType } from '@core/types/FieldType'
 import { ArrayField } from '@core/fields/ArrayField'
+import { ArrayFormField } from '@core/fields/ArrayFormField'
 
 describe('Form', () => {
   class TestForm extends Form {
@@ -15,7 +18,8 @@ describe('Form', () => {
     it('should get field values', () => {
       const form = new TestForm()
       form.fields = { name: 'John', age: 25 }
-      expect(form.fieldsValue).toEqual({ name: 'John', age: 25 })
+      const typedValues: { name: string | null; age: number | null } = form.fieldsValue
+      expect(typedValues).toEqual({ name: 'John', age: 25 })
     })
 
     it('should handle null values', () => {
@@ -46,6 +50,36 @@ describe('Form', () => {
       expect(form.checkValid()).toBe(true)
     })
 
+    it('should validate conditional required fields after bulk assignment', () => {
+      class ConditionalForm extends Form {
+        country = new Field(StringType)
+        region = new Field(StringType, null, {
+          isRequired: (form?: any) => form?.country?.valueClear === 'US'
+        })
+      }
+
+      const form = new ConditionalForm()
+      form.fields = { country: 'US', region: null }
+      expect(form.isValid).toBe(false)
+
+      form.country.rawValue = 'CA'
+      expect(form.checkValid()).toBe(true)
+      expect(form.isValid).toBe(true)
+    })
+
+    it('should run each field validator once during bulk assignment', () => {
+      const validate = vi.fn(() => true)
+      class ValidatedForm extends Form {
+        name = new Field(StringType, null, { validate })
+      }
+
+      const form = new ValidatedForm()
+      validate.mockClear()
+
+      form.fields = { name: 'Ada' }
+
+      expect(validate).toHaveBeenCalledTimes(1)
+    })
     it('should return false if any field is invalid', () => {
       const form = new TestForm()
       form.fields = { name: 'John', age: null }
@@ -116,6 +150,26 @@ describe('Form', () => {
       form.errors = { name: 'Error 2' }
       expect(form.name.error).toBe('Error 2')
     })
+
+    it('should clear previous errors from nested array forms', () => {
+      class ItemForm extends Form {
+        name = new Field(StringType)
+      }
+
+      class CollectionForm extends Form {
+        items = new ArrayFormField(ItemForm)
+      }
+
+      const form = new CollectionForm()
+      form.fields = { items: [{ name: 'Ada' }] }
+      form.errors = { 'items.0.name': 'Old server error' }
+      expect(form.items.forms[0].allErrors.name).toContain('Old server error')
+
+      form.errors = {}
+
+      expect(form.items.forms[0].allErrors).toEqual({})
+      expect(form.items.forms[0].globalErrors).toEqual({})
+    })
   })
 
   describe('setGlobalError', () => {
@@ -178,6 +232,14 @@ describe('Form', () => {
       expect(form.isValid).toBe(false)
     })
 
+    it('should return false from checkValid when global errors exist', () => {
+      const form = new TestForm()
+      form.fields = { name: 'John', age: 25 }
+      form.setGlobalError('server', 'Request rejected')
+
+      expect(form.checkValid()).toBe(false)
+      expect(form.isValid).toBe(false)
+    })
     it('should be false when has global errors', () => {
       const form = new TestForm()
       form.fields = { name: 'John', age: 25 }
@@ -193,14 +255,66 @@ describe('Form', () => {
       expect(form.toJSON()).toEqual({ name: 'John', age: 25 })
     })
 
-    it('should handle Date objects', () => {
+    it('should serialize Date values as ISO strings', () => {
       class DateForm extends Form {
-        date = new Field(NumberType)
+        date = new Field(DateType)
       }
       const form = new DateForm()
-      form.fields = { date: 1672531200000 }
-      const json = form.toJSON()
-      expect(json).toEqual({ date: 1672531200000 })
+      const date = new Date('2023-01-01T00:00:00.000Z')
+      form.fields = { date }
+      expect(form.toJSON()).toEqual({ date: date.toISOString() })
+    })
+
+    it('should serialize Date values inside arrays and nested forms', () => {
+      class ItemForm extends Form {
+        date = new Field(DateType)
+      }
+      class DateCollectionForm extends Form {
+        dates = new ArrayField((value?: Date) => new Field(DateType, value))
+        items = new ArrayFormField(ItemForm)
+      }
+      const form = new DateCollectionForm()
+      const date = new Date('2023-01-01T00:00:00.000Z')
+      form.fields = { dates: [date], items: [{ date }] }
+
+      expect(form.toJSON()).toEqual({
+        dates: [date.toISOString()],
+        items: [{ date: date.toISOString() }]
+      })
+    })
+
+    it('should recursively serialize dates in plain object field values', () => {
+      class MetadataType extends FieldType<{ createdAt: Date }> {
+        cast(rawValue: unknown): { createdAt: Date } | null {
+          if (
+            rawValue !== null &&
+            typeof rawValue === 'object' &&
+            'createdAt' in rawValue &&
+            rawValue.createdAt instanceof Date
+          ) {
+            return rawValue as { createdAt: Date }
+          }
+          return null
+        }
+
+        validate(): string[] {
+          return []
+        }
+
+        getTypeName(): string {
+          return 'metadata'
+        }
+      }
+
+      class MetadataForm extends Form {
+        metadata = new Field(MetadataType)
+      }
+
+      const form = new MetadataForm()
+      const date = new Date('2023-01-01T00:00:00.000Z')
+      form.fields = { metadata: { createdAt: date } }
+
+      expect(form.toJSON()).toEqual({ metadata: { createdAt: date.toISOString() } })
     })
   })
 
@@ -213,7 +327,16 @@ describe('Form', () => {
       expect(formData.get('age')).toBe('25')
     })
 
-    it('should handle Date objects as numbers', () => {
+    it('should serialize Date values as ISO strings', () => {
+      class DateForm extends Form {
+        date = new Field(DateType)
+      }
+      const form = new DateForm()
+      const date = new Date('2023-01-01T00:00:00.000Z')
+      form.fields = { date }
+      expect(form.toFormData().get('date')).toBe(date.toISOString())
+    })
+    it('should preserve numeric timestamps as strings', () => {
       class DateForm extends Form {
         date = new Field(NumberType)
       }
@@ -221,6 +344,100 @@ describe('Form', () => {
       form.fields = { date: 1672531200000 }
       const formData = form.toFormData()
       expect(formData.get('date')).toBe('1672531200000')
+    })
+
+    it('should JSON-encode arrays and nested form values', () => {
+      class ItemForm extends Form {
+        name = new Field(StringType)
+      }
+
+      class CollectionForm extends Form {
+        tags = new ArrayField((value?: string) => new Field(StringType, value))
+        items = new ArrayFormField(ItemForm)
+      }
+
+      const form = new CollectionForm()
+      form.fields = {
+        tags: ['alpha', 'beta'],
+        items: [{ name: 'Ada' }],
+      }
+      const typedValues: {
+        tags: (string | null)[]
+        items: { name: string | null }[]
+      } = form.fieldsValue
+      expect(typedValues.items[0].name).toBe('Ada')
+      expect(form.toJSON()).toEqual({ tags: ['alpha', 'beta'], items: [{ name: 'Ada' }] })
+
+      const formData = form.toFormData()
+      expect(formData.get('tags')).toBe('["alpha","beta"]')
+      expect(formData.get('items')).toBe('[{"name":"Ada"}]')
+    })
+
+    it('should omit null and undefined values', () => {
+      const form = new TestForm()
+      form.fields = { name: null, age: null }
+
+      const formData = form.toFormData()
+      expect(formData.has('name')).toBe(false)
+      expect(formData.has('age')).toBe(false)
+    })
+
+    it('should preserve Blob values in FormData', () => {
+      class BlobType extends FieldType<Blob> {
+        cast(rawValue: unknown): Blob | null {
+          return rawValue instanceof Blob ? rawValue : null
+        }
+
+        validate(): string[] {
+          return []
+        }
+
+        getTypeName(): string {
+          return 'blob'
+        }
+      }
+
+      class AttachmentForm extends Form {
+        attachment = new Field(BlobType)
+      }
+
+      const form = new AttachmentForm()
+      const blob = new Blob(['file contents'], { type: 'text/plain' })
+      form.fields = { attachment: blob }
+
+      const value = form.toFormData().get('attachment')
+      expect(value).not.toBeNull()
+      expect((value as Blob).size).toBe(blob.size)
+      expect((value as Blob).type).toBe('text/plain')
+    })
+
+    it('should preserve File values and filenames in FormData', () => {
+      class FileType extends FieldType<File> {
+        cast(rawValue: unknown): File | null {
+          return rawValue instanceof File ? rawValue : null
+        }
+
+        validate(): string[] {
+          return []
+        }
+
+        getTypeName(): string {
+          return 'file'
+        }
+      }
+
+      class UploadForm extends Form {
+        attachment = new Field(FileType)
+      }
+
+      const form = new UploadForm()
+      const file = new File(['file contents'], 'avatar.txt', { type: 'text/plain' })
+      form.fields = { attachment: file }
+
+      const value = form.toFormData().get('attachment')
+      expect(value).not.toBeNull()
+      expect((value as File).name).toBe('avatar.txt')
+      expect((value as File).size).toBe(file.size)
     })
   })
 

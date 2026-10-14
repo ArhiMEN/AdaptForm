@@ -30,12 +30,15 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
     } else {
       this._rawValue = null
       this._valueClear = null
-      // Пока не вызвали checkValid, isValid = null
+      // Keep isValid as null until checkValid has been called.
       this.isValid = null
     }
+
+    // Constructor defaults are pristine values, not user edits.
+    this.isTouched = false
   }
 
-  // ========== Геттеры/сеттеры ==========
+  // ========== Getters and setters ==========
 
   protected get plugins() {
     return [...(this.options.plugins ?? [])].sort((a, b) => {
@@ -48,8 +51,8 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
   }
 
   set options(options: O) {
-    let cur_options = this.fieldType.options
-    this.fieldType.options = Object.assign(cur_options, options)
+    const currentOptions = this.fieldType.options
+    this.fieldType.options = Object.assign(currentOptions, options)
   }
 
   get rawValue(): T | null {
@@ -57,6 +60,22 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
   }
 
   set rawValue(input: any) {
+    this.setRawValue(input)
+  }
+
+  setRawValue(input: any, validate: boolean = true): void {
+    this.assignRawValue(input)
+    this._errors = []
+    this.isTouched = true
+
+    if (validate) {
+      this.checkAndSetValid()
+    } else {
+      this.isValid = null
+    }
+  }
+
+  private assignRawValue(input: any): void {
     let rawValue = input
 
     for (const plugin of this.plugins) {
@@ -75,10 +94,6 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
 
     this._rawValue = rawValue
     this._valueClear = this.fieldType.cast(valueClear)
-
-    this._errors = []
-    this.isTouched = true
-    this.checkAndSetValid()
   }
 
   get errors(): string[] {
@@ -98,11 +113,11 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
     this.isValid = message ? false : null
   }
 
-  get valueClear(): any {
+  get valueClear(): T | null {
     return this._valueClear
   }
 
-  // ========== Валидация ==========
+  // ========== Validation ==========
 
   private isRequired(form?: Form): boolean {
     let isRequired
@@ -118,7 +133,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
   checkValid(form?: Form): boolean {
     this._errors = []
 
-    // 1. Проверка на пустоту и обязательность
+    // 1. Check emptiness and required status.
     if (this.isEmpty) {
       if (this.isRequired(form)) {
         this._errors.push(this.options.messages?.isRequired ?? 'Поле обязательно для заполнения')
@@ -127,7 +142,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
       return true
     }
 
-    // 2. Проверка, что значение привелось к нужному типу
+    // 2. Check whether the value could be cast to the expected type.
     if (this._valueClear === null) {
       this._errors.push(
         this.options.messages?.type ??
@@ -136,14 +151,14 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
       return false
     }
 
-    // 3. Специфичная валидация типа
+    // 3. Run type-specific validation.
     const typeErrors = this.fieldType.validate(this._valueClear, form)
     if (typeErrors.length > 0) {
       this._errors.push(...typeErrors)
       return false
     }
 
-    // 4. Кастомная валидация
+    // 4. Run custom validation.
     if (this.options.validate) {
       const result = this.options.validate(this._valueClear, form)
       if (result === false) {
@@ -167,22 +182,24 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
   get isEmpty(): boolean {
     let isEmpty = false
     if (this._rawValue === null || this._rawValue === undefined) isEmpty = true
-    else if (this._rawValue === '') isEmpty = true
+    else if (typeof this._rawValue === 'string' && this._rawValue.trim() === '') isEmpty = true
     else if (Array.isArray(this._rawValue) && this._rawValue.length === 0) isEmpty = true
     return isEmpty
   }
 
-  // ========== Вспомогательные методы ==========
+  // ========== Helper methods ==========
 
   reset(): void {
     if (this.defaultValue !== null && this.defaultValue !== undefined) {
-      this.rawValue = this.defaultValue
+      // Restore the default through the same plugin pipeline without validating it.
+      this.assignRawValue(this.defaultValue)
     } else {
       this._rawValue = null
       this._valueClear = null
-      this.isValid = null
     }
+
     this._errors = []
+    this.isValid = null
     this.isTouched = false
   }
 }

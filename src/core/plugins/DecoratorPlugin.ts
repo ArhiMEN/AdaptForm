@@ -120,14 +120,14 @@ export class DecoratorPlugin<T = any> extends BasePlugin<T> {
     return this
   }
 
-  init(field: Field<T>) {
+  init(_field: Field<T>) {
   }
 
-  toRawValue(value: any, field: Field<T>) {
+  toRawValue(value: any, _field: Field<T>) {
     return this.process(String(value ?? '')).rawValue
   }
 
-  toValueClear(value: any, field: Field<T>) {
+  toValueClear(value: any, _field: Field<T>) {
     return this.process(String(value ?? '')).valueClear
   }
 
@@ -183,7 +183,7 @@ export class DecoratorPlugin<T = any> extends BasePlugin<T> {
               if (accept.transform) {
                 outputChar = accept.transform(char)
 
-                // символ пользователя идёт дальше
+                // The user's character is passed through to the next placeholder.
                 consumeChar = false
                 accepted = true
               }
@@ -218,9 +218,9 @@ export class DecoratorPlugin<T = any> extends BasePlugin<T> {
 
         // =========================
         // PREFIX
-        // рисуется только когда
-        // пользователь дошёл
-        // до этого блока
+        // Render only when
+        // the user has reached
+        // this block.
         // =========================
 
         if (

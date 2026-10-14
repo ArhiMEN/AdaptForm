@@ -54,17 +54,17 @@ export class DateType extends FieldType<Date, DateOptions> {
     return this.options.isDatetime ? 'дата и время' : 'дата'
   }
 
-  // Сравнение дат с учётом времени
+  // Compare dates with optional time precision.
   private compareDates(value: Date, boundary: Date, type: 'min' | 'max'): boolean {
     if (this.options.isDatetime) {
-      // Если время важно — сравниваем точно
+      // Compare exact timestamps when time matters.
       if (type === 'min') {
-        return value >= boundary // value должен быть >= minDate
+        return value >= boundary // value must be >= minDate
       } else {
-        return value <= boundary // value должен быть <= maxDate
+        return value <= boundary // value must be <= maxDate
       }
     } else {
-      // Если время не важно — сравниваем только даты
+      // Compare calendar dates only when time does not matter.
       const valueDate = this.toDateOnly(value)
       const boundaryDate = this.toDateOnly(boundary)
 

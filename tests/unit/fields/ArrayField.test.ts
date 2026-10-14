@@ -34,6 +34,14 @@ describe('ArrayField', () => {
       expect(arrayField.items.length).toBe(2)
     })
 
+    it('should preserve null values in the collection', () => {
+      const arrayField = new ArrayField(
+        (value?: string) => new Field(StringType, value)
+      )
+      arrayField.itemsValue = [null, 'value']
+      expect(arrayField.itemsValue).toEqual([null, 'value'])
+    })
+
     it('should validate on set', () => {
       const factory = (value?: number) => new Field(NumberType, value, { gt: 0 })
       const arrayField = new ArrayField(factory, {}, [1, 2])
@@ -75,6 +83,14 @@ describe('ArrayField', () => {
       expect(arrayField.itemsValue).toEqual(['a', 'c'])
     })
 
+    it('should ignore invalid removal indices', () => {
+      const arrayField = new ArrayField((value?: string) => new Field(StringType, value), {}, ['first', 'last'])
+      arrayField.remove(-1)
+      arrayField.remove(10)
+      arrayField.remove(1.5)
+      expect(arrayField.itemsValue).toEqual(['first', 'last'])
+    })
+
     it('should validate after remove', () => {
       const factory = (value?: number) => new Field(NumberType, value, { gt: 0 })
       const arrayField = new ArrayField(factory, { minItems: 2 }, [1, 2, 3])
@@ -109,10 +125,17 @@ describe('ArrayField', () => {
       expect(arrayField.isValid).toBe(false)
     })
 
+    it('should refresh minItems validity after each add without manual validation', () => {
+      const arrayField = new ArrayField((value?: string) => new Field(StringType, value), { minItems: 2 })
+      arrayField.add('first')
+      expect(arrayField.isValid).toBe(false)
+      arrayField.add('second')
+      expect(arrayField.isValid).toBe(true)
+    })
     it('should validate minItems', () => {
       const factory = (value?: string) => new Field(StringType, value)
       const arrayField = new ArrayField(factory, { minItems: 2 })
-      // При создании пустого массива isValid = false из-за minItems
+      // An empty array is invalid when minItems is configured.
       expect(arrayField.isValid).toBe(false)
       
       arrayField.add('a')
@@ -163,6 +186,24 @@ describe('ArrayField', () => {
       expect(arrayField.isTouched).toBe(true)
       arrayField.reset()
       expect(arrayField.isTouched).toBe(false)
+    })
+
+    it('should clear stale errors and require validation after reset', () => {
+      const arrayField = new ArrayField(
+        (value?: string) => new Field(StringType, value),
+        { minItems: 1 }
+      )
+
+      expect(arrayField.isValid).toBe(false)
+      expect(arrayField.errors).not.toEqual([])
+
+      arrayField.reset()
+
+      expect(arrayField.errors).toEqual([])
+      expect(arrayField.isValid).toBe(false)
+
+      expect(arrayField.checkValid()).toBe(false)
+      expect(arrayField.errors).not.toEqual([])
     })
   })
 })

@@ -1,420 +1,386 @@
 # AdaptForm
 
+[English](README.md) · [Русский](README.ru.md)
+
 [![npm version](https://img.shields.io/npm/v/adaptform.svg)](https://www.npmjs.com/package/adaptform)
 [![npm downloads](https://img.shields.io/npm/dm/adaptform.svg)](https://www.npmjs.com/package/adaptform)
-[![bundle size](https://img.shields.io/bundlephobia/minzip/adaptform)](https://bundlephobia.com/package/adaptform)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
-AdaptForm is a TypeScript-first form modeling framework inspired by Django Forms and Pydantic.
+**[Open the interactive demo](https://arhimen.github.io/AdaptForm/)** · **[Read the 2.1.0 changelog](https://github.com/ArhiMEN/AdaptForm/blob/master/CHANGELOG.md)** · **[Browse the demo source](https://github.com/ArhiMEN/AdaptForm/tree/master/demo)**
 
-Instead of describing validation schemas, you describe forms as classes with typed fields. Each field is responsible for
-its own state lifecycle, validation, transformation pipeline, and serialization logic.
-
-## AdaptForm provides:
-
-- Typed form models
-- Field-level validation
-- Cross-field validation
-- Input transformation plugins
-- Nested forms and arrays
-- Automatic TypeScript inference
-- Framework-agnostic integration
+AdaptForm is a TypeScript-first form modeling library inspired by Django Forms and Pydantic. Define forms as classes with typed fields. Each field owns its value, casting, validation, transformation plugins, errors, and state.
 
 ## Features
 
-- Form-as-a-domain-model architecture
-- Field-level state + validation ownership
-- Cross-field validation support
-- Plugin-based transformation pipeline
-- Strong TypeScript inference
-- Nested forms & collections
-- Built-in serialization (JSON / FormData)
-- Optional date engine (Luxon)
-- Framework-agnostic design
-- Zero-core-dependencies
-
-## Philosophy
-
-Most form libraries treat forms as validation schemas:
-
-```TypeScript
-const schema = z.object({
-  login: z.string(),
-  password: z.string(),
-})
-````
-
-AdaptForm treats forms as stateful domain models:
-
-```TypeScript
-class LoginForm extends Form {
-  login = new Field(StringType)
-  password = new Field(StringType)
-}
-```
-
-field is not just a validator — it is a state container that owns:
-
-- value
-- validation
-- errors
-- transformation
-- plugins
-- type casting
-
-The form itself becomes a single source of truth.
-
-Simple Vue:
-
-## Without AdaptForm
-
-A typical Vue form consists of multiple disconnected parts:
-
-- reactive state
-- validation schema
-- error store
-- input masks
-- submission mapping
-
-## With AdaptForm
-
-Everything is unified into a single form model:
-
-```TypeScript
-class RegistrationForm extends Form {
-  phone = new Field(StringType)
-}
-````
+- Class-based form models with inferred TypeScript value types.
+- Field-level and cross-field validation.
+- Conditional required rules and custom synchronous validators.
+- String, number, decimal, boolean, and JavaScript Date field types.
+- Dynamic arrays of fields and arrays of nested forms.
+- Input transformation plugins, including `MaskPlugin`.
+- Server-error mapping with `ErrorsSchema`.
+- JSON and `FormData` serialization.
+- Optional Luxon integration through the `adaptform/luxon` entry point.
+- Framework-agnostic core with no required runtime dependencies.
 
 ## Installation
+
+Install the published npm package:
 
 ```bash
 npm install adaptform
 ```
 
-## Optional: Luxon integration
+Luxon integration is optional:
 
-```Bash
+```bash
 npm install luxon
 ```
 
-## Quick Start
+The [interactive demo](https://arhimen.github.io/AdaptForm/) runs from repository source, with automatic deployment from `v2.1.0` and `master`. Version `2.1.0` is prepared in the repository; npm continues to serve the last published version until the maintainer publishes the release.
 
-```TypeScript
-import {Form, Field, StringType, NumberType} from 'adaptform';
+The demo supports English and Russian with a persistent language selector: [English](https://arhimen.github.io/AdaptForm/?lang=en) · [Русский](https://arhimen.github.io/AdaptForm/?lang=ru). Switching languages preserves form data and validation state.
 
-class LoginForm extends Form {
-  login = new Field(StringType, null, {maxLength: 50});
-  password = new Field(StringType, null, {minLength: 8});
-  remember = new Field(BooleanType, false);
+## Quick start
+
+```typescript
+import { BooleanType, Field, Form, StringType } from 'adaptform'
+
+class RegistrationForm extends Form {
+  name = new Field(StringType, null, {
+    isRequired: true,
+    minLength: 2,
+    maxLength: 50,
+  })
+
+  email = new Field(StringType, null, {
+    isRequired: true,
+    pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  })
+
+  acceptedTerms = new Field(BooleanType, false, {
+    mustBeTrue: true,
+  })
 }
 
-const form = new LoginForm();
-
+const form = new RegistrationForm()
 form.fields = {
-  login: 'john_doe',
-  password: 'securepass123'
-};
+  name: 'Alex Morgan',
+  email: 'alex@example.com',
+  acceptedTerms: true,
+}
 
-console.log(form.isValid); // true
-console.log(form.fieldsValue); // { login: 'john_doe', password: 'securepass123', remember: false }
-```
-
-## Usage Examples
-
-## Field Types
-
-```TypeScript
-import {Field, StringType, NumberType, BooleanType, DecimalType, DateType} from 'adaptform';
-
-// String with validation
-const name = new Field(StringType, null, {
-  minLength: 2,
-  maxLength: 50,
-  pattern: /^[a-zA-Z]+$/
-});
-
-// Number with range
-const age = new Field(NumberType, null, {
-  gt: 0,    // greater than
-  lt: 120   // less than
-});
-
-// Boolean with requirement
-const agreed = new Field(BooleanType, false, {
-  mustBeTrue: true,
-  messages: {
-    mustBeTrue: 'You must agree to the terms'
-  }
-});
-```
-
-## Custom Validation
-
-```TypeScript
-const email = new Field(StringType, null, {
-  validate: (value) => {
-    return value.includes('@') || 'Invalid email format';
-  }
-});
-
-// Async validation with form context
-const passwordConfirmation = new Field(StringType, null, {
-  validate: (value, form) => {
-    return value === form?.password?.valueClear || 'Passwords do not match';
-  }
-});
-```
-
-## Conditional Required Fields
-
-```TypeScript
-class SignUpForm extends Form {
-  country = new Field(StringType, null);
-
-  state = new Field(StringType, null, {
-    isRequired: (form) => form?.country?.valueClear === 'USA',
-    messages: {
-      isRequired: 'State is required for USA residents'
-    }
-  });
+if (form.isValid) {
+  console.log(form.fieldsValue)
+  console.log(form.toJSON())
+} else {
+  console.log(form.allErrors)
 }
 ```
 
-## Input Masks
+`form.fields` assigns the supplied values and validates the completed form. Values for fields omitted from the assignment are left unchanged.
 
-```TypeScript
-import {Field, StringType, MaskPlugin} from 'adaptform';
+## Field types and options
+
+All field types are constructed using `new Field(TypeConstructor, defaultValue?, options?)`.
+
+### StringType
+
+```typescript
+const username = new Field(StringType, null, {
+  isRequired: true,
+  minLength: 3,
+  maxLength: 32,
+  pattern: /^[a-z0-9_]+$/i,
+  messages: {
+    isRequired: 'Enter a username.',
+    minLength: 'Use at least 3 characters.',
+    pattern: 'Use only letters, numbers, and underscores.',
+  },
+})
+```
+
+Supported constraints: `isRequired`, `minLength`, `maxLength`, and `pattern`.
+
+### NumberType
+
+```typescript
+const age = new Field(NumberType, null, {
+  isRequired: true,
+  ge: 18,
+  le: 120,
+})
+```
+
+Supported constraints: `gt`, `ge`, `lt`, and `le`. Values must be finite integers; blank strings and non-finite numbers are rejected.
+
+### DecimalType
+
+```typescript
+const price = new Field(DecimalType, null, {
+  decimalPlaces: 2,
+  maxDigits: 8,
+  ge: 0,
+})
+```
+
+Supports `gt`, `ge`, `lt`, `le`, `decimalPlaces`, and `maxDigits`. Numeric inputs with excess precision are rejected rather than silently rounded. String inputs may use a comma or a period as the decimal separator.
+
+### BooleanType
+
+```typescript
+const accepted = new Field(BooleanType, false, {
+  mustBeTrue: true,
+})
+```
+
+Supports `mustBeTrue` and `mustBeFalse`.
+
+### DateType
+
+```typescript
+const birthday = new Field(DateType, null, {
+  isDatetime: false,
+  minDate: new Date('1900-01-01T00:00:00.000Z'),
+  maxDate: new Date(),
+})
+```
+
+Supports `minDate`, `maxDate`, and `isDatetime`. When `isDatetime` is false, comparisons use calendar dates; when true, timestamps are compared. Invalid dates are rejected.
+
+### Custom validation and messages
+
+Field options support `isRequired`, `messages`, and a synchronous `validate(value, form)` callback. A custom validator returns `true` for success, `false` for the configured validation message, or a string for a specific error.
+
+```typescript
+class PasswordForm extends Form {
+  password = new Field(StringType, null, { minLength: 8 })
+
+  confirmation = new Field(StringType, null, {
+    isRequired: true,
+    validate: (value, form) =>
+      value === form?.password.valueClear || 'Passwords do not match.',
+  })
+}
+```
+
+Validators are synchronous; returning a Promise is not supported. For asynchronous checks such as server-side uniqueness, call the service separately and apply the response through the form's error API.
+
+## Validation lifecycle and state
+
+- Constructor defaults begin untouched.
+- Empty strings and whitespace-only strings count as empty values.
+- Global and sticky regular-expression flags do not make repeated string validation stateful.
+- `form.checkValid()` validates every field and returns `false` when a field is invalid or global server errors remain.
+- Reading `isValid` does not run validators. Fields without a non-null default start with `isValid === null`; non-null constructor defaults pass through casting and validation but still start untouched. After `reset()`, field validity is unset until validation runs again.
+- Bulk assignment validates after direct field values have been assigned, so conditional-required rules can inspect the complete form state.
+- If you change dependent fields one at a time, call `form.checkValid()` after the changes to recompute cross-field rules.
+- `field.setRawValue(value, false)` and `form.setFields(data, false)` allow advanced callers to defer validation. Call `checkValid()` before relying on the validity state.
+- `reset()` restores defaults, clears errors, and leaves validity unset until the next validation. Collection validity is false after reset until the collection is checked again.
+- Adding, removing, or clearing collection items refreshes collection validation. Invalid removal indices are ignored.
+
+## Dynamic collections
+
+### ArrayField
+
+Use `ArrayField` for a dynamic list of similarly typed fields.
+
+```typescript
+import { ArrayField, Field, StringType } from 'adaptform'
+
+const tags = new ArrayField(
+  (value?: string) => new Field(StringType, value, {
+    isRequired: true,
+    minLength: 2,
+  }),
+  { minItems: 1, maxItems: 5 },
+)
+
+tags.add('typescript')
+tags.add('forms')
+console.log(tags.itemsValue)
+console.log(tags.isValid)
+```
+
+Options include `isRequired`, `minItems`, `maxItems`, `messages`, and a synchronous `validate(values, form)` callback. `itemsValue` returns an array whose entries may be `null`.
+
+### ArrayFormField
+
+Use `ArrayFormField` for a list of nested form instances.
+
+```typescript
+import { ArrayFormField, Field, Form, StringType } from 'adaptform'
+
+class AddressForm extends Form {
+  city = new Field(StringType, null, { isRequired: true })
+  postalCode = new Field(StringType, null, { isRequired: true })
+}
+
+const addresses = new ArrayFormField(AddressForm, {
+  minForms: 1,
+  maxForms: 3,
+})
+
+addresses.add({ city: 'Berlin', postalCode: '10115' })
+console.log(addresses.formsFieldsValue)
+```
+
+Options include `isRequired`, `minForms`, `maxForms`, `messages`, and a synchronous `validate(forms, form)` callback.
+
+## Input masks
+
+Plugins transform input before it is cast and validated. The built-in `MaskPlugin` supports fixed mask characters and digit or custom pattern placeholders.
+
+```typescript
+import { Field, MaskPlugin, StringType } from 'adaptform'
 
 const phone = new Field(StringType, null, {
   plugins: [
     new MaskPlugin({
-      maskFormat: '+7 (___) ___-__-__',
+      maskFormat: '+1 (___) ___-____',
       maskPlaceholder: '_',
-      digitPattern: /\d/
-    })
-  ]
-});
+      digitPattern: /\d/,
+    }),
+  ],
+})
 
-phone.rawValue = '9991234567';
-console.log(phone.valueClear); // '+7 (999) 123-45-67'
+phone.rawValue = '4155550134'
+console.log(phone.rawValue)
+console.log(phone.valueClear)
 ```
 
-## Nested Forms
+## Server-side errors with ErrorsSchema
 
-```TypeScript
-import {ArrayField, Field, NumberType} from 'adaptform';
+`ErrorsSchema` maps error keys returned by a backend to form fields. By default, unmatched keys fall back to their original names.
 
-const gameIds = new ArrayField(
-  (value?: number) => new Field(NumberType, value, {gt: 0}),
-  {minItems: 1}
-);
+```typescript
+import { ErrorsSchema, Form, Field, StringType } from 'adaptform'
 
-gameIds.itemsValue = [1, 2, 3];
-gameIds.add(4);
-console.log(gameIds.itemsValue); // [1, 2, 3, 4]
+class AccountForm extends Form {
+  email = new Field(StringType)
+  username = new Field(StringType)
+}
+
+const form = new AccountForm()
+form.errorsShema = new ErrorsSchema()
+  .staticKey('email_address', 'email')
+  .staticKey('user_name', 'username')
+  .fallback(key => key)
+
+form.errors = {
+  email_address: 'This email is already registered.',
+  user_name: 'This username is unavailable.',
+  request_id: 'The request could not be completed.',
+}
+
+console.log(form.allErrors)
 ```
 
-## Luxon Date Integration
+Available schema methods:
 
-```Bash
+- `staticKey(errorKey, fieldName)` maps an exact key.
+- `dynamicKey(pattern, mapping, options?)` maps keys using a regular expression and optional priority.
+- `fallback(handler)` handles keys that do not match configured rules.
+- `transformValue(transformer)` normalizes server error values before mapping.
+- `nest(prefix)` creates a schema for nested field paths.
+- `clone()` and `merge(other)` compose schemas.
+- `ErrorsSchema.fromObject(mapping)` creates a schema from a key-to-field map.
+- `ErrorsSchema.forArray(itemSchema, arrayFieldName, indexExtractor?)` maps array-item errors, including bracket and dotted index notation.
+
+Assigning a new `form.errors` object clears previously applied errors before applying the new payload. Unknown field keys become global errors.
+
+## Serialization
+
+### JSON
+
+`toJSON()` returns a JSON-compatible object. JavaScript `Date` instances are recursively converted to ISO 8601 strings, including dates nested in arrays and plain objects.
+
+```typescript
+const payload = form.toJSON()
+await fetch('/api/profile', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(payload),
+})
+```
+
+### FormData
+
+`toFormData()` omits `null` and `undefined` values, appends scalar values as strings, serializes dates as ISO 8601 strings, preserves `Blob` and `File` values, and JSON-encodes arrays and nested objects.
+
+```typescript
+const body = form.toFormData()
+await fetch('/api/profile', {
+  method: 'POST',
+  body,
+})
+```
+
+Do not set the multipart `Content-Type` header manually; the browser supplies the boundary.
+
+## Optional Luxon integration
+
+Install Luxon separately, then import the additional date type from the dedicated subpath:
+
+```bash
 npm install luxon
 ```
 
-```TypeScript
-import {DateLuxonType} from 'adaptform/luxon';
-import {DateTime} from 'luxon';
+```typescript
+import { Field } from 'adaptform'
+import { DateLuxonType } from 'adaptform/luxon'
+import { DateTime } from 'luxon'
 
-const birthdate = new Field(DateLuxonType, null, {
+const date = new Field(DateLuxonType, null, {
   isDatetime: false,
   minDate: DateTime.fromISO('1900-01-01'),
   maxDate: DateTime.now(),
   inputFormat: 'dd.MM.yyyy',
-  messages: {
-    minDate: 'Date must be after 1900',
-    maxDate: 'Date cannot be in the future'
-  }
-});
-
-birthdate.rawValue = '15.06.1990';
-console.log(birthdate.valueClear); // Luxon DateTime object
+})
 ```
 
-## Form Submission
+## API overview
 
-```TypeScript
-class ContactForm extends Form {
-  name = new Field(StringType, null, {maxLength: 100});
-  email = new Field(StringType, null, {
-    pattern: /^[^@]+@[^@.]+\.[^@.]+$/
-  });
-  message = new Field(StringType, null, {maxLength: 1000});
-}
+| Class | Main API |
+| --- | --- |
+| `Form` | `fields`, `setFields()`, `fieldsValue`, `checkValid()`, `isValid`, `allErrors`, `globalErrors`, `errors`, `setGlobalError()`, `clearGlobalErrors()`, `reset()`, `toJSON()`, `toFormData()` |
+| `Field` | `rawValue`, `setRawValue()`, `valueClear`, `errors`, `error`, `isValid`, `isTouched`, `isEmpty`, `checkValid()`, `reset()` |
+| `ArrayField` | `items`, `itemsValue`, `add()`, `remove()`, `clear()`, `checkValid()`, `reset()` |
+| `ArrayFormField` | `forms`, `formsFieldsValue`, `add()`, `remove()`, `clear()`, `checkValid()`, `reset()` |
+| `ErrorsSchema` | `staticKey()`, `dynamicKey()`, `fallback()`, `transformValue()`, `parseErrors()`, `parseErrorsDetailed()`, `nest()`, `clone()`, `merge()`, `forArray()`, `fromObject()` |
 
-const form = new ContactForm();
-form.fields = {
-  name: 'John',
-  email: 'john@example.com',
-  message: 'Hello!'
-};
+## Development
 
-if (form.checkValid()) {
-  // Submit form
-  const formData = form.toFormData();
-  const json = form.toJSON();
+Requirements: Node.js 22 (used by CI) and npm.
 
-  await fetch('/api/contact', {
-    method: 'POST',
-    body: formData
-  });
-} else {
-  console.log(form.allErrors);
-  // {
-  //   name: [],
-  //   email: [],
-  //   message: []
-  // }
-}
+```bash
+npm ci
+npm run lint
+npm test
+npm run build
+npx tsc --noEmit -p tsconfig.json
+npm run check:demo
+npm run build:demo
 ```
 
-## Global Errors
+To run the interactive demo locally:
 
-```TypeScript
-class LoginForm extends Form {
-  login = new Field(StringType, null);
-  password = new Field(StringType, null);
-}
-
-const form = new LoginForm();
-
-// Add server-side errors
-form.errors = {
-  login: 'Account not found',
-  password: 'Invalid password'
-};
-
-// Or set global error
-form.setGlobalError('auth', 'Authentication failed');
+```bash
+npm run dev -- --config demo/vite.config.ts
 ```
 
-## Plugin System
-
-### Built-in Plugins
-
-* **MaskPlugin** - Input masking (phone, date, credit card)
-
-* **FieldPlugin** - Base plugin for custom extensions
-
-### Creating Custom Plugins
-
-```TypeScript
-import {BasePlugin} from 'adaptform';
-import type {FieldPlugin} from 'adaptform';
-
-class UppercasePlugin extends BasePlugin implements FieldPlugin<string> {
-  toRawValue(value: string): string {
-    return value?.toUpperCase() || '';
-  }
-
-  toValueClear(value: string): string {
-    return value?.toLowerCase() || '';
-  }
-}
-
-const field = new Field(StringType, null, {
-  plugins: [new UppercasePlugin()]
-});
-```
-
-## API Reference
-
-### Form
-
-* `checkValid(form?)` - Validate all fields
-
-* `fieldsValue` - Get all field values
-
-* `allErrors` - Get all validation errors
-
-* `globalErrors` - Get global errors
-
-* `toFormData()` - Convert to FormData
-
-* `toJSON()` - Convert to JSON
-
-* `reset()` - Reset all fields
-
-### Field
-
-* `rawValue` - Set raw input value
-
-* `valueClear` - Get cleaned/validated value
-
-* `isValid` - Check if field is valid
-
-* `error` - Get first error message
-
-* `errors` - Get all error messages
-
-* `isTouched` - Check if field was modified
-
-* `isEmpty` - Check if field is empty
-
-* `reset()` - Reset to default value
-
-### ArrayField
-
-* `add(value?)` - Add new field
-
-* `remove(index)` - Remove field at index
-
-* `clear()` - Remove all fields
-
-* `itemsValue` - Get array of values
-
-* `items` - Get array of Field instances
-
-### ArrayFormField
-
-* `add(data?)` - Add new form
-
-* `remove(index)` - Remove form at index
-
-* `clear()` - Remove all forms
-
-* `forms` - Get array of Form instances
-
-* `formsFieldsValue` - Get array of form values
-
-## TypeScript Support
-
-```TypeScript
-import {Form, Field, StringType, NumberType} from 'adaptform';
-
-class UserForm extends Form {
-  name = new Field(StringType, null);
-  age = new Field(NumberType, null);
-}
-
-const form = new UserForm();
-
-// Full type inference
-type UserData = typeof form.fieldsValue;
-// { name: string | null; age: number | null; }
-```
-
-## License
-
-MIT © [Stanislav Orlov](https://github.com/ArhiMEN)
+The demo is built by GitHub Actions from `v2.1.0` and `master`. GitHub Pages is configured to allow both branches to publish to the same demo URL; see [Demo and GitHub Pages notes](https://github.com/ArhiMEN/AdaptForm/blob/master/docs/DEMO.md).
 
 ## Links
 
-* [GitHub Repository](https://github.com/ArhiMEN/adaptform)
-* [npm Package](https://www.npmjs.com/package/adaptform)
-* [Bug Reports](https://github.com/ArhiMEN/adaptform/issues)
-* [Changelog](https://github.com/ArhiMEN/adaptform/blob/master/CHANGELOG.md)
+- **[Interactive demo](https://arhimen.github.io/AdaptForm/)**
+- [GitHub repository](https://github.com/ArhiMEN/AdaptForm)
+- [npm package](https://www.npmjs.com/package/adaptform)
+- [Issue tracker](https://github.com/ArhiMEN/AdaptForm/issues)
+- [Changelog](https://github.com/ArhiMEN/AdaptForm/blob/master/CHANGELOG.md)
+- [License](https://github.com/ArhiMEN/AdaptForm/blob/master/LICENSE.md)
 
-## Support
+## License
 
-If you find this project useful, please give it a star on GitHub!
+MIT © Stanislav Orlov

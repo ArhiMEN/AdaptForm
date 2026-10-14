@@ -5,10 +5,10 @@ import {NumberType, StringType} from "@core/types";
 import {ErrorsSchema} from "@core/ErrorsShema";
 
 
-// Вспомогательные классы форм для тестов
+// Helper form classes used in tests.
 class LoginForm extends Form {
-  email = new Field(StringType, 'test@example.com')  // Значение по умолчанию
-  password = new Field(StringType, 'password123')     // Значение по умолчанию
+  email = new Field(StringType, 'test@example.com')  // Default value.
+  password = new Field(StringType, 'password123')     // Default value.
 
   constructor() {
     super()
@@ -126,102 +126,102 @@ class MultiAccountDialogForm extends Form {
 }
 
 describe('Form with ErrorsSchema', () => {
-  describe('LoginForm - статические правила', () => {
+  describe('LoginForm - static rules', () => {
     let form: LoginForm
 
     beforeEach(() => {
       form = new LoginForm()
     })
 
-    it('должен устанавливать ошибки на поля по статическим ключам', () => {
+    it('should assign field errors using static keys', () => {
       form.errors = {
-        email: 'Email обязателен',
-        password: 'Пароль слишком короткий'
+        email: 'Email is required',
+        password: 'Password is too short'
       }
 
-      expect(form['_fields'].email.error).toBe('Email обязателен')
-      expect(form['_fields'].password.error).toBe('Пароль слишком короткий')
+      expect(form['_fields'].email.error).toBe('Email is required')
+      expect(form['_fields'].password.error).toBe('Password is too short')
     })
 
-    it('должен маппить server_error на password', () => {
+    it('should map server_error to password', () => {
       form.errors = {
-        server_error: 'Ошибка сервера'
+        server_error: 'Server error'
       }
 
-      expect(form['_fields'].password.error).toBe('Ошибка сервера')
-      // После установки ошибок, валидация не запускается автоматически
+      expect(form['_fields'].password.error).toBe('Server error')
+      // Assigning errors does not trigger validation automatically.
       expect(form['_fields'].email.errors).toEqual([])
     })
 
-    it('должен добавлять неизвестные ошибки в globalErrors', () => {
+    it('should add unknown errors to globalErrors', () => {
       form.errors = {
-        email: 'Email обязателен',
-        unknown_error: 'Неизвестная ошибка'
+        email: 'Email is required',
+        unknown_error: 'Unknown error'
       }
 
       expect(form.globalErrors).toEqual({
-        unknown_error: 'Неизвестная ошибка'
+        unknown_error: 'Unknown error'
       })
-      expect(form['_fields'].email.error).toBe('Email обязателен')
+      expect(form['_fields'].email.error).toBe('Email is required')
     })
 
-    it('должен очищать предыдущие глобальные ошибки при установке новых', () => {
+    it('should clear previous global errors before applying new ones', () => {
       form.errors = {
-        unknown_error: 'Старая ошибка'
+        unknown_error: 'Previous error'
       }
       expect(form.globalErrors).toHaveProperty('unknown_error')
 
       form.errors = {
-        email: 'Новая ошибка'
+        email: 'New error'
       }
       expect(form.globalErrors).toEqual({})
     })
 
-    it('должен очищать ошибки полей при установке пустого объекта', () => {
+    it('should clear field errors when an empty object is assigned', () => {
       form.errors = {
-        email: 'Была ошибка'
+        email: 'There was an error'
       }
-      expect(form['_fields'].email.error).toBe('Была ошибка')
+      expect(form['_fields'].email.error).toBe('There was an error')
 
       form.errors = {}
       expect(form['_fields'].email.error).toBe('')
       expect(form.globalErrors).toEqual({})
     })
 
-    it('должен поддерживать setGlobalError', () => {
-      form.setGlobalError('form_error', 'Ошибка всей формы')
+    it('should support setGlobalError', () => {
+      form.setGlobalError('form_error', 'Form-level error')
 
       expect(form.globalErrors).toEqual({
-        form_error: 'Ошибка всей формы'
+        form_error: 'Form-level error'
       })
     })
 
-    it('должен очищать глобальные ошибки через clearGlobalErrors', () => {
-      form.setGlobalError('error1', 'Ошибка 1')
-      form.setGlobalError('error2', 'Ошибка 2')
+    it('should clear global errors with clearGlobalErrors', () => {
+      form.setGlobalError('error1', 'Error 1')
+      form.setGlobalError('error2', 'Error 2')
 
       form.clearGlobalErrors()
 
       expect(form.globalErrors).toEqual({})
     })
 
-    it('должен возвращать все ошибки через allErrors', () => {
+    it('should return all errors through allErrors', () => {
       form.errors = {
-        email: 'Email обязателен',
-        unknown_error: 'Неизвестная ошибка'
+        email: 'Email is required',
+        unknown_error: 'Unknown error'
       }
 
       const allErrors = form.allErrors
 
       expect(allErrors).toHaveProperty('email')
-      expect(allErrors.email).toContain('Email обязателен')
+      expect(allErrors.email).toContain('Email is required')
       expect(allErrors).toHaveProperty('unknown_error')
-      expect(allErrors.unknown_error).toContain('Неизвестная ошибка')
+      expect(allErrors.unknown_error).toContain('Unknown error')
     })
 
-    it('должен сбрасывать ошибки при reset', () => {
+    it('should clear errors on reset', () => {
       form.errors = {
-        email: 'Email обязателен'
+        email: 'Email is required'
       }
       form.setGlobalError('global', 'Global error')
 
@@ -232,51 +232,51 @@ describe('Form with ErrorsSchema', () => {
     })
   })
 
-  describe('ProfileForm - динамические правила и трансформеры', () => {
+  describe('ProfileForm - dynamic rules and transformers', () => {
     let form: ProfileForm
 
     beforeEach(() => {
       form = new ProfileForm()
     })
 
-    it('должен обрабатывать статические ключи', () => {
+    it('should process static keys', () => {
       form.errors = {
-        'user.email': 'Email неверный'
+        'user.email': 'Invalid email'
       }
 
-      expect(form['_fields'].email.error).toBe('Email неверный')
+      expect(form['_fields'].email.error).toBe('Invalid email')
     })
 
-    it('должен обрабатывать динамические ключи', () => {
+    it('should process dynamic keys', () => {
       form.errors = {
-        'user.firstName': 'Имя обязательно',
-        'user.lastName': 'Фамилия обязательна'
+        'user.firstName': 'First name is required',
+        'user.lastName': 'Last name is required'
       }
 
-      expect(form['_fields'].firstName.error).toBe('Имя обязательно')
-      expect(form['_fields'].lastName.error).toBe('Фамилия обязательна')
+      expect(form['_fields'].firstName.error).toBe('First name is required')
+      expect(form['_fields'].lastName.error).toBe('Last name is required')
     })
 
-    it('должен трансформировать значения-массивы', () => {
+    it('should transform array values', () => {
       form.errors = {
-        'user.email': ['Email неверный', 'Email слишком короткий']
+        'user.email': ['Invalid email', 'Email is too short']
       }
 
-      expect(form['_fields'].email.error).toBe('Email неверный')
+      expect(form['_fields'].email.error).toBe('Invalid email')
     })
 
-    it('должен обрабатывать неизвестные ключи через fallback', () => {
+    it('should process unknown keys through the fallback', () => {
       form.errors = {
-        'unknown.field': 'Неизвестная ошибка'
+        'unknown.field': 'Unknown error'
       }
 
       expect(form.globalErrors).toEqual({
-        'unknown.field': 'Неизвестная ошибка'
+        'unknown.field': 'Unknown error'
       })
     })
   })
 
-  describe('SurveyForm - ArrayFormField с вложенными формами', () => {
+  describe('SurveyForm - ArrayFormField with nested forms', () => {
     let form: SurveyForm
 
     beforeEach(() => {
@@ -285,55 +285,55 @@ describe('Form with ErrorsSchema', () => {
       form.questions.add()
     })
 
-    it('должен устанавливать ошибки на поля вложенных форм', () => {
+    it('should assign errors to fields in nested forms', () => {
       form.errors = {
-        'title': 'Заголовок обязателен',
-        'questions.0.text': 'Текст вопроса обязателен',
-        'questions.0.type': 'Тип вопроса обязателен',
-        'questions.1.text': 'Текст второго вопроса обязателен'
+        'title': 'Title is required',
+        'questions.0.text': 'Question text is required',
+        'questions.0.type': 'Question type is required',
+        'questions.1.text': 'Second question text is required'
       }
 
-      expect(form['_fields'].title.error).toBe('Заголовок обязателен')
-      expect(form.questions.forms[0]['_fields'].text.error).toBe('Текст вопроса обязателен')
-      expect(form.questions.forms[0]['_fields'].type.error).toBe('Тип вопроса обязателен')
-      expect(form.questions.forms[1]['_fields'].text.error).toBe('Текст второго вопроса обязателен')
+      expect(form['_fields'].title.error).toBe('Title is required')
+      expect(form.questions.forms[0]['_fields'].text.error).toBe('Question text is required')
+      expect(form.questions.forms[0]['_fields'].type.error).toBe('Question type is required')
+      expect(form.questions.forms[1]['_fields'].text.error).toBe('Second question text is required')
     })
 
-    it('должен обрабатывать ошибки на уровне индекса формы', () => {
+    it('should process errors at a form index', () => {
       form.errors = {
-        'questions[0]': 'Ошибка в первом вопросе'
+        'questions[0]': 'Error in the first question'
       }
 
       const form0 = form.questions.forms[0] as QuestionForm
       expect(form0.globalErrors).toHaveProperty('index_0')
-      expect(form0.globalErrors.index_0).toBe('Ошибка в первом вопросе')
+      expect(form0.globalErrors.index_0).toBe('Error in the first question')
     })
 
-    it('должен обрабатывать неизвестные ключи как глобальные ошибки', () => {
+    it('should process unknown keys as global errors', () => {
       form.errors = {
-        'unknown_error': 'Неизвестная ошибка',
-        'questions.99.text': 'Ошибка для несуществующей формы'
+        'unknown_error': 'Unknown error',
+        'questions.99.text': 'Error for a nonexistent form'
       }
 
       expect(form.globalErrors).toEqual({
-        'unknown_error': 'Неизвестная ошибка',
-        'questions.99.text': 'Ошибка для несуществующей формы'
+        'unknown_error': 'Unknown error',
+        'questions.99.text': 'Error for a nonexistent form'
       })
     })
 
-    it('должен корректно обрабатывать отсутствие форм в массиве', () => {
+    it('should handle an empty array of forms', () => {
       const emptyForm = new SurveyForm()
 
       emptyForm.errors = {
-        'questions.0.text': 'Ошибка'
+        'questions.0.text': 'Error'
       }
 
       expect(emptyForm.globalErrors).toHaveProperty('questions.0.text')
-      expect(emptyForm.globalErrors['questions.0.text']).toBe('Ошибка')
+      expect(emptyForm.globalErrors['questions.0.text']).toBe('Error')
     })
   })
 
-  describe('MultiAccountDialogForm - сложная вложенность', () => {
+  describe('MultiAccountDialogForm - complex nesting', () => {
     let form: MultiAccountDialogForm
 
     beforeEach(() => {
@@ -342,13 +342,13 @@ describe('Form with ErrorsSchema', () => {
       form.accounts.add()
     })
 
-    it('должен обрабатывать ошибки Pydantic для вложенных аккаунтов', () => {
+    it('should process Pydantic errors for nested accounts', () => {
       const pydanticErrors = {
-        'accounts.0.launcher_type': 'Value error, Выберите лаунчер',
-        'accounts.0.login': 'Логин слишком длинный',
-        'accounts.0.password': 'Value error, Пароль слишком короткий',
-        'accounts.1.launcher_type': 'Value error, Выберите лаунчер',
-        'accounts.1.email': 'Email неверный'
+        'accounts.0.launcher_type': 'Value error, Select a launcher',
+        'accounts.0.login': 'Login is too long',
+        'accounts.0.password': 'Value error, Password is too short',
+        'accounts.1.launcher_type': 'Value error, Select a launcher',
+        'accounts.1.email': 'Invalid email'
       }
 
       form.errors = pydanticErrors
@@ -356,91 +356,91 @@ describe('Form with ErrorsSchema', () => {
       const account0 = form.accounts.forms[0] as AccountForm
       const account1 = form.accounts.forms[1] as AccountForm
 
-      expect(account0['_fields'].launcher_type.error).toBe('Выберите лаунчер')
-      expect(account0['_fields'].login.error).toBe('Логин слишком длинный')
-      expect(account0['_fields'].password.error).toBe('Пароль слишком короткий')
-      expect(account1['_fields'].launcher_type.error).toBe('Выберите лаунчер')
+      expect(account0['_fields'].launcher_type.error).toBe('Select a launcher')
+      expect(account0['_fields'].login.error).toBe('Login is too long')
+      expect(account0['_fields'].password.error).toBe('Password is too short')
+      expect(account1['_fields'].launcher_type.error).toBe('Select a launcher')
     })
 
-    it('должен обрабатывать ошибки game_ids внутри аккаунта', () => {
+    it('should process game_ids errors within an account', () => {
       form.errors = {
-        'accounts.0.game_ids': 'Добавьте хотя бы одну игру',
-        'accounts.0.game_ids.0': 'Значение должно быть больше 0',
-        'accounts.0.game_ids.1': 'Значение должно быть больше 0'
+        'accounts.0.game_ids': 'Add at least one game',
+        'accounts.0.game_ids.0': 'Value must be greater than 0',
+        'accounts.0.game_ids.1': 'Value must be greater than 0'
       }
 
       const account0 = form.accounts.forms[0] as AccountForm
 
-      expect(account0['_fields'].game_ids.error).toBe('Добавьте хотя бы одну игру')
+      expect(account0['_fields'].game_ids.error).toBe('Add at least one game')
 
-      // game_ids - это ArrayField, ошибки на индексы попадают в глобальные
+      // game_ids is an ArrayField, so index-level errors are added to global errors.
       const account0GlobalErrors = account0.globalErrors
-      expect(account0GlobalErrors).toHaveProperty('game_ids.0', 'Значение должно быть больше 0')
-      expect(account0GlobalErrors).toHaveProperty('game_ids.1', 'Значение должно быть больше 0')
+      expect(account0GlobalErrors).toHaveProperty('game_ids.0', 'Value must be greater than 0')
+      expect(account0GlobalErrors).toHaveProperty('game_ids.1', 'Value must be greater than 0')
     })
 
-    it('должен обрабатывать ошибки на уровне всего массива accounts', () => {
+    it('should process errors for the entire accounts array', () => {
       form.errors = {
-        'accounts': 'Минимум один аккаунт обязателен'
+        'accounts': 'At least one account is required'
       }
 
-      expect(form['_fields'].accounts.error).toBe('Минимум один аккаунт обязателен')
+      expect(form['_fields'].accounts.error).toBe('At least one account is required')
     })
 
-    it('должен обрабатывать ошибки на уровне конкретного аккаунта', () => {
+    it('should process errors for a specific account', () => {
       form.errors = {
-        'accounts.0': 'Ошибка в первом аккаунте'
+        'accounts.0': 'Error in the first account'
       }
 
       const account0 = form.accounts.forms[0] as AccountForm
       expect(account0.globalErrors).toHaveProperty('index_0')
-      expect(account0.globalErrors.index_0).toBe('Ошибка в первом аккаунте')
+      expect(account0.globalErrors.index_0).toBe('Error in the first account')
     })
 
-    it('должен добавлять неизвестные ошибки в глобальные', () => {
+    it('should add unknown errors to global errors', () => {
       form.errors = {
-        'server_error': 'Внутренняя ошибка сервера',
-        'network_error': 'Проблемы с сетью'
+        'server_error': 'Internal server error',
+        'network_error': 'Network issues'
       }
 
       expect(form.globalErrors).toEqual({
-        'server_error': 'Внутренняя ошибка сервера',
-        'network_error': 'Проблемы с сетью'
+        'server_error': 'Internal server error',
+        'network_error': 'Network issues'
       })
     })
 
-    it('должен возвращать все ошибки включая вложенные', () => {
+    it('should return all errors, including nested errors', () => {
       form.errors = {
-        'accounts.0.launcher_type': 'Выберите лаунчер',
-        'accounts.0.login': 'Логин обязателен',
-        'global_error': 'Глобальная ошибка'
+        'accounts.0.launcher_type': 'Select a launcher',
+        'accounts.0.login': 'Login is required',
+        'global_error': 'Global error'
       }
 
       const allErrors = form.allErrors
 
       expect(allErrors).toHaveProperty('accounts')
       expect(allErrors).toHaveProperty('global_error')
-      expect(allErrors.global_error).toContain('Глобальная ошибка')
+      expect(allErrors.global_error).toContain('Global error')
     })
   })
 
-  describe('Интеграционные тесты', () => {
-    it('должен корректно обрабатывать установку ошибок несколько раз', () => {
+  describe('Integration tests', () => {
+    it('should handle repeated error assignments', () => {
       const form = new LoginForm()
 
       form.errors = {
-        email: 'Email обязателен'
+        email: 'Email is required'
       }
-      expect(form['_fields'].email.error).toBe('Email обязателен')
+      expect(form['_fields'].email.error).toBe('Email is required')
 
       form.errors = {
-        password: 'Пароль слишком короткий'
+        password: 'Password is too short'
       }
       expect(form['_fields'].email.error).toBe('')
-      expect(form['_fields'].password.error).toBe('Пароль слишком короткий')
+      expect(form['_fields'].password.error).toBe('Password is too short')
     })
 
-    it('должен поддерживать смену схемы на лету', () => {
+    it('should support changing the schema at runtime', () => {
       const form = new LoginForm()
 
       form.errorsShema = new ErrorsSchema()
@@ -448,28 +448,28 @@ describe('Form with ErrorsSchema', () => {
         .fallback((key) => key)
 
       form.errors = {
-        'email_error': 'Email обязателен',
-        'password_error': 'Пароль слишком короткий'
+        'email_error': 'Email is required',
+        'password_error': 'Password is too short'
       }
 
-      expect(form['_fields'].email.error).toBe('Email обязателен')
-      expect(form['_fields'].password.error).toBe('Пароль слишком короткий')
+      expect(form['_fields'].email.error).toBe('Email is required')
+      expect(form['_fields'].password.error).toBe('Password is too short')
     })
 
-    it('должен обрабатывать сложный сценарий с Pydantic ошибками', () => {
+    it('should handle a complex scenario with Pydantic errors', () => {
       const form = new MultiAccountDialogForm()
       form.accounts.add()
       form.accounts.add()
 
       const pydanticResponse = {
-        'accounts.0.launcher_type': 'Value error, Выберите лаунчер',
+        'accounts.0.launcher_type': 'Value error, Select a launcher',
         'accounts.0.login': 'ensure this value has at most 50 characters',
         'accounts.0.password': 'Value error, ensure this value has at least 8 characters',
-        'accounts.0.game_ids': 'Value error, Добавьте хотя бы одну игру',
+        'accounts.0.game_ids': 'Value error, Add at least one game',
         'accounts.0.game_ids.0': 'Value error, ensure this value is greater than 0',
-        'accounts.1.launcher_type': 'Value error, Выберите лаунчер',
+        'accounts.1.launcher_type': 'Value error, Select a launcher',
         'accounts.1.email': 'value is not a valid email address',
-        'form_error': 'Value error, Общая ошибка формы'
+        'form_error': 'Value error, General form error'
       }
 
       form.errors = pydanticResponse
@@ -477,22 +477,22 @@ describe('Form with ErrorsSchema', () => {
       const account0 = form.accounts.forms[0] as AccountForm
       const account1 = form.accounts.forms[1] as AccountForm
 
-      expect(account0['_fields'].launcher_type.error).toBe('Выберите лаунчер')
+      expect(account0['_fields'].launcher_type.error).toBe('Select a launcher')
       expect(account0['_fields'].login.error).toBe('ensure this value has at most 50 characters')
       expect(account0['_fields'].password.error).toBe('ensure this value has at least 8 characters')
-      expect(account0['_fields'].game_ids.error).toBe('Добавьте хотя бы одну игру')
+      expect(account0['_fields'].game_ids.error).toBe('Add at least one game')
 
       expect(account0.globalErrors).toHaveProperty('game_ids.0')
       expect(account0.globalErrors['game_ids.0']).toBe('ensure this value is greater than 0')
 
-      expect(account1['_fields'].launcher_type.error).toBe('Выберите лаунчер')
+      expect(account1['_fields'].launcher_type.error).toBe('Select a launcher')
 
       expect(form.globalErrors).toEqual({
-        'form_error': 'Общая ошибка формы'
+        'form_error': 'General form error'
       })
     })
 
-    it('должен сохранять значения полей при установке ошибок', () => {
+    it('should preserve field values when assigning errors', () => {
       const form = new LoginForm()
 
       form.fields = {
@@ -501,44 +501,44 @@ describe('Form with ErrorsSchema', () => {
       }
 
       form.errors = {
-        email: 'Email уже используется'
+        email: 'Email is already in use'
       }
 
       expect(form.fieldsValue).toEqual({
         email: 'test@example.com',
         password: 'password123'
       })
-      expect(form['_fields'].email.error).toBe('Email уже используется')
+      expect(form['_fields'].email.error).toBe('Email is already in use')
     })
   })
 
-  describe('Краевые случаи', () => {
-    it('должен обрабатывать null в ошибках', () => {
+  describe('Edge cases', () => {
+    it('should handle null values in errors', () => {
       const form = new LoginForm()
 
       form.errors = {
-        email: 'Email обязателен',
+        email: 'Email is required',
         password: null
       } as any
 
-      expect(form['_fields'].email.error).toBe('Email обязателен')
+      expect(form['_fields'].email.error).toBe('Email is required')
       expect(form['_fields'].password.errors).toEqual([])
       expect(form.globalErrors).toEqual({})
     })
 
-    it('должен обрабатывать ошибки для несуществующих полей', () => {
+    it('should handle errors for nonexistent fields', () => {
       const form = new LoginForm()
 
       form.errors = {
-        'non_existent_field': 'Ошибка'
+        'non_existent_field': 'Error'
       }
 
       expect(form.globalErrors).toEqual({
-        'non_existent_field': 'Ошибка'
+        'non_existent_field': 'Error'
       })
     })
 
-    it('должен обрабатывать большое количество ошибок', () => {
+    it('should handle a large number of errors', () => {
       const form = new MultiAccountDialogForm()
 
       for (let i = 0; i < 5; i++) {
@@ -547,16 +547,16 @@ describe('Form with ErrorsSchema', () => {
 
       const manyErrors: Record<string, string> = {}
       for (let i = 0; i < 5; i++) {
-        manyErrors[`accounts.${i}.launcher_type`] = `Ошибка в аккаунте ${i}`
-        manyErrors[`accounts.${i}.login`] = `Логин обязателен ${i}`
+        manyErrors[`accounts.${i}.launcher_type`] = `Error in account ${i}`
+        manyErrors[`accounts.${i}.login`] = `Login is required ${i}`
       }
 
       form.errors = manyErrors
 
       for (let i = 0; i < 5; i++) {
         const account = form.accounts.forms[i] as AccountForm
-        expect(account['_fields'].launcher_type.error).toBe(`Ошибка в аккаунте ${i}`)
-        expect(account['_fields'].login.error).toBe(`Логин обязателен ${i}`)
+        expect(account['_fields'].launcher_type.error).toBe(`Error in account ${i}`)
+        expect(account['_fields'].login.error).toBe(`Login is required ${i}`)
       }
     })
   })

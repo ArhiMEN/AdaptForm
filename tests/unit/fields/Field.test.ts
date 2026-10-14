@@ -1,8 +1,7 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { Field } from '@core/fields/Field'
 import { StringType } from '@core/types/StringType'
 import { NumberType } from '@core/types/NumberType'
-import { BooleanType } from '@core/types/BooleanType'
 
 describe('Field', () => {
   describe('construction', () => {
@@ -11,6 +10,10 @@ describe('Field', () => {
       expect(field.rawValue).toBe('hello')
     })
 
+    it('should keep constructor default values untouched', () => {
+      const field = new Field(StringType, 'initial')
+      expect(field.isTouched).toBe(false)
+    })
     it('should create field with null default', () => {
       const field = new Field(StringType, null)
       expect(field.rawValue).toBeNull()
@@ -86,6 +89,11 @@ describe('Field', () => {
       expect(field.isEmpty).toBe(true)
     })
 
+    it('should return true for whitespace-only strings', () => {
+      const field = new Field(StringType)
+      field.rawValue = '   '
+      expect(field.isEmpty).toBe(true)
+    })
     it('should return true for empty string', () => {
       const field = new Field(StringType)
       field.rawValue = ''
@@ -120,10 +128,6 @@ describe('Field', () => {
       })
 
       it('should support function for isRequired', () => {
-        class TestForm {
-          country = new Field(StringType)
-        }
-        
         const field = new Field(StringType, null, {
           isRequired: (form?: any) => form?.country?.valueClear === 'USA'
         })
@@ -163,7 +167,6 @@ describe('Field', () => {
       })
 
       it('should pass form to validator', () => {
-        const field = new Field(StringType)
         const field2 = new Field(StringType, null, {
           validate: (value, form) => {
             return value === (form as any)?.otherField?.valueClear || 'Must match'
@@ -200,6 +203,23 @@ describe('Field', () => {
       expect(field.errors.length).toBeGreaterThan(0)
       field.reset()
       expect(field.errors).toEqual([])
+    })
+
+    it('should restore defaults without validating until the next explicit check', () => {
+      const validate = vi.fn(() => false)
+      const field = new Field(StringType, 'default', { validate })
+      expect(validate).toHaveBeenCalledTimes(1)
+
+      field.rawValue = 'changed'
+      expect(validate).toHaveBeenCalledTimes(2)
+
+      field.reset()
+
+      expect(field.rawValue).toBe('default')
+      expect(field.isTouched).toBe(false)
+      expect(field.isValid).toBeNull()
+      expect(field.errors).toEqual([])
+      expect(validate).toHaveBeenCalledTimes(2)
     })
   })
 

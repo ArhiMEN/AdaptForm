@@ -52,6 +52,16 @@ describe('DecimalType', () => {
       expect(errors).toContain('Пример: 1.00')
     })
 
+    it('should reject numeric values with excess decimal places instead of rounding them', () => {
+      const type = new DecimalType({ decimalPlaces: 2 })
+      expect(type.validate(1.234)).toContain('Максимальное количество знаков после запятой 2')
+    })
+
+    it('should respect zero decimal places', () => {
+      const type = new DecimalType({ decimalPlaces: 0, maxDigits: 3 })
+      expect(type.validate('123')).toEqual([])
+      expect(type.validate('1.2')).toContain('Максимальное количество знаков после запятой 0')
+    })
     it('should return error for too many decimal places', () => {
       const type = new DecimalType({ decimalPlaces: 2 })
       const errors = type.validate('123.456')

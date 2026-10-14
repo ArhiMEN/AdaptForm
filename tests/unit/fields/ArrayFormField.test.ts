@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { ArrayFormField } from '@core/fields/ArrayFormField'
 import { Form } from '@core/Form'
 import { Field } from '@core/fields/Field'
@@ -42,6 +42,20 @@ describe('ArrayFormField', () => {
       arrayFormField.forms = [{ name: null }]
       expect(arrayFormField.isValid).toBe(false)
     })
+
+    it('should run nested field validators once when replacing forms', () => {
+      const validate = vi.fn(() => true)
+      class ValidatedForm extends Form {
+        name = new Field(StringType, null, { validate })
+      }
+
+      const arrayFormField = new ArrayFormField(ValidatedForm)
+      validate.mockClear()
+
+      arrayFormField.forms = [{ name: 'Ada' }]
+
+      expect(validate).toHaveBeenCalledTimes(1)
+    })
   })
 
   describe('add', () => {
@@ -80,6 +94,14 @@ describe('ArrayFormField', () => {
     })
   })
 
+  it('should ignore invalid removal indices', () => {
+    const arrayFormField = new ArrayFormField(TestForm, {}, [{ name: 'first' }, { name: 'last' }])
+    arrayFormField.remove(-1)
+    arrayFormField.remove(10)
+    arrayFormField.remove(1.5)
+    expect(arrayFormField.formsFieldsValue).toEqual([{ name: 'first' }, { name: 'last' }])
+  })
+
   describe('clear', () => {
     it('should remove all forms', () => {
       const arrayFormField = new ArrayFormField(TestForm, {}, [
@@ -103,9 +125,26 @@ describe('ArrayFormField', () => {
       expect(arrayFormField.isValid).toBe(false)
     })
 
+    it('should refresh minForms validity after each add without manual validation', () => {
+      const arrayFormField = new ArrayFormField(TestForm, { minForms: 2 })
+      arrayFormField.add({ name: 'John' })
+      expect(arrayFormField.isValid).toBe(false)
+      arrayFormField.add({ name: 'Jane' })
+      expect(arrayFormField.isValid).toBe(true)
+    })
+
+    it('should not rerun custom validation when reading isValid', () => {
+      const validate = vi.fn(() => true)
+      const arrayFormField = new ArrayFormField(TestForm, { validate }, [{ name: 'John' }])
+      expect(validate).toHaveBeenCalledTimes(1)
+
+      expect(arrayFormField.isValid).toBe(true)
+      expect(arrayFormField.isValid).toBe(true)
+      expect(validate).toHaveBeenCalledTimes(1)
+    })
     it('should validate minForms', () => {
       const arrayFormField = new ArrayFormField(TestForm, { minForms: 2 })
-      // При создании пустой массив isValid = false из-за minForms
+      // An empty collection is invalid when minForms is configured.
       expect(arrayFormField.isValid).toBe(false)
       
       arrayFormField.add({ name: 'John' })
@@ -146,12 +185,27 @@ describe('ArrayFormField', () => {
       ])
       arrayFormField.add({ name: 'Bob' })
       arrayFormField.reset()
-      // После reset() формы должны вернуться к значениям по умолчанию (null)
+
       expect(arrayFormField.formsFieldsValue).toEqual([
         { name: null },
         { name: null },
         { name: null }
       ])
+    })
+
+    it('should clear collection errors and require validation after reset', () => {
+      const arrayFormField = new ArrayFormField(TestForm, { minForms: 1 })
+
+      expect(arrayFormField.isValid).toBe(false)
+      expect(arrayFormField.errors).not.toEqual([])
+
+      arrayFormField.reset()
+
+      expect(arrayFormField.errors).toEqual([])
+      expect(arrayFormField.isValid).toBe(false)
+
+      expect(arrayFormField.checkValid()).toBe(false)
+      expect(arrayFormField.errors).not.toEqual([])
     })
   })
 })

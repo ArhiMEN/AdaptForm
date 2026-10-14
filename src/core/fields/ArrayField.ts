@@ -1,42 +1,44 @@
 import {ArrayFieldOptions} from "@core/options"
 import {Field} from "@core/fields/Field"
 import {Form} from "@core/Form"
+import {isValidArrayIndex} from "@core/fields/arrayUtils"
 
 export class ArrayField<T = any> {
   protected options: ArrayFieldOptions
   protected _items: Field<T>[] = []
   protected _errors: string[] = []
+  private _hasValidationResult = false
 
   isTouched: boolean = false
 
   constructor(
     protected factory: (value?: T) => Field<T>,
     options: ArrayFieldOptions = {},
-    initial: T[] = []
+    initial: (T | null)[] = []
   ) {
     this.options = {
       isRequired: true,
       messages: {},
       ...options
     } as ArrayFieldOptions
-    this._items = initial.map(v => this.factory(v))
+    this._items = initial.map(value => this.factory(value as T))
     this.checkValid()
   }
 
   // ===== value =====
 
-  set itemsValue(items: T[]) {
+  set itemsValue(items: (T | null)[]) {
     this.clear()
 
-    for (const i of items) {
-      this.add(i, false)
+    for (const item of items) {
+      this.add(item as T, false)
     }
 
     this.checkValid()
   }
 
-  get itemsValue(): T[] {
-    return this._items.map(i => i.valueClear)
+  get itemsValue(): (T | null)[] {
+    return this._items.map(item => item.valueClear)
   }
 
   get items(): Field<T>[] {
@@ -45,7 +47,7 @@ export class ArrayField<T = any> {
 
   // ===== actions =====
 
-  add(value?: T, force_check?: boolean): Field<T> {
+  add(value?: T, force_check: boolean = true): Field<T> {
     const field = this.factory(value)
     this.isTouched = true
     this._items.push(field)
@@ -56,6 +58,8 @@ export class ArrayField<T = any> {
   }
 
   remove(index: number): void {
+    if (!isValidArrayIndex(index, this._items.length)) return
+
     this._items.splice(index, 1)
     this.checkValid()
   }
@@ -79,6 +83,7 @@ export class ArrayField<T = any> {
   }
 
   checkValid(form?: Form): boolean {
+    this._hasValidationResult = true
     this._errors = []
 
     if (this.isRequired(form) && this._items.length === 0) {
@@ -113,7 +118,7 @@ export class ArrayField<T = any> {
     }
 
     if (this.options.validate) {
-      const values = this._items.map(i => i.valueClear)
+      const values = this._items.map(item => item.valueClear)
       const result = this.options.validate(values, form)
 
       if (result === false) {
@@ -137,11 +142,10 @@ export class ArrayField<T = any> {
   }
 
   get isValid(): boolean {
-    // Если есть ошибки массива - не валиден
+    if (!this._hasValidationResult) return false
     if (this._errors.length > 0) return false
-    
-    // Проверяем, что все элементы валидны (isValid === true)
-    return this._items.every(i => i.isValid === true)
+
+    return this._items.every(item => item.isValid === true)
   }
 
   get error(): string {
@@ -151,8 +155,10 @@ export class ArrayField<T = any> {
   set error(message: string | null) {
     if (message) {
       this._errors = [message]
+      this._hasValidationResult = true
     } else {
       this._errors = []
+      this._hasValidationResult = false
     }
   }
 
@@ -161,8 +167,9 @@ export class ArrayField<T = any> {
   }
 
   reset(): void {
-    this._items.forEach(i => i.reset())
+    this._items.forEach(item => item.reset())
     this._errors = []
+    this._hasValidationResult = false
     this.isTouched = false
   }
 }

@@ -72,6 +72,13 @@ describe('StringType', () => {
       expect(errors).toContain('Неверный формат')
     })
 
+    it('should validate global patterns consistently across repeated calls', () => {
+      const type = new StringType({ pattern: /^abc$/g })
+
+      expect(type.validate('abc')).toEqual([])
+      expect(type.validate('abc')).toEqual([])
+      expect(type.validate('xabc')).toContain('Неверный формат')
+    })
     it('should return custom error for pattern mismatch', () => {
       const type = new StringType({
         pattern: /^[a-z]+$/,

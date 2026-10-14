@@ -17,7 +17,7 @@ export class DecimalType extends FieldType<number | string, DecimalOptions> {
       return this.castString(rawValue)
     }
 
-    if (typeof rawValue === 'number' && !isNaN(rawValue)) {
+    if (typeof rawValue === 'number' && Number.isFinite(rawValue)) {
       return rawValue
     }
 
@@ -29,10 +29,10 @@ export class DecimalType extends FieldType<number | string, DecimalOptions> {
 
     if (!trimmed) return null
 
-    // Заменяем запятую на точку
+    // Replace commas with decimal points.
     const normalized = trimmed.replace(',', '.')
 
-    // Проверяем, что строка похожа на число
+    // Check whether the input resembles a number.
     if (!this.isValidNumberString(normalized)) {
       return null
     }
@@ -42,28 +42,28 @@ export class DecimalType extends FieldType<number | string, DecimalOptions> {
 
   validate(value: number | string): string[] {
     const errors: string[] = []
-    value = typeof value === 'number' ? this.numberToString(value) : value
+    value = typeof value === 'number' ? String(value) : value
 
-    // Проверяем, что строка соответствует формату числа
+    // Check whether the input matches the numeric format.
     if (!this.isValidNumberString(value)) {
       errors.push(this.options.messages?.invalid ?? 'Пример: 1.00')
       return errors
     }
 
-    const maxDigits = this.options.maxDigits || 8
-    const decimalPlaces = this.options.decimalPlaces || 2
+    const maxDigits = this.options.maxDigits ?? 8
+    const decimalPlaces = this.options.decimalPlaces ?? 2
     const maxIntDigits = maxDigits - decimalPlaces
 
-    // Разбираем строку на части
+    // Split the input into integer and decimal parts.
     const isNegative = value.startsWith('-')
     const normalizedValue = isNegative ? value.substring(1) : value
     const parts = normalizedValue.split('.')
     const intPart = parts[0]
     const decPart = parts.length > 1 ? parts[1] : ''
 
-    // Проверка на точку в конце (пользователь ещё вводит)
+    // Handle a trailing decimal point while the user is still typing.
     if (normalizedValue.endsWith('.')) {
-      // Проверяем только целую часть
+      // Validate only the integer part.
       if (intPart.length > maxIntDigits) {
         errors.push(
           this.options.messages?.maxDigits ??
@@ -73,7 +73,7 @@ export class DecimalType extends FieldType<number | string, DecimalOptions> {
       return errors
     }
 
-    // Проверка целой части
+    // Validate the integer part.
     if (intPart.length === 0) {
       errors.push(this.options.messages?.invalid ?? 'Пример: 1.00')
       return errors
@@ -86,9 +86,9 @@ export class DecimalType extends FieldType<number | string, DecimalOptions> {
       )
     }
 
-    // Проверка десятичной части
+    // Validate the decimal part.
     if (parts.length === 2) {
-      // Общее количество знаков
+      // Check the total number of digits.
       if (intPart.length + decPart.length > maxDigits) {
         errors.push(
           this.options.messages?.maxDigits ??
@@ -96,7 +96,7 @@ export class DecimalType extends FieldType<number | string, DecimalOptions> {
         )
       }
 
-      // Количество знаков после запятой
+      // Check the number of digits after the decimal point.
       if (decPart.length === 0) {
         errors.push(
           this.options.messages?.invalid ??
@@ -110,10 +110,10 @@ export class DecimalType extends FieldType<number | string, DecimalOptions> {
       }
     }
 
-    // Если есть ошибки формата — дальше не проверяем
+    // Stop further validation when the format is invalid.
     if (errors.length > 0) return errors
 
-    // Проверка min/max (только если значение не в процессе ввода)
+    // Check min/max constraints only when the value is not mid-entry.
     if (!value.endsWith('.')) {
       const numValue = parseFloat(value)
 
@@ -152,21 +152,15 @@ export class DecimalType extends FieldType<number | string, DecimalOptions> {
   }
 
   private isValidNumberString(value: string): boolean {
-    // Разрешаем: 123, 123.45, -123.45, 123.
+    // Accept values such as 123, 123.45, -123.45, and 123.
     const pattern = /^-?\d+\.?\d*$/
 
-    // Проверяем, что нет больше одной точки
+    // Ensure there is at most one decimal point.
     const dotCount = (value.match(/\./g) || []).length
     if (dotCount > 1) return false
 
-    // Проверяем формат
+    // Validate the format.
     return pattern.test(value)
-  }
-
-  private numberToString(value: number): string {
-    const decimalPlaces = this.options.decimalPlaces
-
-    return value.toFixed(decimalPlaces)
   }
 
   getTypeName(): string {

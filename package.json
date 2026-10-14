@@ -1,6 +1,6 @@
 {
   "name": "adaptform",
-  "version": "2.0.5",
+  "version": "2.1.0",
   "description": "Library of adaptive forms of validation",
   "keywords": [
     "form",
@@ -45,7 +45,10 @@
     "dist",
     "README.md",
     "LICENSE.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "README.ru.md",
+    "LICENSE.ru.md",
+    "CHANGELOG.ru.md"
   ],
   "sideEffects": false,
   "repository": {
@@ -55,7 +58,7 @@
   "bugs": {
     "url": "https://github.com/ArhiMEN/adaptform/issues"
   },
-  "homepage": "https://github.com/ArhiMEN/adaptform#readme",
+  "homepage": "https://arhimen.github.io/AdaptForm/",
   "engines": {
     "node": ">=16.0.0"
   },
@@ -67,18 +70,26 @@
     "test:integration": "vitest run tests/integration",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint src --ext .ts",
-    "prepublishOnly": "npm run build"
+    "lint": "eslint src tests demo --max-warnings 0",
+    "prepublishOnly": "npm run build",
+    "check:package": "node scripts/check-package-content.mjs",
+    "build:demo": "vite build --config demo/vite.config.ts",
+    "check:demo": "tsc --noEmit -p demo/tsconfig.json"
   },
   "devDependencies": {
     "@types/luxon": "^3.5.0",
-    "@types/node": "^20.0.0",
-    "@vitest/coverage-v8": "^1.6.1",
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^5.0.4",
     "jsdom": "^29.1.1",
     "luxon": "^3.5.0",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
-    "vitest": "^1.0.0"
+    "vitest": "^5.0.4",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.12.0",
+    "typescript-eslint": "^8.71.2",
+    "vite": "^8.3.4",
+    "globals": "^17.4.0"
   },
   "peerDependencies": {
     "luxon": ">=3.5.0"
@@ -87,5 +98,13 @@
     "luxon": {
       "optional": true
     }
+  },
+  "overrides": {
+    "brace-expansion": "5.0.12",
+    "esbuild": "0.28.1",
+    "nanoid": "3.3.18",
+    "postcss": "8.5.23",
+    "source-map-js": "1.2.2",
+    "undici": "7.29.1"
   }
 }
