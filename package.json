@@ -1,6 +1,6 @@
 {
   "name": "adaptform",
-  "version": "2.0.5",
+  "version": "2.1.0",
   "description": "Library of adaptive forms of validation",
   "keywords": [
     "form",
@@ -67,9 +67,11 @@
     "test:integration": "vitest run tests/integration",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint src tests --max-warnings 0",
+    "lint": "eslint src tests demo --max-warnings 0",
     "prepublishOnly": "npm run build",
-    "check:package": "node scripts/check-package-content.mjs"
+    "check:package": "node scripts/check-package-content.mjs",
+    "build:demo": "vite build --config demo/vite.config.ts",
+    "check:demo": "tsc --noEmit -p demo/tsconfig.json"
   },
   "devDependencies": {
     "@types/luxon": "^3.5.0",
