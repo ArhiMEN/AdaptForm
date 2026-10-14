@@ -169,7 +169,7 @@ Validators are synchronous; returning a Promise is not supported. For asynchrono
 - Empty strings and whitespace-only strings count as empty values.
 - Global and sticky regular-expression flags do not make repeated string validation stateful.
 - `form.checkValid()` validates every field and returns `false` when a field is invalid or global server errors remain.
-- Reading `isValid` does not run validators. A field's `isValid` is `null` when its state has not yet been validated or has been reset.
+- Reading `isValid` does not run validators. Fields without a non-null default start with `isValid === null`; non-null constructor defaults pass through casting and validation but still start untouched. After `reset()`, field validity is unset until validation runs again.
 - Bulk assignment validates after direct field values have been assigned, so conditional-required rules can inspect the complete form state.
 - If you change dependent fields one at a time, call `form.checkValid()` after the changes to recompute cross-field rules.
 - `field.setRawValue(value, false)` and `form.setFields(data, false)` allow advanced callers to defer validation. Call `checkValid()` before relying on the validity state.
