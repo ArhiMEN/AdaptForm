@@ -1,6 +1,7 @@
 import {ArrayFieldOptions} from "@core/options"
 import {Field} from "@core/fields/Field"
 import {Form} from "@core/Form"
+import {isValidArrayIndex} from "@core/fields/arrayUtils"
 
 export class ArrayField<T = any> {
   protected options: ArrayFieldOptions
@@ -56,6 +57,8 @@ export class ArrayField<T = any> {
   }
 
   remove(index: number): void {
+    if (!isValidArrayIndex(index, this._items.length)) return
+
     this._items.splice(index, 1)
     this.checkValid()
   }
