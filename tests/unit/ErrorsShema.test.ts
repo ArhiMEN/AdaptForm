@@ -475,7 +475,7 @@ describe('ErrorSchema', () => {
       })
 
       expect(result).toEqual({
-        'items.0.name': 'Required'
+        'items.7.name': 'Required'
       })
     })
   })
