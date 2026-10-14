@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#101827" />
+    <meta name="description" content="Try AdaptForm 2.1.0 in an interactive browser demo: fields, validation, arrays, nested forms, server errors, and serialization." />
+    <title>AdaptForm — Interactive Demo</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="AdaptForm home">
+          <span class="brand-mark">A</span>
+          <span>AdaptForm<span class="brand-version">2.1.0 demo</span></span>
+        </a>
+        <nav class="top-links" aria-label="Project links">
+          <a href="https://github.com/ArhiMEN/AdaptForm" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+          <a href="https://github.com/ArhiMEN/AdaptForm/blob/v2.1.0/README.md" target="_blank" rel="noreferrer">Documentation <span aria-hidden="true">↗</span></a>
+        </nav>
+      </header>
+
+      <main id="top">
+        <section class="hero">
+          <div class="hero-copy">
+            <div class="eyebrow"><span class="status-dot"></span> INTERACTIVE PLAYGROUND</div>
+            <h1>Forms you can <span>actually try.</span></h1>
+            <p>Explore validation, field state, nested collections, server errors, and serialization — powered by the source in this branch.</p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="#basic-form">Try the form <span aria-hidden="true">↓</span></a>
+              <a class="button button-quiet" href="https://github.com/ArhiMEN/AdaptForm/tree/v2.1.0" target="_blank" rel="noreferrer">Browse source <span aria-hidden="true">↗</span></a>
+            </div>
+          </div>
+          <div class="hero-card" aria-label="Demo capabilities">
+            <div class="code-window">
+              <div class="window-bar"><span></span><span></span><span></span><small>profile-form.ts</small></div>
+              <pre><code><span class="code-purple">class</span> <span class="code-blue">ProfileForm</span> <span class="code-purple">extends</span> Form {
+  name = <span class="code-yellow">new Field</span>(StringType, <span class="code-green">null</span>, {
+    minLength: <span class="code-number">3</span>,
+    isRequired: <span class="code-green">true</span>
+  })
+}
+
+form.checkValid()
+form.toJSON()</code></pre>
+            </div>
+            <div class="hero-stats">
+              <div><strong>Live</strong><span>validation</span></div>
+              <div><strong>Real</strong><span>library code</span></div>
+              <div><strong>Local</strong><span>browser only</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="feature-strip" aria-label="Demo sections">
+          <a href="#basic-form"><span class="feature-icon">01</span><span><strong>Field validation</strong><small>Required, pattern, range</small></span></a>
+          <a href="#collections"><span class="feature-icon">02</span><span><strong>Collections</strong><small>Arrays and nested forms</small></span></a>
+          <a href="#server-errors"><span class="feature-icon">03</span><span><strong>Server errors</strong><small>Map backend responses</small></span></a>
+          <a href="#serialization"><span class="feature-icon">04</span><span><strong>Serialization</strong><small>JSON and FormData</small></span></a>
+        </section>
+
+        <section class="section-heading" id="basic-form">
+          <div><div class="eyebrow">01 / CORE</div><h2>Build a profile</h2><p>Change values to see field and form state update. Try an invalid email, an age below 18, or switch the country to test conditional validation.</p></div>
+          <div class="live-pill"><span class="status-dot"></span> LIVE FORM</div>
+        </section>
+
+        <section class="playground-grid">
+          <article class="panel form-panel">
+            <div class="panel-heading"><div><h3>Profile details</h3><p>Required fields are marked with an asterisk.</p></div><span class="panel-icon">✳</span></div>
+            <form id="profile-form" novalidate>
+              <div class="field-grid">
+                <div class="form-field" data-field="name">
+                  <label for="name">Full name <span>*</span></label>
+                  <input id="name" name="name" autocomplete="name" placeholder="e.g. Alex Morgan" />
+                  <div class="field-meta"><small>At least 3 characters</small><span class="field-state" data-state="name">Untouched</span></div>
+                  <p class="field-error" id="error-name"></p>
+                </div>
+                <div class="form-field" data-field="email">
+                  <label for="email">Email address <span>*</span></label>
+                  <input id="email" name="email" type="email" autocomplete="email" placeholder="alex@example.com" />
+                  <div class="field-meta"><small>Must be a valid email</small><span class="field-state" data-state="email">Untouched</span></div>
+                  <p class="field-error" id="error-email"></p>
+                </div>
+                <div class="form-field" data-field="age">
+                  <label for="age">Age <span>*</span></label>
+                  <input id="age" name="age" type="number" min="18" max="120" placeholder="18–120" />
+                  <div class="field-meta"><small>Whole number, 18 to 120</small><span class="field-state" data-state="age">Untouched</span></div>
+                  <p class="field-error" id="error-age"></p>
+                </div>
+                <div class="form-field" data-field="birthDate">
+                  <label for="birthDate">Date of birth</label>
+                  <input id="birthDate" name="birthDate" type="date" />
+                  <div class="field-meta"><small>Cannot be in the future</small><span class="field-state" data-state="birthDate">Untouched</span></div>
+                  <p class="field-error" id="error-birthDate"></p>
+                </div>
+                <div class="form-field">
+                  <label for="country">Country <span>*</span></label>
+                  <select id="country" name="country">
+                    <option value="US">United States</option>
+                    <option value="CA">Canada</option>
+                    <option value="GB">United Kingdom</option>
+                    <option value="DE">Germany</option>
+                  </select>
+                </div>
+                <div class="form-field" data-field="region">
+                  <label for="region">State / region <span class="conditional-label">* for US</span></label>
+                  <input id="region" name="region" placeholder="e.g. California" />
+                  <div class="field-meta"><small>Required only for United States</small><span class="field-state" data-state="region">Untouched</span></div>
+                  <p class="field-error" id="error-region"></p>
+                </div>
+              </div>
+              <div class="checkbox-field" data-field="terms">
+                <label class="checkbox-label" for="terms"><input id="terms" name="terms" type="checkbox" /><span>I agree to the terms and conditions <b>*</b></span></label>
+                <p class="field-error" id="error-terms"></p>
+              </div>
+              <div class="form-actions">
+                <button class="button button-primary" type="submit">Validate form <span aria-hidden="true">→</span></button>
+                <button class="button button-secondary" type="button" id="reset-profile">Reset</button>
+              </div>
+              <div class="form-result" id="profile-result" role="status" aria-live="polite">Fill in a few fields, then validate.</div>
+            </form>
+          </article>
+
+          <aside class="panel inspector-panel">
+            <div class="panel-heading"><div><h3>Form inspector</h3><p>State from the live Form instance</p></div><span class="panel-icon">⌘</span></div>
+            <div class="inspector-status" id="profile-status"><span class="status-dot status-dot-muted"></span><div><strong>Not validated yet</strong><small>Enter values to begin</small></div></div>
+            <div class="inspector-block"><div class="inspector-label">FIELDS VALUE</div><pre class="output-code" id="profile-values">{ }</pre></div>
+            <div class="inspector-block"><div class="inspector-label">ALL ERRORS</div><pre class="output-code" id="profile-errors">{ }</pre></div>
+            <div class="inspector-block"><div class="inspector-label">FIELD STATE</div><div class="state-list" id="field-states"></div></div>
+            <p class="inspector-note">The inspector reads the library's <code>fieldsValue</code>, <code>allErrors</code>, <code>isValid</code>, and field state properties.</p>
+          </aside>
+        </section>
+
+        <section class="section-heading" id="collections">
+          <div><div class="eyebrow">02 / COLLECTIONS</div><h2>Arrays & nested forms</h2><p>Try collection constraints, add or remove items, and validate a list of address forms.</p></div>
+        </section>
+        <section class="two-column">
+          <article class="panel">
+            <div class="panel-heading"><div><h3>ArrayField</h3><p>1–4 tags, each at least 2 characters</p></div><span class="panel-icon">[ ]</span></div>
+            <div id="tags-list" class="dynamic-list"></div>
+            <div class="collection-toolbar"><button class="button button-secondary" type="button" id="add-tag">＋ Add tag</button><button class="button button-quiet" type="button" id="clear-tags">Clear all</button></div>
+            <p class="field-error collection-error" id="tags-error"></p>
+            <div class="inspector-block"><div class="inspector-label">ITEMS VALUE</div><pre class="output-code" id="tags-values">[]</pre></div>
+          </article>
+          <article class="panel">
+            <div class="panel-heading"><div><h3>ArrayFormField</h3><p>Up to 3 nested address forms</p></div><span class="panel-icon">▤</span></div>
+            <div id="addresses-list" class="dynamic-list"></div>
+            <div class="collection-toolbar"><button class="button button-secondary" type="button" id="add-address">＋ Add address</button><button class="button button-primary" type="button" id="validate-addresses">Validate</button></div>
+            <p class="field-error collection-error" id="addresses-error"></p>
+            <div class="inspector-block"><div class="inspector-label">NESTED FORM VALUES</div><pre class="output-code" id="addresses-values">[]</pre></div>
+          </article>
+        </section>
+
+        <section class="section-heading" id="server-errors">
+          <div><div class="eyebrow">03 / ERROR HANDLING</div><h2>Simulate a server response</h2><p>Apply a realistic backend error payload to the same form instance, then clear it or edit the values.</p></div>
+        </section>
+        <section class="two-column">
+          <article class="panel">
+            <div class="panel-heading"><div><h3>Server error payload</h3><p>Example response from an API</p></div><span class="panel-icon">↳</span></div>
+            <pre class="payload-code"><code>{
+  "email": "This email is already registered.",
+  "region": "This region is not available.",
+  "profile_id": "The profile could not be updated."
+}</code></pre>
+            <div class="form-actions"><button class="button button-primary" type="button" id="apply-server-errors">Apply server errors</button><button class="button button-secondary" type="button" id="clear-server-errors">Clear server errors</button></div>
+            <div class="form-result" id="server-result" role="status" aria-live="polite">No simulated server errors applied.</div>
+          </article>
+          <article class="panel">
+            <div class="panel-heading"><div><h3>Mapped errors</h3><p>Field errors and unknown keys</p></div><span class="panel-icon">⚑</span></div>
+            <div id="mapped-errors" class="mapped-errors"><div class="empty-state">Apply the example payload to see how errors are attached to fields and unknown keys become global errors.</div></div>
+            <p class="inspector-note">The form uses <code>ErrorsSchema</code>'s default fallback mapping. You can configure static, dynamic, nested, and array-item mappings in your own application.</p>
+          </article>
+        </section>
+
+        <section class="section-heading" id="serialization">
+          <div><div class="eyebrow">04 / OUTPUT</div><h2>Serialization lab</h2><p>Inspect the same form as JSON or FormData. Values update as you edit the form above.</p></div>
+        </section>
+        <section class="panel serialization-panel">
+          <div class="serialization-toolbar"><div class="tab-list" role="tablist" aria-label="Serialization output"><button class="tab-button is-active" type="button" data-tab="json" role="tab" aria-selected="true">toJSON()</button><button class="tab-button" type="button" data-tab="formdata" role="tab" aria-selected="false">toFormData()</button></div><button class="button button-quiet button-small" type="button" id="copy-output">Copy output</button></div>
+          <pre class="output-code serialization-output" id="serialization-output">{ }</pre>
+          <div class="serialization-footer"><span class="status-dot"></span><span id="serialization-note">JSON-compatible values, including ISO date strings.</span></div>
+        </section>
+
+        <footer class="footer">
+          <a class="brand footer-brand" href="#top"><span class="brand-mark">A</span><span>AdaptForm</span></a>
+          <p>Interactive playground for the <code>v2.1.0</code> branch. No data leaves your browser.</p>
+          <div class="footer-links"><a href="https://github.com/ArhiMEN/AdaptForm/tree/v2.1.0" target="_blank" rel="noreferrer">Source</a><a href="https://github.com/ArhiMEN/AdaptForm/blob/v2.1.0/CHANGELOG.md" target="_blank" rel="noreferrer">Changelog</a><a href="https://www.npmjs.com/package/adaptform" target="_blank" rel="noreferrer">npm</a></div>
+        </footer>
+      </main>
+    </div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
