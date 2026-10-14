@@ -80,6 +80,14 @@ describe('ArrayFormField', () => {
     })
   })
 
+  it('should ignore invalid removal indices', () => {
+    const arrayFormField = new ArrayFormField(TestForm, {}, [{ name: 'first' }, { name: 'last' }])
+    arrayFormField.remove(-1)
+    arrayFormField.remove(10)
+    arrayFormField.remove(1.5)
+    expect(arrayFormField.formsFieldsValue).toEqual([{ name: 'first' }, { name: 'last' }])
+  })
+
   describe('clear', () => {
     it('should remove all forms', () => {
       const arrayFormField = new ArrayFormField(TestForm, {}, [
