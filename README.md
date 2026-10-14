@@ -366,7 +366,7 @@ To run the interactive demo locally:
 npm run dev -- --config demo/vite.config.ts
 ```
 
-The demo is built from the `v2.1.0` branch by GitHub Actions. The first deployment requires GitHub Pages to be enabled with the source set to GitHub Actions; see [Demo and GitHub Pages notes](https://github.com/ArhiMEN/AdaptForm/blob/v2.1.0/docs/DEMO.md).
+The demo is built by GitHub Actions from `v2.1.0` and, after the demo workflow is merged, from `master`. GitHub Pages is configured to allow both branches to publish to the same demo URL; see [Demo and GitHub Pages notes](https://github.com/ArhiMEN/AdaptForm/blob/v2.1.0/docs/DEMO.md).
 
 ## Links
 

@@ -10,7 +10,7 @@ Starting package version: `2.0.5`
 Package version in this branch: `2.1.0` (prepared for maintainer release; not published)  
 Release status: Release candidate prepared; npm publication, GitHub release, and release tagging have not been performed.
 
-Interactive demo: [https://arhimen.github.io/AdaptForm/](https://arhimen.github.io/AdaptForm/) — deployment is pending the one-time Pages setting.
+Interactive demo: [https://arhimen.github.io/AdaptForm/](https://arhimen.github.io/AdaptForm/) — live and verified against the `v2.1.0` source; deployment permissions allow `v2.1.0` and `master`.
 
 ## Completed
 
@@ -31,7 +31,9 @@ Interactive demo: [https://arhimen.github.io/AdaptForm/](https://arhimen.github.
 - [x] Added an npm package content check and integrated it into CI.
 - [x] Created a styled interactive demo at `demo/`, built directly against the branch source.
 - [x] Added a GitHub Pages deployment workflow and independent demo type-check/build checks in CI.
-- [ ] Complete the first live deployment after a repository owner enables GitHub Pages with the source set to GitHub Actions. The workflow token cannot enable the repository setting.
+- [x] Enabled GitHub Pages with GitHub Actions and allowed both `v2.1.0` and `master` in the `github-pages` deployment environment.
+- [x] Added automatic demo deployment from `master` once the workflow is merged there; both branches publish to the same URL.
+- [x] Completed the first live deployment and verified the live page and its JavaScript/CSS assets against the local production build.
 - [x] Linked the demo from README, CHANGELOG, and project tracking; added deployment instructions in `docs/DEMO.md`.
 - [x] Prepared `package.json` and `package-lock.json` with version `2.1.0` without publishing.
 - [x] Updated README, CHANGELOG, and this tracker to describe the implemented behavior and deferred work.
@@ -54,7 +56,14 @@ The final code checks passed, including demo type-check and production build. Th
 | Package content | Passed | 18 packaged files; required entry points/declarations present; source, tests, docs, and GitHub workflow files excluded |
 | Demo | Passed | Type-check, Vite production build, and output structure verified |
 
-The final CI run verified 339 tests across 16 files, both dependency audits (zero known vulnerabilities), lint, package build, npm package contents, source type-check, demo type-check, and demo production build. The GitHub Pages deploy job separately remains blocked until Pages is enabled in repository settings.
+The final CI run verified 339 tests across 16 files, both dependency audits (zero known vulnerabilities), lint, package build, npm package contents, source type-check, demo type-check, and demo production build.
+
+### Demo deployment follow-up — 2026-10-14
+
+- Found that Pages was already enabled, but the `github-pages` environment allowed deployment only from `master`. Added `v2.1.0` while preserving the existing `master` policy.
+- Reran [Deploy demo run 38536827525](https://github.com/ArhiMEN/AdaptForm/actions/runs/38536827525); build and deployment succeeded. Downloaded the live HTML, JavaScript, and CSS over HTTPS and verified that all three exactly match the local production build; the page identifies itself as the 2.1.0 demo.
+- Added `master` to the deployment workflow's push triggers. No merge into `master` was performed; automatic deployment there becomes available when this branch is merged.
+- Local checks passed: lint, demo type-check, demo production build, and all 339 tests across 16 files with coverage. No library source files changed, so per-file source coverage thresholds do not apply to this workflow/documentation change.
 
 ## Deferred follow-up — outside this branch's acceptance criteria
 
@@ -65,7 +74,7 @@ The final CI run verified 339 tests across 16 files, both dependency audits (zer
 
 ## Known limitations
 
-- The demo build and type-check pass in CI, but the first GitHub Pages deployment is blocked by repository settings. An owner/admin must enable **Settings → Pages → Build and deployment → GitHub Actions**, then rerun the **Deploy demo** workflow. The workflow attempted automatic enablement but GitHub rejected the repository-settings operation for the workflow token.
+- Both permitted branches share one live demo URL; the latest successful deployment replaces the previous site. The `master` deployment trigger must reach `master` through the normal merge process.
 
 - Legacy callback APIs still contain some `any` types where replacing them with `unknown` would cause a source-compatibility change. Form value inference, serialization results, and nested collection values have been made more precise without broad callback API changes.
 - No PlayLease application runtime or integration suite was run, by explicit scope decision.
@@ -80,5 +89,5 @@ The final CI run verified 339 tests across 16 files, both dependency audits (zer
 - [x] Repository and branch safety constraints were preserved.
 - [x] Confirm the final branch CI after the last code and documentation updates.
 - [x] Prepare version `2.1.0` in package metadata and changelog without publishing or tagging.
-- [ ] Enable GitHub Pages in repository settings, rerun deployment, and verify the live demo URL.
+- [x] Enable GitHub Pages in repository settings, allow both deployment branches, rerun deployment, and verify the live demo URL and assets.
 - [ ] Obtain explicit approval before creating a GitHub release, tag, or npm publication.

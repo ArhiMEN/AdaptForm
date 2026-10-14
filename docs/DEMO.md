@@ -1,8 +1,8 @@
 # Interactive demo and GitHub Pages
 
-The intended live playground URL is **[https://arhimen.github.io/AdaptForm/](https://arhimen.github.io/AdaptForm/)**. The build and type-check pass in CI, but the first deployment is currently blocked because GitHub Pages is not enabled for the repository and the workflow token cannot change that repository setting.
+The live playground URL is **[https://arhimen.github.io/AdaptForm/](https://arhimen.github.io/AdaptForm/)**. GitHub Pages uses GitHub Actions for deployment, and the `github-pages` environment allows both `v2.1.0` and `master` to deploy.
 
-The page is built from the `demo/` application and the library source in `src/` on branch `v2.1.0`. It does not load the published npm package, so the playground exercises the code being prepared for the 2.1.0 release candidate.
+The page is built from the `demo/` application and the library source in `src/` on the deploying branch. The initial deployment uses `v2.1.0`, so the playground exercises the code being prepared for the 2.1.0 release candidate. After this branch is merged into `master`, changes on `master` also deploy automatically. Both branches publish to the same URL; the latest successful deployment becomes the live demo.
 
 ## What the playground covers
 
@@ -32,13 +32,15 @@ The Vite development server uses the root path locally, while production builds 
 
 ## Automatic deployment
 
-The workflow at `.github/workflows/deploy-demo.yml` builds and deploys the site when files in `demo/`, `src/`, package metadata, or the workflow itself change on branch `v2.1.0`. It can also be started manually using GitHub Actions' **Deploy demo** workflow.
+The workflow at `.github/workflows/deploy-demo.yml` builds and deploys the site when files in `demo/`, `src/`, package metadata, or the workflow itself change on `v2.1.0` or `master`. It can also be started manually using GitHub Actions' **Deploy demo** workflow, selecting either branch once it contains the workflow.
 
 The workflow type-checks the demo, creates the production build, and uploads the generated static site to GitHub Pages. The standard CI workflow independently type-checks and builds the demo.
 
 ### If Pages has not been enabled for this repository
 
 In the repository's GitHub settings, open **Settings → Pages** and set the build and deployment source to **GitHub Actions**. This one-time setting requires repository-owner/admin access and cannot be changed by a commit in this branch. After saving it, rerun **Deploy demo** from branch `v2.1.0`. The workflow will then build the site and deploy it to the URL above.
+
+Under **Settings → Environments → github-pages → Deployment branches and tags**, allow both `v2.1.0` and `master`. Enabling Pages alone may leave only `master` allowed, which blocks deployment from `v2.1.0` even when the build succeeds. These repository settings are already configured for this project.
 
 ## Updating the demo
 
