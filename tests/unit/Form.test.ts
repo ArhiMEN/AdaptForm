@@ -195,14 +195,14 @@ describe('Form', () => {
       expect(form.toJSON()).toEqual({ name: 'John', age: 25 })
     })
 
-    it('should handle Date objects', () => {
+    it('should serialize Date values as ISO strings', () => {
       class DateForm extends Form {
-        date = new Field(NumberType)
+        date = new Field(DateType)
       }
       const form = new DateForm()
-      form.fields = { date: 1672531200000 }
-      const json = form.toJSON()
-      expect(json).toEqual({ date: 1672531200000 })
+      const date = new Date('2023-01-01T00:00:00.000Z')
+      form.fields = { date }
+      expect(form.toJSON()).toEqual({ date: date.toISOString() })
     })
   })
 
@@ -215,6 +215,15 @@ describe('Form', () => {
       expect(formData.get('age')).toBe('25')
     })
 
+    it('should serialize Date values as ISO strings', () => {
+      class DateForm extends Form {
+        date = new Field(DateType)
+      }
+      const form = new DateForm()
+      const date = new Date('2023-01-01T00:00:00.000Z')
+      form.fields = { date }
+      expect(form.toFormData().get('date')).toBe(date.toISOString())
+    })
     it('should preserve numeric timestamps as strings', () => {
       class DateForm extends Form {
         date = new Field(NumberType)
