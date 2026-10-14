@@ -45,7 +45,7 @@ export class ArrayField<T = any> {
 
   // ===== actions =====
 
-  add(value?: T, force_check?: boolean): Field<T> {
+  add(value?: T, force_check: boolean = true): Field<T> {
     const field = this.factory(value)
     this.isTouched = true
     this._items.push(field)
