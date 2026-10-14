@@ -41,8 +41,10 @@ Interactive demo: [https://arhimen.github.io/AdaptForm/](https://arhimen.github.
 
 ## Latest verified implementation
 
-CI run: [38539391483](https://github.com/ArhiMEN/AdaptForm/actions/runs/38539391483)  
-Verified implementation commit: `8e80018a3952d6ce4d5b7c059e1ff00953e0387c`  
+CI run: [38539391483](https://github.com/ArhiMEN/AdaptForm/actions/runs/38539391483)
+
+Verified implementation commit: `8e80018a3952d6ce4d5b7c059e1ff00953e0387c`
+
 The final code checks passed, including demo type-check and production build. The subsequent status-only bookkeeping update does not change implementation.
 
 | Check | Status | Result |
