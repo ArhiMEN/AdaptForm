@@ -89,13 +89,13 @@ export abstract class Form {
       const field = fields[key]
 
       if (field instanceof ArrayFormField) {
-        // Для ArrayFormField собираем ошибки из всех вложенных форм
+        // Collect errors from all nested forms in an ArrayFormField.
         const formErrors = this.collectArrayFormErrors(field)
         if (formErrors.length > 0) {
           errors[key] = formErrors
         }
       } else {
-        // Для Field и ArrayField берем их собственные ошибки
+        // Use the field's own errors for Field and ArrayField.
         const fieldErrors = field.errors
         if (fieldErrors.length > 0) {
           errors[key] = fieldErrors
@@ -103,7 +103,7 @@ export abstract class Form {
       }
     }
 
-    // Добавляем глобальные ошибки
+    // Add global errors.
     for (const key of Object.keys(this._globalErrors)) {
       if (!errors[key]) {
         errors[key] = []
@@ -115,15 +115,15 @@ export abstract class Form {
   }
 
   /**
-   * Рекурсивно собирает все ошибки из ArrayFormField
+   * Recursively collect all errors from an ArrayFormField.
    */
   private collectArrayFormErrors(arrayField: ArrayFormField): string[] {
     const allErrors: string[] = []
 
-    // Ошибки самого ArrayFormField
+    // Include errors from the ArrayFormField itself.
     allErrors.push(...arrayField.errors)
 
-    // Ошибки из каждой формы в массиве
+    // Include errors from each form in the array.
     for (let i = 0; i < arrayField.forms.length; i++) {
       const form = arrayField.forms[i]
       const formAllErrors = form.allErrors
@@ -146,23 +146,23 @@ export abstract class Form {
     const fields = this._fields
     this._globalErrors = {}
 
-    // Очищаем все ошибки полей перед установкой новых
+    // Clear existing field errors before applying new ones.
     for (const key of Object.keys(fields)) {
       fields[key].error = null
     }
 
-    // Используем схему для парсинга ошибок
+    // Parse errors using the configured schema.
     const parsedErrors = this.errorsShema.parseErrors(errors)
 
-    // Обрабатываем распарсенные ошибки
+    // Apply the parsed errors.
     for (const [fieldName, errorMessage] of Object.entries(parsedErrors)) {
       this.applyErrorToField(fieldName, errorMessage, fields, this)
     }
   }
 
   /**
-   * Применяет ошибку к соответствующему полю
-   * Поддерживает вложенные поля через точечную нотацию
+   * Apply an error to the corresponding field.
+   * Supports nested fields using dot notation.
    */
   private applyErrorToField(
     fieldPath: string,
@@ -170,19 +170,19 @@ export abstract class Form {
     fields: Record<string, Field<any> | ArrayField<any> | ArrayFormField<any>>,
     targetForm: Form
   ): void {
-    // Защита от undefined targetForm
+    // Guard against an undefined target form.
     if (!targetForm) {
       console.error('applyErrorToField: targetForm is undefined')
       return
     }
 
-    // Сначала проверяем прямое совпадение с полем
+    // Check for a direct field match first.
     if (fieldPath in fields && fields[fieldPath]) {
       fields[fieldPath].error = errorMessage
       return
     }
 
-    // Если прямого совпадения нет, разбираем как вложенный путь
+    // If no direct match exists, interpret the key as a nested path.
     const parts = fieldPath.split('.')
     const rootField = parts[0]
 
@@ -195,7 +195,7 @@ export abstract class Form {
         this.applyNestedError(field, parts.slice(1), errorMessage, fieldPath, targetForm)
       }
     } else {
-      // Если поле не найдено, добавляем в глобальные ошибки целевой формы
+      // If the field is not found, add the error to the target form's global errors.
       targetForm.setGlobalError(fieldPath, errorMessage)
     }
   }
@@ -207,7 +207,7 @@ export abstract class Form {
     fullPath: string,
     targetForm: Form
   ): void {
-    // Защита от undefined targetForm
+    // Guard against an undefined target form.
     if (!targetForm) {
       console.error('applyNestedError: targetForm is undefined')
       return
@@ -215,27 +215,27 @@ export abstract class Form {
 
     const [currentPart, ...remainingParts] = pathParts
 
-    // Обработка ArrayFormField (массив форм)
+    // Handle ArrayFormField (an array of forms).
     if (field instanceof ArrayFormField) {
       const index = parseInt(currentPart)
       if (!isNaN(index) && index >= 0 && index < field.forms.length) {
         const form = field.forms[index]
         if (remainingParts.length > 0) {
-          // Рекурсивно применяем к полю внутри формы
+          // Recursively apply the error to a field inside the form.
           const formFields = form['_fields']
-          // Передаем form как целевую форму для глобальных ошибок
+          // Use the nested form as the target for global errors.
           this.applyErrorToField(remainingParts.join('.'), errorMessage, formFields, form)
         } else {
-          // Если это индекс без указания конкретного поля,
-          // добавляем как глобальную ошибку формы
+          // If the path specifies an index without a field,
+          // add it as a global form error.
           form.setGlobalError(`index_${index}`, errorMessage)
         }
       } else {
-        // Индекс вне диапазона - добавляем в глобальные ошибки целевой формы
+        // If the index is out of range, add a global error to the target form.
         targetForm.setGlobalError(fullPath, errorMessage)
       }
     }
-    // Для ArrayField и Field - добавляем в глобальные ошибки целевой формы
+    // For ArrayField and Field, add the error to the target form's global errors.
     else {
       targetForm.setGlobalError(fullPath, errorMessage)
     }
@@ -265,7 +265,7 @@ export abstract class Form {
     return false
   }
 
-  // Проверить, валидна ли форма
+  // Check whether the form is valid.
   get isValid(): boolean {
     const fields = this._fields
     for (const key of Object.keys(fields)) {
@@ -298,11 +298,11 @@ export abstract class Form {
     return formData
   }
 
-  // Получить все значения в виде JSON
+  // Get all values in JSON-compatible form.
   toJSON(): Record<string, any> {
     const data = this.fieldsValue
 
-    // Преобразуем даты в строки для JSON
+    // Convert dates to strings for JSON.
     const json: Record<string, any> = {}
     for (const [key, value] of Object.entries(data)) {
       if (value instanceof Date) {
