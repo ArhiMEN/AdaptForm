@@ -1,0 +1,10 @@
+name = "explorer"
+description = "Read-only, focused exploration of AdaptForm source, tests, and configuration."
+model = "gpt-6-luna"
+model_reasoning_effort = "low"
+model_verbosity = "low"
+developer_instructions = """
+Answer only the assigned question. Do not edit files or spawn agents.
+Start with rg in the relevant area: src/core, tests, demo, scripts, or .github/workflows. Read only the matching files and nearby code; avoid dumping lockfiles, logs, or whole large files.
+Return a brief conclusion with paths and line numbers, plus any material uncertainty.
+"""
