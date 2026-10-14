@@ -21,7 +21,7 @@ Improve the reliability, type safety, maintainability, and release confidence of
 - [ ] Add regression tests before or alongside each fix.
 
 ### 3. Serialization contracts
-- [ ] Define and test JSON serialization for primitives, arrays, dates, nested forms, nulls, and optional values. Primitive and Date cases are covered; array/nested JSON cases remain to be added.
+- [x] Define and test JSON serialization for primitives, arrays, nested forms, and Date values, including recursive Date conversion.
 - [x] Define and test FormData serialization for arrays, nested form values, Date values, and omission of nullish values. Blob/File handling is implemented; broader edge-case coverage remains to be added.
 - [ ] Preserve existing supported behavior or document migration steps for intentional changes.
 
@@ -32,7 +32,7 @@ Improve the reliability, type safety, maintainability, and release confidence of
 - [x] Ensure generated declaration files match the intended public API.
 
 ### 5. Error handling and localization
-- [ ] Review error schema parsing for nested objects, arrays, unknown fields, and non-string values.
+- [x] Review error schema parsing for nested objects, arrays, unknown fields, and non-string values; add regression coverage for array mappings and fallback invocation.
 - [ ] Consider structured error codes and parameters as a path to localization without parsing human-readable messages.
 - [ ] Keep existing PlayLease localization behavior compatible or document coordinated migration before changing message contracts.
 
