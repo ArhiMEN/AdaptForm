@@ -410,6 +410,35 @@ describe('Form', () => {
       expect((value as Blob).size).toBe(blob.size)
       expect((value as Blob).type).toBe('text/plain')
     })
+
+    it('should preserve File values and filenames in FormData', () => {
+      class FileType extends FieldType<File> {
+        cast(rawValue: unknown): File | null {
+          return rawValue instanceof File ? rawValue : null
+        }
+
+        validate(): string[] {
+          return []
+        }
+
+        getTypeName(): string {
+          return 'file'
+        }
+      }
+
+      class UploadForm extends Form {
+        attachment = new Field(FileType)
+      }
+
+      const form = new UploadForm()
+      const file = new File(['file contents'], 'avatar.txt', { type: 'text/plain' })
+      form.fields = { attachment: file }
+
+      const value = form.toFormData().get('attachment')
+      expect(value).not.toBeNull()
+      expect((value as File).name).toBe('avatar.txt')
+      expect((value as File).size).toBe(file.size)
+    })
   })
 
   describe('nested ArrayField', () => {
