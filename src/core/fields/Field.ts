@@ -98,7 +98,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
     this.isValid = message ? false : null
   }
 
-  get valueClear(): any {
+  get valueClear(): T | null {
     return this._valueClear
   }
 
