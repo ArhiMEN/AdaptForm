@@ -41,14 +41,14 @@ Interactive demo: [https://arhimen.github.io/AdaptForm/](https://arhimen.github.
 
 ## Latest verified implementation
 
-CI run: [38532435860](https://github.com/ArhiMEN/AdaptForm/actions/runs/38532435860)  
-Verified implementation commit: `9c4d6700001ac60fe194249c57088454fb083401`  
+CI run: [38539391483](https://github.com/ArhiMEN/AdaptForm/actions/runs/38539391483)  
+Verified implementation commit: `8e80018a3952d6ce4d5b7c059e1ff00953e0387c`  
 The final code checks passed, including demo type-check and production build. The subsequent status-only bookkeeping update does not change implementation.
 
 | Check | Status | Result |
 |---|---|---|
 | Reproducible install | Passed | `npm ci` succeeded |
-| Dependency audit | Passed | `npm audit --audit-level=moderate` and the lockfile scan reported zero known vulnerabilities |
+| Dependency audit | Passed | `npm audit --audit-level=moderate` reported zero known vulnerabilities; the previous lockfile scan also reported zero |
 | Lint | Passed | `npm run lint` |
 | Tests | Passed | 339 tests across 16 test files |
 | Build | Passed | ESM, CommonJS, and TypeScript declarations |
@@ -56,12 +56,13 @@ The final code checks passed, including demo type-check and production build. Th
 | Package content | Passed | 18 packaged files; required entry points/declarations present; source, tests, docs, and GitHub workflow files excluded |
 | Demo | Passed | Type-check, Vite production build, and output structure verified |
 
-The final CI run verified 339 tests across 16 files, both dependency audits (zero known vulnerabilities), lint, package build, npm package contents, source type-check, demo type-check, and demo production build.
+The final CI run verified 339 tests across 16 files, npm dependency auditing (zero known vulnerabilities), lint, package build, npm package contents, source type-check, demo type-check, and demo production build.
 
 ### Demo deployment follow-up — 2026-10-14
 
 - Found that Pages was already enabled, but the `github-pages` environment allowed deployment only from `master`. Added `v2.1.0` while preserving the existing `master` policy.
 - Reran [Deploy demo run 38536827525](https://github.com/ArhiMEN/AdaptForm/actions/runs/38536827525); build and deployment succeeded. Downloaded the live HTML, JavaScript, and CSS over HTTPS and verified that all three exactly match the local production build; the page identifies itself as the 2.1.0 demo.
+- After pushing the workflow change, [CI run 38539391483](https://github.com/ArhiMEN/AdaptForm/actions/runs/38539391483) and the automatic [Deploy demo run 38539392190](https://github.com/ArhiMEN/AdaptForm/actions/runs/38539392190) both passed for commit `8e80018`.
 - Added `master` to the deployment workflow's push triggers. No merge into `master` was performed; automatic deployment there becomes available when this branch is merged.
 - Local checks passed: lint, demo type-check, demo production build, and all 339 tests across 16 files with coverage. No library source files changed, so per-file source coverage thresholds do not apply to this workflow/documentation change.
 
