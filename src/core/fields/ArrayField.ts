@@ -21,7 +21,7 @@ export class ArrayField<T = any> {
       messages: {},
       ...options
     } as ArrayFieldOptions
-    this._items = initial.map(v => this.factory(v))
+    this._items = initial.map(value => this.factory(value as T))
     this.checkValid()
   }
 
