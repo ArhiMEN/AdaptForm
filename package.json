@@ -55,7 +55,7 @@
   "bugs": {
     "url": "https://github.com/ArhiMEN/adaptform/issues"
   },
-  "homepage": "https://github.com/ArhiMEN/adaptform#readme",
+  "homepage": "https://arhimen.github.io/AdaptForm/",
   "engines": {
     "node": ">=16.0.0"
   },
