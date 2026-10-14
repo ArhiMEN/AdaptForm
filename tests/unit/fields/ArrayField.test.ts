@@ -109,6 +109,13 @@ describe('ArrayField', () => {
       expect(arrayField.isValid).toBe(false)
     })
 
+    it('should refresh minItems validity after each add without manual validation', () => {
+      const arrayField = new ArrayField((value?: string) => new Field(StringType, value), { minItems: 2 })
+      arrayField.add('first')
+      expect(arrayField.isValid).toBe(false)
+      arrayField.add('second')
+      expect(arrayField.isValid).toBe(true)
+    })
     it('should validate minItems', () => {
       const factory = (value?: string) => new Field(StringType, value)
       const arrayField = new ArrayField(factory, { minItems: 2 })
