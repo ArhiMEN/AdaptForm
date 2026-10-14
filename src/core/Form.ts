@@ -67,15 +67,15 @@ export abstract class Form {
     return data as FormFieldsValue<this>
   }
 
-  set fields(data: Record<string, any>) {
+  set fields(data: Record<string, unknown>) {
     const fields = this._fields
 
     for (const key of Object.keys(data)) {
       const field = fields[key]
       if (field) {
         if (field instanceof Field) field.rawValue = data[key]
-        else if (field instanceof ArrayField) field.itemsValue = data[key]
-        else if (field instanceof ArrayFormField) field.forms = data[key]
+        else if (field instanceof ArrayField) field.itemsValue = data[key] as any[]
+        else if (field instanceof ArrayFormField) field.forms = data[key] as unknown[]
         else console.error(`Invalid field "${key}" type`)
       }
     }
@@ -145,14 +145,9 @@ export abstract class Form {
     return {...this._globalErrors}
   }
 
-  set errors(errors: Record<string, any>) {
+  set errors(errors: Record<string, unknown>) {
+    this.clearErrorsRecursively()
     const fields = this._fields
-    this._globalErrors = {}
-
-    // Clear existing field errors before applying new ones.
-    for (const key of Object.keys(fields)) {
-      fields[key].error = null
-    }
 
     // Parse errors using the configured schema.
     const parsedErrors = this.errorsShema.parseErrors(errors)
@@ -160,6 +155,22 @@ export abstract class Form {
     // Apply the parsed errors.
     for (const [fieldName, errorMessage] of Object.entries(parsedErrors)) {
       this.applyErrorToField(fieldName, errorMessage, fields, this)
+    }
+  }
+
+  private clearErrorsRecursively(): void {
+    this._globalErrors = {}
+
+    for (const field of Object.values(this._fields)) {
+      if (field instanceof Field) {
+        field.error = null
+      } else if (field instanceof ArrayField) {
+        field.error = null
+        for (const item of field.items) item.error = null
+      } else if (field instanceof ArrayFormField) {
+        field.error = null
+        for (const nestedForm of field.forms) nestedForm.clearErrorsRecursively()
+      }
     }
   }
 
