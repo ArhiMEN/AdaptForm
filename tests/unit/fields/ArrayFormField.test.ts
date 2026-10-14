@@ -171,13 +171,13 @@ describe('ArrayFormField', () => {
       ])
       arrayFormField.add({ name: 'Bob' })
       arrayFormField.reset()
-      // После reset() формы должны вернуться к значениям по умолчанию (null)
+
       expect(arrayFormField.formsFieldsValue).toEqual([
         { name: null },
         { name: null },
         { name: null }
       ])
-  
+    })
 
     it('should clear collection errors and require validation after reset', () => {
       const arrayFormField = new ArrayFormField(TestForm, { minForms: 1 })
@@ -193,6 +193,5 @@ describe('ArrayFormField', () => {
       expect(arrayFormField.checkValid()).toBe(false)
       expect(arrayFormField.errors).not.toEqual([])
     })
-  })
   })
 })
