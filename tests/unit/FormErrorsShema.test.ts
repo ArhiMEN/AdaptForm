@@ -133,7 +133,7 @@ describe('Form with ErrorsSchema', () => {
       form = new LoginForm()
     })
 
-    it('должен устанавливать ошибки на поля по статическим ключам', () => {
+    it('should assign field errors using static keys', () => {
       form.errors = {
         email: 'Email обязателен',
         password: 'Пароль слишком короткий'
@@ -143,7 +143,7 @@ describe('Form with ErrorsSchema', () => {
       expect(form['_fields'].password.error).toBe('Пароль слишком короткий')
     })
 
-    it('должен маппить server_error на password', () => {
+    it('should map server_error to password', () => {
       form.errors = {
         server_error: 'Ошибка сервера'
       }
@@ -153,7 +153,7 @@ describe('Form with ErrorsSchema', () => {
       expect(form['_fields'].email.errors).toEqual([])
     })
 
-    it('должен добавлять неизвестные ошибки в globalErrors', () => {
+    it('should add unknown errors to globalErrors', () => {
       form.errors = {
         email: 'Email обязателен',
         unknown_error: 'Неизвестная ошибка'
@@ -165,7 +165,7 @@ describe('Form with ErrorsSchema', () => {
       expect(form['_fields'].email.error).toBe('Email обязателен')
     })
 
-    it('должен очищать предыдущие глобальные ошибки при установке новых', () => {
+    it('should clear previous global errors before applying new ones', () => {
       form.errors = {
         unknown_error: 'Старая ошибка'
       }
@@ -177,7 +177,7 @@ describe('Form with ErrorsSchema', () => {
       expect(form.globalErrors).toEqual({})
     })
 
-    it('должен очищать ошибки полей при установке пустого объекта', () => {
+    it('should clear field errors when an empty object is assigned', () => {
       form.errors = {
         email: 'Была ошибка'
       }
@@ -188,7 +188,7 @@ describe('Form with ErrorsSchema', () => {
       expect(form.globalErrors).toEqual({})
     })
 
-    it('должен поддерживать setGlobalError', () => {
+    it('should support setGlobalError', () => {
       form.setGlobalError('form_error', 'Ошибка всей формы')
 
       expect(form.globalErrors).toEqual({
@@ -196,7 +196,7 @@ describe('Form with ErrorsSchema', () => {
       })
     })
 
-    it('должен очищать глобальные ошибки через clearGlobalErrors', () => {
+    it('should clear global errors with clearGlobalErrors', () => {
       form.setGlobalError('error1', 'Ошибка 1')
       form.setGlobalError('error2', 'Ошибка 2')
 
@@ -205,7 +205,7 @@ describe('Form with ErrorsSchema', () => {
       expect(form.globalErrors).toEqual({})
     })
 
-    it('должен возвращать все ошибки через allErrors', () => {
+    it('should return all errors through allErrors', () => {
       form.errors = {
         email: 'Email обязателен',
         unknown_error: 'Неизвестная ошибка'
@@ -219,7 +219,7 @@ describe('Form with ErrorsSchema', () => {
       expect(allErrors.unknown_error).toContain('Неизвестная ошибка')
     })
 
-    it('должен сбрасывать ошибки при reset', () => {
+    it('should clear errors on reset', () => {
       form.errors = {
         email: 'Email обязателен'
       }
@@ -239,7 +239,7 @@ describe('Form with ErrorsSchema', () => {
       form = new ProfileForm()
     })
 
-    it('должен обрабатывать статические ключи', () => {
+    it('should process static keys', () => {
       form.errors = {
         'user.email': 'Email неверный'
       }
@@ -247,7 +247,7 @@ describe('Form with ErrorsSchema', () => {
       expect(form['_fields'].email.error).toBe('Email неверный')
     })
 
-    it('должен обрабатывать динамические ключи', () => {
+    it('should process dynamic keys', () => {
       form.errors = {
         'user.firstName': 'Имя обязательно',
         'user.lastName': 'Фамилия обязательна'
@@ -257,7 +257,7 @@ describe('Form with ErrorsSchema', () => {
       expect(form['_fields'].lastName.error).toBe('Фамилия обязательна')
     })
 
-    it('должен трансформировать значения-массивы', () => {
+    it('should transform array values', () => {
       form.errors = {
         'user.email': ['Email неверный', 'Email слишком короткий']
       }
@@ -265,7 +265,7 @@ describe('Form with ErrorsSchema', () => {
       expect(form['_fields'].email.error).toBe('Email неверный')
     })
 
-    it('должен обрабатывать неизвестные ключи через fallback', () => {
+    it('should process unknown keys through the fallback', () => {
       form.errors = {
         'unknown.field': 'Неизвестная ошибка'
       }
@@ -285,7 +285,7 @@ describe('Form with ErrorsSchema', () => {
       form.questions.add()
     })
 
-    it('должен устанавливать ошибки на поля вложенных форм', () => {
+    it('should assign errors to fields in nested forms', () => {
       form.errors = {
         'title': 'Заголовок обязателен',
         'questions.0.text': 'Текст вопроса обязателен',
@@ -299,7 +299,7 @@ describe('Form with ErrorsSchema', () => {
       expect(form.questions.forms[1]['_fields'].text.error).toBe('Текст второго вопроса обязателен')
     })
 
-    it('должен обрабатывать ошибки на уровне индекса формы', () => {
+    it('should process errors at a form index', () => {
       form.errors = {
         'questions[0]': 'Ошибка в первом вопросе'
       }
@@ -309,7 +309,7 @@ describe('Form with ErrorsSchema', () => {
       expect(form0.globalErrors.index_0).toBe('Ошибка в первом вопросе')
     })
 
-    it('должен обрабатывать неизвестные ключи как глобальные ошибки', () => {
+    it('should process unknown keys as global errors', () => {
       form.errors = {
         'unknown_error': 'Неизвестная ошибка',
         'questions.99.text': 'Ошибка для несуществующей формы'
@@ -321,7 +321,7 @@ describe('Form with ErrorsSchema', () => {
       })
     })
 
-    it('должен корректно обрабатывать отсутствие форм в массиве', () => {
+    it('should handle an empty array of forms', () => {
       const emptyForm = new SurveyForm()
 
       emptyForm.errors = {
@@ -342,7 +342,7 @@ describe('Form with ErrorsSchema', () => {
       form.accounts.add()
     })
 
-    it('должен обрабатывать ошибки Pydantic для вложенных аккаунтов', () => {
+    it('should process Pydantic errors for nested accounts', () => {
       const pydanticErrors = {
         'accounts.0.launcher_type': 'Value error, Выберите лаунчер',
         'accounts.0.login': 'Логин слишком длинный',
@@ -362,7 +362,7 @@ describe('Form with ErrorsSchema', () => {
       expect(account1['_fields'].launcher_type.error).toBe('Выберите лаунчер')
     })
 
-    it('должен обрабатывать ошибки game_ids внутри аккаунта', () => {
+    it('should process game_ids errors within an account', () => {
       form.errors = {
         'accounts.0.game_ids': 'Добавьте хотя бы одну игру',
         'accounts.0.game_ids.0': 'Значение должно быть больше 0',
@@ -379,7 +379,7 @@ describe('Form with ErrorsSchema', () => {
       expect(account0GlobalErrors).toHaveProperty('game_ids.1', 'Значение должно быть больше 0')
     })
 
-    it('должен обрабатывать ошибки на уровне всего массива accounts', () => {
+    it('should process errors for the entire accounts array', () => {
       form.errors = {
         'accounts': 'Минимум один аккаунт обязателен'
       }
@@ -387,7 +387,7 @@ describe('Form with ErrorsSchema', () => {
       expect(form['_fields'].accounts.error).toBe('Минимум один аккаунт обязателен')
     })
 
-    it('должен обрабатывать ошибки на уровне конкретного аккаунта', () => {
+    it('should process errors for a specific account', () => {
       form.errors = {
         'accounts.0': 'Ошибка в первом аккаунте'
       }
@@ -397,7 +397,7 @@ describe('Form with ErrorsSchema', () => {
       expect(account0.globalErrors.index_0).toBe('Ошибка в первом аккаунте')
     })
 
-    it('должен добавлять неизвестные ошибки в глобальные', () => {
+    it('should add unknown errors to global errors', () => {
       form.errors = {
         'server_error': 'Внутренняя ошибка сервера',
         'network_error': 'Проблемы с сетью'
@@ -409,7 +409,7 @@ describe('Form with ErrorsSchema', () => {
       })
     })
 
-    it('должен возвращать все ошибки включая вложенные', () => {
+    it('should return all errors, including nested errors', () => {
       form.errors = {
         'accounts.0.launcher_type': 'Выберите лаунчер',
         'accounts.0.login': 'Логин обязателен',
@@ -425,7 +425,7 @@ describe('Form with ErrorsSchema', () => {
   })
 
   describe('Интеграционные тесты', () => {
-    it('должен корректно обрабатывать установку ошибок несколько раз', () => {
+    it('should handle repeated error assignments', () => {
       const form = new LoginForm()
 
       form.errors = {
@@ -440,7 +440,7 @@ describe('Form with ErrorsSchema', () => {
       expect(form['_fields'].password.error).toBe('Пароль слишком короткий')
     })
 
-    it('должен поддерживать смену схемы на лету', () => {
+    it('should support changing the schema at runtime', () => {
       const form = new LoginForm()
 
       form.errorsShema = new ErrorsSchema()
@@ -456,7 +456,7 @@ describe('Form with ErrorsSchema', () => {
       expect(form['_fields'].password.error).toBe('Пароль слишком короткий')
     })
 
-    it('должен обрабатывать сложный сценарий с Pydantic ошибками', () => {
+    it('should handle a complex scenario with Pydantic errors', () => {
       const form = new MultiAccountDialogForm()
       form.accounts.add()
       form.accounts.add()
@@ -492,7 +492,7 @@ describe('Form with ErrorsSchema', () => {
       })
     })
 
-    it('должен сохранять значения полей при установке ошибок', () => {
+    it('should preserve field values when assigning errors', () => {
       const form = new LoginForm()
 
       form.fields = {
@@ -513,7 +513,7 @@ describe('Form with ErrorsSchema', () => {
   })
 
   describe('Краевые случаи', () => {
-    it('должен обрабатывать null в ошибках', () => {
+    it('should handle null values in errors', () => {
       const form = new LoginForm()
 
       form.errors = {
@@ -526,7 +526,7 @@ describe('Form with ErrorsSchema', () => {
       expect(form.globalErrors).toEqual({})
     })
 
-    it('должен обрабатывать ошибки для несуществующих полей', () => {
+    it('should handle errors for nonexistent fields', () => {
       const form = new LoginForm()
 
       form.errors = {
@@ -538,7 +538,7 @@ describe('Form with ErrorsSchema', () => {
       })
     })
 
-    it('должен обрабатывать большое количество ошибок', () => {
+    it('should handle a large number of errors', () => {
       const form = new MultiAccountDialogForm()
 
       for (let i = 0; i < 5; i++) {
