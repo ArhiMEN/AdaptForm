@@ -1,4 +1,7 @@
 import { defineConfig } from 'vitest/config'
+import { fileURLToPath } from 'node:url'
+
+const sourceDirectory = fileURLToPath(new URL('./src/core', import.meta.url))
 
 export default defineConfig({
   test: {
@@ -16,7 +19,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@core': '/home/stas/PycharmProjects/adaptform/src/core',
+      '@core': sourceDirectory,
     },
   },
 })
