@@ -51,8 +51,8 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
   }
 
   set options(options: O) {
-    const cur_options = this.fieldType.options
-    this.fieldType.options = Object.assign(cur_options, options)
+    const currentOptions = this.fieldType.options
+    this.fieldType.options = Object.assign(currentOptions, options)
   }
 
   get rawValue(): T | null {
@@ -60,6 +60,13 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
   }
 
   set rawValue(input: any) {
+    this.assignRawValue(input)
+    this._errors = []
+    this.isTouched = true
+    this.checkAndSetValid()
+  }
+
+  private assignRawValue(input: any): void {
     let rawValue = input
 
     for (const plugin of this.plugins) {
@@ -78,10 +85,6 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
 
     this._rawValue = rawValue
     this._valueClear = this.fieldType.cast(valueClear)
-
-    this._errors = []
-    this.isTouched = true
-    this.checkAndSetValid()
   }
 
   get errors(): string[] {
@@ -179,13 +182,15 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
 
   reset(): void {
     if (this.defaultValue !== null && this.defaultValue !== undefined) {
-      this.rawValue = this.defaultValue
+      // Restore the default through the same plugin pipeline without validating it.
+      this.assignRawValue(this.defaultValue)
     } else {
       this._rawValue = null
       this._valueClear = null
-      this.isValid = null
     }
+
     this._errors = []
+    this.isValid = null
     this.isTouched = false
   }
 }
