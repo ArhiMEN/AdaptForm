@@ -42,7 +42,7 @@ export class DecimalType extends FieldType<number | string, DecimalOptions> {
 
   validate(value: number | string): string[] {
     const errors: string[] = []
-    value = typeof value === 'number' ? this.numberToString(value) : value
+    value = typeof value === 'number' ? String(value) : value
 
     // Check whether the input matches the numeric format.
     if (!this.isValidNumberString(value)) {
@@ -161,12 +161,6 @@ export class DecimalType extends FieldType<number | string, DecimalOptions> {
 
     // Validate the format.
     return pattern.test(value)
-  }
-
-  private numberToString(value: number): string {
-    const decimalPlaces = this.options.decimalPlaces
-
-    return String(value)
   }
 
   getTypeName(): string {
