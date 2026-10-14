@@ -74,10 +74,14 @@ describe('DateType', () => {
     })
 
     it('should check time when isDatetime is true', () => {
-      const type = new DateType({ isDatetime: true })
-      const date1 = new Date('2023-01-01 10:00:00')
-      const date2 = new Date('2023-01-01 12:00:00')
-      expect(type.validate(date1)).toEqual([])
+      const type = new DateType({
+        isDatetime: true,
+        minDate: new Date('2023-01-01T11:00:00')
+      })
+      const date1 = new Date('2023-01-01T10:00:00')
+      const date2 = new Date('2023-01-01T12:00:00')
+      expect(type.validate(date1).length).toBeGreaterThan(0)
+      expect(type.validate(date2)).toEqual([])
     })
   })
 
