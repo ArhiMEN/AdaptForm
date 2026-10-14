@@ -3,6 +3,22 @@ import {ArrayField} from "@core/fields/ArrayField"
 import {ArrayFormField} from "@core/fields/ArrayFormField"
 import {DefaultErrorsSchema, ErrorsSchema} from "@core/ErrorsShema"
 
+export type FormFieldValue<TField> =
+  TField extends Field<infer TValue, any> ? TValue | null :
+  TField extends ArrayField<infer TValue> ? (TValue | null)[] :
+  TField extends ArrayFormField<infer TForm>
+    ? TForm extends Form ? FormFieldsValue<TForm>[] : unknown[]
+    : never
+
+export type FormFieldsValue<TForm extends Form> = {
+  [K in keyof TForm as TForm[K] extends
+    | Field<any, any>
+    | ArrayField<any>
+    | ArrayFormField<any>
+    ? K
+    : never]: FormFieldValue<TForm[K]>
+}
+
 export abstract class Form {
   private _globalErrors: Record<string, string> = {}
   errorsShema: ErrorsSchema = DefaultErrorsSchema
@@ -34,7 +50,7 @@ export abstract class Form {
     return isFormValid
   }
 
-  get fieldsValue(): Record<string, any> {
+  get fieldsValue(): FormFieldsValue<this> {
     const data: Record<string, any> = {}
     const fields = this._fields
 
@@ -48,7 +64,7 @@ export abstract class Form {
       data[key] = valueClear
     }
 
-    return data
+    return data as FormFieldsValue<this>
   }
 
   set fields(data: Record<string, any>) {
