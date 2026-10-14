@@ -179,5 +179,23 @@ describe('ArrayField', () => {
       arrayField.reset()
       expect(arrayField.isTouched).toBe(false)
     })
+
+    it('should clear stale errors and require validation after reset', () => {
+      const arrayField = new ArrayField(
+        (value?: string) => new Field(StringType, value),
+        { minItems: 1 }
+      )
+
+      expect(arrayField.isValid).toBe(false)
+      expect(arrayField.errors).not.toEqual([])
+
+      arrayField.reset()
+
+      expect(arrayField.errors).toEqual([])
+      expect(arrayField.isValid).toBe(false)
+
+      expect(arrayField.checkValid()).toBe(false)
+      expect(arrayField.errors).not.toEqual([])
+    })
   })
 })
