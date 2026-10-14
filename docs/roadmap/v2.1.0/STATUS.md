@@ -29,12 +29,12 @@ Release status: Not released; npm publication is not authorized by this plan.
 
 ## Recent implementation notes
 
-- Updated `ErrorsSchema.forArray()` to use its custom index extractor, accept bracket/angle-bracket/dotted index notation, and apply the supplied item schema's field mappings and value transformers.
-- Added regression tests for the above behaviors. The implementation and regression tests passed in GitHub Actions.
+- Updated `ErrorsSchema.forArray()` to honor custom index extractors, use explicit bracket/dotted indices by default, apply item-schema mappings and transformers, and reject malformed default index keys.
+- Added regression tests for the above behaviors, the single-call fallback contract, public exports, inferred types, and recursive Date serialization. The implementation and regression tests passed in GitHub Actions.
 
 ## Latest verified code baseline
 
-The run for commit `438a9ba07c6102a134db158c03e40fa48a2a44e0` passed: 312 tests across 16 files, ESM/CommonJS/declaration builds, and `tsc --noEmit`. This baseline includes the new array-schema behavior, typed `fieldsValue`, nullable `valueClear`, and Date serialization tests.
+The run for commit `ff6a05834e1e221d658c45755d4b6483917e29ac` passed: 315 tests across 16 files, ESM/CommonJS/declaration builds, and `tsc --noEmit`. This includes array error mapping and transformers, fallback invocation, typed form values, and recursive Date serialization.
 
 The lockfile metadata was aligned with `package.json`, and the updated `npm ci` workflow passed in GitHub Actions (run `38523206183`).
 
@@ -44,7 +44,7 @@ The lockfile metadata was aligned with `package.json`, and the updated `npm ci` 
 |---|---|---|
 | Repository and branch | Passed | Branch created from `master`; no existing branch changed. |
 | Reproducible install | Passed | `npm ci` succeeded with the aligned lockfile. |
-| Test suite | Passed | Latest verified code baseline: 312 tests passed across 16 test files. |
+| Test suite | Passed | Latest verified code baseline: 315 tests passed across 16 test files. |
 | Build | Passed | ESM, CommonJS, and TypeScript declaration output built successfully. |
 | Type-check | Passed | `npx tsc --noEmit -p tsconfig.json` passed. |
 | Lint | Blocked | Existing `npm run lint` script fails because ESLint is not installed/configured. |
