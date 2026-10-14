@@ -49,6 +49,22 @@ describe('Form', () => {
       expect(form.checkValid()).toBe(true)
     })
 
+    it('should validate conditional required fields after bulk assignment', () => {
+      class ConditionalForm extends Form {
+        country = new Field(StringType)
+        region = new Field(StringType, null, {
+          isRequired: (form?: any) => form?.country?.valueClear === 'US'
+        })
+      }
+
+      const form = new ConditionalForm()
+      form.fields = { country: 'US', region: null }
+      expect(form.isValid).toBe(false)
+
+      form.country.rawValue = 'CA'
+      expect(form.checkValid()).toBe(true)
+      expect(form.isValid).toBe(true)
+    })
     it('should return false if any field is invalid', () => {
       const form = new TestForm()
       form.fields = { name: 'John', age: null }
@@ -181,6 +197,14 @@ describe('Form', () => {
       expect(form.isValid).toBe(false)
     })
 
+    it('should return false from checkValid when global errors exist', () => {
+      const form = new TestForm()
+      form.fields = { name: 'John', age: 25 }
+      form.setGlobalError('server', 'Request rejected')
+
+      expect(form.checkValid()).toBe(false)
+      expect(form.isValid).toBe(false)
+    })
     it('should be false when has global errors', () => {
       const form = new TestForm()
       form.fields = { name: 'John', age: 25 }
