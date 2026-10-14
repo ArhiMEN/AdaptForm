@@ -32,7 +32,9 @@ Release status: Not released; npm publication is not authorized by this plan.
 | Repository and branch | Passed | Branch created from `master`; no existing branch changed. |
 | Test suite | Passed | 310 tests passed across 16 test files in GitHub Actions. |
 | Build | Passed | ESM, CommonJS, and declaration output built successfully. |
-| Type-check | Passed | `npx tsc --noEmit -p tsconfig.json` passed. |\n| Lint | Blocked | Existing `npm run lint` script fails because ESLint is not installed/configured. |\n| Dependency audit | Warning | `npm install` reported 11 vulnerabilities: 2 moderate, 6 high, 3 critical. Needs triage; no automatic fixes applied. |
+| Type-check | Passed | `npx tsc --noEmit -p tsconfig.json` passed. |
+| Lint | Blocked | Existing `npm run lint` script fails because ESLint is not installed/configured. |
+| Dependency audit | Warning | `npm install` reported 11 vulnerabilities: 2 moderate, 6 high, 3 critical. Needs triage; no automatic fixes applied. |
 | PlayLease integration tests | Not run | Review only; no application runtime was started. |
 
 ## Decisions and constraints
