@@ -3,6 +3,7 @@ import { Form } from '@core/Form'
 import { Field } from '@core/fields/Field'
 import { StringType } from '@core/types/StringType'
 import { NumberType } from '@core/types/NumberType'
+import { DateType } from '@core/types/DateType'
 import { ArrayField } from '@core/fields/ArrayField'
 import { ArrayFormField } from '@core/fields/ArrayFormField'
 
