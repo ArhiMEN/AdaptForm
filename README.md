@@ -305,7 +305,7 @@ const schema = ErrorsSchema.forArray(
   new ErrorsSchema(),
   'items',
   (key) => {
-    const match = key.match(/<(\\d+)>/);
+    const match = key.match(/<(\d+)>/);
     return match ? Number(match[1]) : -1;
   }
 );
