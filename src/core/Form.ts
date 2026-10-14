@@ -300,18 +300,33 @@ export abstract class Form {
 
   // Get all values in JSON-compatible form.
   toJSON(): Record<string, any> {
-    const data = this.fieldsValue
-
-    // Convert dates to strings for JSON.
     const json: Record<string, any> = {}
-    for (const [key, value] of Object.entries(data)) {
-      if (value instanceof Date) {
-        json[key] = value.toISOString()
-      } else {
-        json[key] = value
-      }
+
+    for (const [key, value] of Object.entries(this.fieldsValue)) {
+      json[key] = this.serializeJsonValue(value)
     }
 
     return json
+  }
+
+  private serializeJsonValue(value: any): any {
+    if (value instanceof Date) {
+      return value.toISOString()
+    }
+
+    if (Array.isArray(value)) {
+      return value.map(item => this.serializeJsonValue(item))
+    }
+
+    if (value !== null && typeof value === 'object') {
+      const prototype = Object.getPrototypeOf(value)
+      if (prototype === Object.prototype || prototype === null) {
+        return Object.fromEntries(
+          Object.entries(value).map(([key, nestedValue]) => [key, this.serializeJsonValue(nestedValue)])
+        )
+      }
+    }
+
+    return value
   }
 }
