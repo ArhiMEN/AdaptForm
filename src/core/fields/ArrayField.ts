@@ -7,6 +7,7 @@ export class ArrayField<T = any> {
   protected options: ArrayFieldOptions
   protected _items: Field<T>[] = []
   protected _errors: string[] = []
+  private _hasValidationResult = false
 
   isTouched: boolean = false
 
@@ -29,15 +30,15 @@ export class ArrayField<T = any> {
   set itemsValue(items: T[]) {
     this.clear()
 
-    for (const i of items) {
-      this.add(i, false)
+    for (const item of items) {
+      this.add(item, false)
     }
 
     this.checkValid()
   }
 
   get itemsValue(): (T | null)[] {
-    return this._items.map(i => i.valueClear)
+    return this._items.map(item => item.valueClear)
   }
 
   get items(): Field<T>[] {
@@ -82,6 +83,7 @@ export class ArrayField<T = any> {
   }
 
   checkValid(form?: Form): boolean {
+    this._hasValidationResult = true
     this._errors = []
 
     if (this.isRequired(form) && this._items.length === 0) {
@@ -116,7 +118,7 @@ export class ArrayField<T = any> {
     }
 
     if (this.options.validate) {
-      const values = this._items.map(i => i.valueClear)
+      const values = this._items.map(item => item.valueClear)
       const result = this.options.validate(values, form)
 
       if (result === false) {
@@ -140,11 +142,10 @@ export class ArrayField<T = any> {
   }
 
   get isValid(): boolean {
-    // An array with its own errors is invalid.
+    if (!this._hasValidationResult) return false
     if (this._errors.length > 0) return false
-    
-    // All items must be valid (isValid === true).
-    return this._items.every(i => i.isValid === true)
+
+    return this._items.every(item => item.isValid === true)
   }
 
   get error(): string {
@@ -164,8 +165,9 @@ export class ArrayField<T = any> {
   }
 
   reset(): void {
-    this._items.forEach(i => i.reset())
+    this._items.forEach(item => item.reset())
     this._errors = []
+    this._hasValidationResult = false
     this.isTouched = false
   }
 }
