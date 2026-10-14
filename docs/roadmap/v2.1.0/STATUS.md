@@ -2,7 +2,7 @@
 
 ## Current stage
 
-**Stage 1 — Baseline audit and test setup**
+**Stage 2 — Core correctness and type-safety improvements**
 
 Branch: `v2.1.0`  
 Baseline branch: `master`  
@@ -27,22 +27,23 @@ Release status: Not released; npm publication is not authorized by this plan.
 - [x] Add regression coverage for array error mapping, inferred field/array/nested-form value types, and Date serialization.
 - [ ] Turn remaining source-review findings into minimal reproducible regression tests.
 
-## Latest changes awaiting CI verification
+## Recent implementation notes
 
 - Updated `ErrorsSchema.forArray()` to use its custom index extractor, accept bracket/angle-bracket/dotted index notation, and apply the supplied item schema's field mappings and value transformers.
-- Added regression tests for the above behaviors. The newest GitHub Actions run must pass before these changes are considered verified.
+- Added regression tests for the above behaviors. The implementation and regression tests passed in GitHub Actions.
 
 ## Latest verified code baseline
 
 The run for commit `438a9ba07c6102a134db158c03e40fa48a2a44e0` passed: 312 tests across 16 files, ESM/CommonJS/declaration builds, and `tsc --noEmit`. This baseline includes the new array-schema behavior, typed `fieldsValue`, nullable `valueClear`, and Date serialization tests.
 
-The lockfile metadata has since been aligned with `package.json`, and CI has been switched to `npm ci`; those newest commits are awaiting their own workflow result.
+The lockfile metadata was aligned with `package.json`, and the updated `npm ci` workflow passed in GitHub Actions (run `38523206183`).
 
 ## Verification log
 
 | Check | Status | Notes |
 |---|---|---|
 | Repository and branch | Passed | Branch created from `master`; no existing branch changed. |
+| Reproducible install | Passed | `npm ci` succeeded with the aligned lockfile. |
 | Test suite | Passed | Latest verified code baseline: 312 tests passed across 16 test files. |
 | Build | Passed | ESM, CommonJS, and TypeScript declaration output built successfully. |
 | Type-check | Passed | `npx tsc --noEmit -p tsconfig.json` passed. |
@@ -59,7 +60,6 @@ The lockfile metadata has since been aligned with `package.json`, and CI has bee
 
 ## Next actions
 
-1. Verify that the new `npm ci` workflow succeeds with the aligned lockfile.
-2. Repair the pre-existing `npm run lint` command without introducing an inconsistent lockfile.
-3. Continue the English-language audit, preserving a coordinated migration plan for Russian default validation messages used by PlayLease.
-4. Review validity getter side effects and remaining type-safety gaps.
+1. Repair the pre-existing `npm run lint` command without introducing an inconsistent lockfile.
+2. Continue the English-language audit, preserving a coordinated migration plan for Russian default validation messages used by PlayLease.
+3. Review validity getter side effects and remaining type-safety gaps.
