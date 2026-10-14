@@ -7,18 +7,18 @@ Improve the reliability, type safety, maintainability, and release confidence of
 ## Workstreams
 
 ### 1. Baseline and repository hygiene
-- [ ] Inspect the current public API, package exports, build configuration, and existing test coverage.
+- [x] Inspect the current public API, package exports, build configuration, and existing test coverage.
 - [x] Run the existing test suite, build, and TypeScript type-check through GitHub Actions; record the actual results.
-- [ ] Repair the pre-existing `npm run lint` command: ESLint is not installed or configured.
+- [x] Repair `npm run lint` with ESLint flat config and TypeScript ESLint; lint source and tests in CI.
 - [x] Remove the machine-specific absolute path from Vitest configuration and use a portable project-relative path.
 - [ ] Audit repository-authored text for English consistency.
 
 ### 2. Core correctness
-- [ ] Review field validation and conditional-required behavior when dependent fields change.
-- [ ] Make validity reads predictable and avoid hidden repeated validation side effects.
+- [x] Validate conditional-required rules after bulk assignment and document explicit `checkValid()` use after individual dependent-field changes.
+- [x] Make `isValid` reads side-effect-free; explicitly revalidate collections after mutations.
 - [ ] Review reset semantics, error lifecycle, and nested-form error propagation.
 - [x] Fix `ErrorsSchema.forArray()` to honor its custom index extractor and supplied item schema, with regression coverage.
-- [ ] Add regression tests before or alongside each fix.
+- [x] Add regression tests for the implemented validation, array-index, numeric precision, and regex correctness fixes.
 
 ### 3. Serialization contracts
 - [x] Define and test JSON serialization for primitives, arrays, nested forms, and Date values, including recursive Date conversion.
@@ -37,11 +37,11 @@ Improve the reliability, type safety, maintainability, and release confidence of
 - [ ] Keep existing PlayLease localization behavior compatible or document coordinated migration before changing message contracts.
 
 ### 6. Dependency health
-- [ ] Investigate the 11 npm audit findings reported during CI dependency installation (2 moderate, 6 high, 3 critical); identify direct/transitive causes and safe upgrades without blindly applying breaking fixes.
+- [x] Replace vulnerable transitive dependency versions with patched versions using reviewed overrides; `npm audit` and the lockfile vulnerability scan now report zero known vulnerabilities.
 
 ### 7. Release readiness
 - [ ] Expand regression and integration coverage for identified edge cases.
-- [ ] Verify tests, build, lint, and package contents in the available environment.
+- [x] Verify lint, tests, build, and TypeScript type-check through GitHub Actions; package-content review remains outstanding.
 - [ ] Update README and CHANGELOG in English to reflect implemented behavior only.
 - [ ] Review the final diff and document remaining risks.
 - [ ] Do not publish or tag a release without explicit user approval.

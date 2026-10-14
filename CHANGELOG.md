@@ -6,12 +6,18 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Configure ESLint for TypeScript source and tests, and add dependency auditing to CI.
 - Export `ErrorsSchema` from the package entry point.
 - Infer `Form.fieldsValue` from declared `Field`, `ArrayField`, and `ArrayFormField` properties.
 - Document array error mapping and recursive JSON serialization behavior.
 
 ### Changed
 
+- Upgrade Vitest, Vite, ESLint, and TypeScript lint tooling; pin patched transitive dependencies and run CI on Node.js 22.
+- `Form.fields` validates after bulk assignment; `Form.checkValid()` includes global server errors.
+- Array collections revalidate on mutation, validity reads avoid hidden repeated validation, and invalid removal indices are ignored.
+- Constructor defaults start untouched; whitespace-only strings are treated as empty; global/sticky regex validation is deterministic.
+- Number parsing rejects blank/non-finite values, and decimal precision checks no longer silently round numeric input.
 - `Field.valueClear` now exposes its actual `T | null` type; `ArrayField.itemsValue` reflects nullable item values.
 - `Form.toFormData()` JSON-encodes arrays and nested objects and omits `null`/`undefined` values.
 - `Form.toJSON()` recursively converts `Date` values to ISO 8601 strings, including dates inside arrays and plain objects.

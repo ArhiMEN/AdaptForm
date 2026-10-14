@@ -17,7 +17,7 @@ Release status: Not released; npm publication is not authorized by this plan.
 - [x] Identified priority areas from source review: type inference, serialization, validation side effects, array error schema composition, and localization compatibility.
 - [x] Confirmed PlayLease consumes `adaptform@^2.0.5` and has a custom adapter that currently translates Russian validation messages.
 
-## In progress
+## Completed
 
 - [x] Establish the executable test/build/type-check baseline through GitHub Actions.
 - [x] Inspect test configuration and replace the machine-specific absolute alias path with a portable path.
@@ -25,18 +25,19 @@ Release status: Not released; npm publication is not authorized by this plan.
 - [x] Replace the machine-specific Vitest alias with a portable path derived from `import.meta.url`.
 - [x] Add regression tests for default and custom array-error index extraction, dotted index notation, and item-schema field mappings.
 - [x] Add regression coverage for array error mapping, inferred field/array/nested-form value types, and Date serialization.
-- [ ] Turn remaining source-review findings into minimal reproducible regression tests.
+- [x] Add regression tests for regex statefulness, blank/non-finite numbers, decimal precision, conditional required fields, collection mutation, and invalid removal indices.
+- [x] Configure ESLint and add a CI dependency audit.
 
 ## Recent implementation notes
 
 - Updated `ErrorsSchema.forArray()` to honor custom index extractors, use explicit bracket/dotted indices by default, apply item-schema mappings and transformers, and reject malformed default index keys.
-- Added regression tests for the above behaviors, the single-call fallback contract, public exports, inferred types, and recursive Date serialization. The implementation and regression tests passed in GitHub Actions.
+- Added regression tests for the above behaviors, the single-call fallback contract, public exports, inferred types, recursive Date serialization, conditional validation, regex determinism, numeric edge cases, and collection mutation. The latest verified run passed 329 tests across 16 files.
 
 ## Latest verified code baseline
 
-The run for commit `ff6a05834e1e221d658c45755d4b6483917e29ac` passed: 315 tests across 16 files, ESM/CommonJS/declaration builds, and `tsc --noEmit`. This includes array error mapping and transformers, fallback invocation, typed form values, and recursive Date serialization.
+The run for commit `e6d1ae883ff3cdc31d7306e034ff648645a66f74` passed: 329 tests across 16 files, ESLint, dependency audit, ESM/CommonJS/declaration builds, and `tsc --noEmit`.
 
-The lockfile metadata was aligned with `package.json`, and the updated `npm ci` workflow passed in GitHub Actions (run `38523206183`).
+The lockfile is aligned with `package.json`. `npm audit --audit-level=moderate` reported zero vulnerabilities, and the independent lockfile scan also found zero known OSV vulnerabilities.
 
 ## Verification log
 
@@ -44,11 +45,11 @@ The lockfile metadata was aligned with `package.json`, and the updated `npm ci` 
 |---|---|---|
 | Repository and branch | Passed | Branch created from `master`; no existing branch changed. |
 | Reproducible install | Passed | `npm ci` succeeded with the aligned lockfile. |
-| Test suite | Passed | Latest verified code baseline: 315 tests passed across 16 test files. |
+| Test suite | Passed | Latest verified baseline: 329 tests passed across 16 test files. |
 | Build | Passed | ESM, CommonJS, and TypeScript declaration output built successfully. |
 | Type-check | Passed | `npx tsc --noEmit -p tsconfig.json` passed. |
-| Lint | Blocked | Existing `npm run lint` script fails because ESLint is not installed/configured. |
-| Dependency audit | Warning | `npm install` reported 11 vulnerabilities: 2 moderate, 6 high, 3 critical. Needs triage; no automatic fixes applied. |
+| Lint | Passed | ESLint flat config checks `src` and `tests`; `npm run lint` passes. |
+| Dependency audit | Passed | `npm audit --audit-level=moderate` and the lockfile vulnerability scan report zero known vulnerabilities. Patched transitive dependencies are pinned with overrides. |
 | PlayLease integration tests | Not run | Review only; no application runtime was started. |
 
 ## Decisions and constraints
@@ -60,6 +61,7 @@ The lockfile metadata was aligned with `package.json`, and the updated `npm ci` 
 
 ## Next actions
 
-1. Repair the pre-existing `npm run lint` command without introducing an inconsistent lockfile.
-2. Continue the English-language audit, preserving a coordinated migration plan for Russian default validation messages used by PlayLease.
-3. Review validity getter side effects and remaining type-safety gaps.
+1. Review reset semantics and remaining type-safety gaps, including avoidable `any` types.
+2. Finish the repository-wide English-language audit, excluding default validation messages as explicitly deferred.
+3. Leave PlayLease integration and validation-message localization unchanged for the later coordinated pass.
+4. Review package contents and final diff before release readiness.
