@@ -28,6 +28,19 @@ describe('NumberType', () => {
       expect(type.cast(undefined)).toBeNull()
     })
 
+    it('should return null for blank numeric strings', () => {
+      const type = new NumberType()
+      expect(type.cast('')).toBeNull()
+      expect(type.cast('   ')).toBeNull()
+    })
+
+    it('should reject non-finite numbers', () => {
+      const type = new NumberType()
+      expect(type.cast(Infinity)).toBeNull()
+      expect(type.cast(-Infinity)).toBeNull()
+      expect(type.cast('Infinity')).toBeNull()
+      expect(type.validate(Infinity)).not.toEqual([])
+    })
     it('should return null for NaN', () => {
       const type = new NumberType()
       expect(type.cast(NaN)).toBeNull()
