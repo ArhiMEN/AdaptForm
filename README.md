@@ -36,7 +36,7 @@ Luxon integration is optional:
 npm install luxon
 ```
 
-The [interactive demo](https://arhimen.github.io/AdaptForm/) runs from this repository's `v2.1.0` source branch. The npm package version remains independent until a release is published.
+The [interactive demo](https://arhimen.github.io/AdaptForm/) runs from this repository's `v2.1.0` source branch. This branch is prepared with package version `2.1.0`; npm continues to serve the last published version until the maintainer publishes the release.
 
 ## Quick start
 
