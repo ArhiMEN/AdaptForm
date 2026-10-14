@@ -5,49 +5,51 @@ import {isValidArrayIndex} from "@core/fields/arrayUtils"
 export class ArrayFormField<T extends Form = Form> {
   private _forms: T[] = []
   private _errors: string[] = []
+  private _hasValidationResult = false
 
   isTouched: boolean = false
 
   constructor(
     private FormConstructor: new () => T,
     private options: ArrayFormFieldOptions = {},
-    initial: any[] = []
+    initial: unknown[] = []
   ) {
     this._forms = initial.map(data => {
       const form = new this.FormConstructor()
-      form.fields = data
+      form.fields = data as Record<string, unknown>
       return form
     })
     this.checkValid()
   }
 
-
   // ===== value =====
 
-  set forms(forms: any[]) {
+  set forms(forms: unknown[]) {
     this.clear()
 
-    for (const f of forms) {
-      this.add(f, false)
+    for (const formData of forms) {
+      this.add(formData, false)
     }
 
     this.checkValid()
   }
 
-  get forms(): Form[] {
+  get forms(): T[] {
     return this._forms
   }
 
-  get formsFieldsValue(): any[] {
-    return this._forms.map(i => i.fieldsValue)
+  get formsFieldsValue(): unknown[] {
+    return this._forms.map(form => form.fieldsValue)
   }
 
   // ===== actions =====
 
-  add(data?: any, force_check: boolean = true): T {
+  add(data?: unknown, force_check: boolean = true): T {
     const form = new this.FormConstructor()
 
-    if (data) form.fields = data
+    if (data !== undefined && data !== null) {
+      form.fields = data as Record<string, unknown>
+    }
 
     this.isTouched = true
     this._forms.push(form)
@@ -70,8 +72,9 @@ export class ArrayFormField<T extends Form = Form> {
   }
 
   reset(): void {
-    this._forms.forEach(f => f.reset())
+    this._forms.forEach(form => form.reset())
     this._errors = []
+    this._hasValidationResult = false
     this.isTouched = false
   }
 
@@ -89,9 +92,10 @@ export class ArrayFormField<T extends Form = Form> {
   }
 
   checkValid(form?: Form): boolean {
+    this._hasValidationResult = true
     this._errors = []
 
-    if (this.isRequired(form) && this.forms.length === 0) {
+    if (this.isRequired(form) && this._forms.length === 0) {
       this._errors.push(
         this.options.messages?.isRequired ??
         "Добавьте хотя бы один элемент"
@@ -117,13 +121,13 @@ export class ArrayFormField<T extends Form = Form> {
 
     let valid = true
 
-    for (const form of this.forms) {
-      const ok = form.checkValid(form)
+    for (const nestedForm of this._forms) {
+      const ok = nestedForm.checkValid(nestedForm)
       if (!ok) valid = false
     }
 
     if (this.options.validate) {
-      const result = this.options.validate(this.forms, form)
+      const result = this.options.validate(this._forms, form)
 
       if (result === false) {
         this._errors.push(
@@ -147,10 +151,9 @@ export class ArrayFormField<T extends Form = Form> {
   }
 
   get isValid(): boolean {
-    // An array of forms with its own errors is invalid.
+    if (!this._hasValidationResult) return false
     if (this._errors.length > 0) return false
-    
-    // Every nested form must be valid (checkValid() === true).
+
     return this._forms.every(form => form.isValid)
   }
 
