@@ -319,14 +319,14 @@ export class ErrorsSchema {
     fieldName: string
     matchedBy: 'static' | 'dynamic' | 'fallback'
   } | null {
-    // Проверяем статические правила (Map)
+    // Check static rules (Map).
     if (this._staticRules.has(key)) {
       const mapping = this._staticRules.get(key)!
       const fieldName = typeof mapping === 'function' ? mapping(value) : mapping
       return fieldName ? {fieldName, matchedBy: 'static'} : null
     }
 
-    // Проверяем динамические правила
+    // Check dynamic rules.
     for (const rule of this._dynamicRules) {
       const match = key.match(rule.pattern)
       if (match) {
@@ -347,12 +347,12 @@ export class ErrorsSchema {
   }
 
   private findMapping(key: string, value: any): ErrorFieldMapping | null {
-    // Проверяем статические правила (Map)
+    // Check static rules (Map).
     if (this._staticRules.has(key)) {
       return this._staticRules.get(key)!
     }
 
-    // Проверяем динамические правила
+    // Check dynamic rules.
     for (const rule of this._dynamicRules) {
       const match = key.match(rule.pattern)
       if (match) {
@@ -375,7 +375,7 @@ export class ErrorsSchema {
 }
 
 /**
- * Базовая схема по умолчанию
+ * Default base schema.
  */
 export const DefaultErrorsSchema = new ErrorsSchema()
   .fallback((key) => key)
