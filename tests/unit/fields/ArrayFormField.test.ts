@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { ArrayFormField } from '@core/fields/ArrayFormField'
 import { Form } from '@core/Form'
 import { Field } from '@core/fields/Field'
@@ -103,6 +103,23 @@ describe('ArrayFormField', () => {
       expect(arrayFormField.isValid).toBe(false)
     })
 
+    it('should refresh minForms validity after each add without manual validation', () => {
+      const arrayFormField = new ArrayFormField(TestForm, { minForms: 2 })
+      arrayFormField.add({ name: 'John' })
+      expect(arrayFormField.isValid).toBe(false)
+      arrayFormField.add({ name: 'Jane' })
+      expect(arrayFormField.isValid).toBe(true)
+    })
+
+    it('should not rerun custom validation when reading isValid', () => {
+      const validate = vi.fn(() => true)
+      const arrayFormField = new ArrayFormField(TestForm, { validate }, [{ name: 'John' }])
+      expect(validate).toHaveBeenCalledTimes(1)
+
+      expect(arrayFormField.isValid).toBe(true)
+      expect(arrayFormField.isValid).toBe(true)
+      expect(validate).toHaveBeenCalledTimes(1)
+    })
     it('should validate minForms', () => {
       const arrayFormField = new ArrayFormField(TestForm, { minForms: 2 })
       // При создании пустой массив isValid = false из-за minForms
