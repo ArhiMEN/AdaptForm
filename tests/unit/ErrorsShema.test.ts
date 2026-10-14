@@ -460,6 +460,23 @@ describe('ErrorSchema', () => {
       })
     })
 
+    it('should apply item-schema mappings to array errors', () => {
+      const itemSchema = new ErrorsSchema()
+        .staticKey('email', 'emailAddress')
+        .dynamicKey(/^(.+)_error$/, (match) => match[1])
+
+      const schema = ErrorsSchema.forArray(itemSchema, 'accounts')
+      const result = schema.parseErrors({
+        'accounts[0].email': 'Invalid email',
+        'accounts[1].password_error': 'Too short'
+      })
+
+      expect(result).toEqual({
+        'accounts.0.emailAddress': 'Invalid email',
+        'accounts.1.password': 'Too short'
+      })
+    })
+
     it('should use a custom index extractor for non-standard index notation', () => {
       const schema = ErrorsSchema.forArray(
         new ErrorsSchema(),
