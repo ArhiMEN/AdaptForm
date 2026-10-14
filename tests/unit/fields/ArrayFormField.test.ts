@@ -177,6 +177,22 @@ describe('ArrayFormField', () => {
         { name: null },
         { name: null }
       ])
+  
+
+    it('should clear collection errors and require validation after reset', () => {
+      const arrayFormField = new ArrayFormField(TestForm, { minForms: 1 })
+
+      expect(arrayFormField.isValid).toBe(false)
+      expect(arrayFormField.errors).not.toEqual([])
+
+      arrayFormField.reset()
+
+      expect(arrayFormField.errors).toEqual([])
+      expect(arrayFormField.isValid).toBe(false)
+
+      expect(arrayFormField.checkValid()).toBe(false)
+      expect(arrayFormField.errors).not.toEqual([])
     })
+  })
   })
 })
