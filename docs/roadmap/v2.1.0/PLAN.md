@@ -9,7 +9,7 @@ Improve the reliability, type safety, maintainability, and release confidence of
 ### 1. Baseline and repository hygiene
 - [ ] Inspect the current public API, package exports, build configuration, and existing test coverage.
 - [ ] Run the existing test suite, build, and lint checks; record the actual baseline results.
-- [ ] Remove machine-specific paths from tooling configuration and use portable project-relative configuration.
+- [x] Remove the machine-specific absolute path from Vitest configuration and use a portable project-relative path.
 - [ ] Audit repository-authored text for English consistency.
 
 ### 2. Core correctness
@@ -21,7 +21,7 @@ Improve the reliability, type safety, maintainability, and release confidence of
 
 ### 3. Serialization contracts
 - [ ] Define and test JSON serialization for primitives, arrays, dates, nested forms, nulls, and optional values.
-- [ ] Define and test FormData serialization, including the behavior of arrays, objects, dates, and files.
+- [ ] Define and test FormData serialization, including the behavior of arrays, objects, dates, and files. (Implementation and regression tests started; execution still pending.)
 - [ ] Preserve existing supported behavior or document migration steps for intentional changes.
 
 ### 4. Type safety
