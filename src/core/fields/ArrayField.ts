@@ -35,7 +35,7 @@ export class ArrayField<T = any> {
     this.checkValid()
   }
 
-  get itemsValue(): T[] {
+  get itemsValue(): (T | null)[] {
     return this._items.map(i => i.valueClear)
   }
 
