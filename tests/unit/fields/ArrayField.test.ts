@@ -75,6 +75,14 @@ describe('ArrayField', () => {
       expect(arrayField.itemsValue).toEqual(['a', 'c'])
     })
 
+    it('should ignore invalid removal indices', () => {
+      const arrayField = new ArrayField((value?: string) => new Field(StringType, value), {}, ['first', 'last'])
+      arrayField.remove(-1)
+      arrayField.remove(10)
+      arrayField.remove(1.5)
+      expect(arrayField.itemsValue).toEqual(['first', 'last'])
+    })
+
     it('should validate after remove', () => {
       const factory = (value?: number) => new Field(NumberType, value, { gt: 0 })
       const arrayField = new ArrayField(factory, { minItems: 2 }, [1, 2, 3])
