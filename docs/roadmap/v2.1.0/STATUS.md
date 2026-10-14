@@ -7,8 +7,8 @@
 Branch: `v2.1.0`  
 Baseline branch: `master`  
 Starting package version: `2.0.5`  
-Package version in this branch: `2.0.5` (intentionally unchanged until release approval)  
-Release status: Not released; npm publication and release tagging are not authorized.
+Package version in this branch: `2.1.0` (prepared for maintainer release; not published)  
+Release status: Release candidate prepared; npm publication, GitHub release, and release tagging have not been performed.
 
 ## Completed
 
@@ -27,6 +27,10 @@ Release status: Not released; npm publication and release tagging are not author
 - [x] Added regression tests for validation batching, reset behavior, nested error clearing, nullable collection values, nested Date serialization, and Blob/File FormData handling.
 - [x] Completed the English-language audit for repository-authored documentation, comments, and test descriptions. Existing user-facing validation/error text and type names remain unchanged for a separate localization pass.
 - [x] Added an npm package content check and integrated it into CI.
+- [x] Created a styled interactive demo at `demo/`, built directly against the branch source.
+- [x] Added a GitHub Pages deployment workflow and independent demo type-check/build checks in CI.
+- [x] Linked the demo from README, CHANGELOG, and project tracking; added deployment instructions in `docs/DEMO.md`.
+- [x] Prepared `package.json` and `package-lock.json` with version `2.1.0` without publishing.
 - [x] Updated README, CHANGELOG, and this tracker to describe the implemented behavior and deferred work.
 - [x] Reviewed the branch comparison against `master`: no files are deleted, and no release, tag, or published package version was changed.
 
@@ -59,7 +63,7 @@ The plan-only commit `70322702b643057191a378a91cce468b09e1f728` also passed CI. 
 
 - Legacy callback APIs still contain some `any` types where replacing them with `unknown` would cause a source-compatibility change. Form value inference, serialization results, and nested collection values have been made more precise without broad callback API changes.
 - No PlayLease application runtime or integration suite was run, by explicit scope decision.
-- The published npm version remains `2.0.5`; this branch has not been released.
+- The latest published npm version remains `2.0.5`; this branch is prepared as `2.1.0` but has not been released.
 
 ## Final checklist
 
@@ -69,4 +73,6 @@ The plan-only commit `70322702b643057191a378a91cce468b09e1f728` also passed CI. 
 - [x] No duplicate implementation was added where existing logic could be improved.
 - [x] Repository and branch safety constraints were preserved.
 - [x] Confirm the final branch CI after the last code and documentation updates.
-- [ ] Obtain explicit approval before bumping the package version, tagging, or publishing.
+- [x] Prepare version `2.1.0` in package metadata and changelog without publishing or tagging.
+- [ ] Confirm GitHub Pages is enabled and verify the live demo URL after deployment.
+- [ ] Obtain explicit approval before creating a GitHub release, tag, or npm publication.
