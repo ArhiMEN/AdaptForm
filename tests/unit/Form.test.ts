@@ -4,6 +4,7 @@ import { Field } from '@core/fields/Field'
 import { StringType } from '@core/types/StringType'
 import { NumberType } from '@core/types/NumberType'
 import { ArrayField } from '@core/fields/ArrayField'
+import { ArrayFormField } from '@core/fields/ArrayFormField'
 
 describe('Form', () => {
   class TestForm extends Form {
@@ -213,7 +214,7 @@ describe('Form', () => {
       expect(formData.get('age')).toBe('25')
     })
 
-    it('should handle Date objects as numbers', () => {
+    it('should preserve numeric timestamps as strings', () => {
       class DateForm extends Form {
         date = new Field(NumberType)
       }
@@ -221,6 +222,36 @@ describe('Form', () => {
       form.fields = { date: 1672531200000 }
       const formData = form.toFormData()
       expect(formData.get('date')).toBe('1672531200000')
+    })
+
+    it('should JSON-encode arrays and nested form values', () => {
+      class ItemForm extends Form {
+        name = new Field(StringType)
+      }
+
+      class CollectionForm extends Form {
+        tags = new ArrayField((value?: string) => new Field(StringType, value))
+        items = new ArrayFormField(ItemForm)
+      }
+
+      const form = new CollectionForm()
+      form.fields = {
+        tags: ['alpha', 'beta'],
+        items: [{ name: 'Ada' }],
+      }
+
+      const formData = form.toFormData()
+      expect(formData.get('tags')).toBe('["alpha","beta"]')
+      expect(formData.get('items')).toBe('[{"name":"Ada"}]')
+    })
+
+    it('should omit null and undefined values', () => {
+      const form = new TestForm()
+      form.fields = { name: null, age: null }
+
+      const formData = form.toFormData()
+      expect(formData.has('name')).toBe(false)
+      expect(formData.has('age')).toBe(false)
     })
   })
 
