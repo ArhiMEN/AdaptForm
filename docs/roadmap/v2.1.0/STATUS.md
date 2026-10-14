@@ -32,8 +32,9 @@ Release status: Not released; npm publication and release tagging are not author
 
 ## Latest verified implementation
 
-CI run: [38527915110](https://github.com/ArhiMEN/AdaptForm/actions/runs/38527915110)  
-Verified code commit: `0d8ea2783a3b17c5ce62ac9a85ae19832d12d32f`
+CI run: [38528184542](https://github.com/ArhiMEN/AdaptForm/actions/runs/38528184542)  
+Verified branch commit: `3fedf9d3b2b1bc1563f371c31bc6b13bf817bd49`  
+The run passed after the final code and documentation changes; the later status-only bookkeeping commit does not change implementation.
 
 | Check | Status | Result |
 |---|---|---|
@@ -67,5 +68,5 @@ The plan-only commit `70322702b643057191a378a91cce468b09e1f728` also passed CI. 
 - [x] Documentation and tracking files are updated in English, excluding deferred user-facing validation/error text.
 - [x] No duplicate implementation was added where existing logic could be improved.
 - [x] Repository and branch safety constraints were preserved.
-- [ ] Confirm the final branch CI after the last documentation update.
+- [x] Confirm the final branch CI after the last code and documentation updates.
 - [ ] Obtain explicit approval before bumping the package version, tagging, or publishing.
