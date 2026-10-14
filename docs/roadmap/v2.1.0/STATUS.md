@@ -37,9 +37,9 @@ Release status: Release candidate prepared; npm publication, GitHub release, and
 
 ## Latest verified implementation
 
-CI run: [38528184542](https://github.com/ArhiMEN/AdaptForm/actions/runs/38528184542)  
-Verified branch commit: `3fedf9d3b2b1bc1563f371c31bc6b13bf817bd49`  
-The run passed after the final code and documentation changes; the later status-only bookkeeping commit does not change implementation.
+CI run: [38532435860](https://github.com/ArhiMEN/AdaptForm/actions/runs/38532435860)  
+Verified implementation commit: `9c4d6700001ac60fe194249c57088454fb083401`  
+The final code checks passed, including demo type-check and production build. The subsequent status-only bookkeeping update does not change implementation.
 
 | Check | Status | Result |
 |---|---|---|
@@ -50,8 +50,9 @@ The run passed after the final code and documentation changes; the later status-
 | Build | Passed | ESM, CommonJS, and TypeScript declarations |
 | Type-check | Passed | `npx tsc --noEmit -p tsconfig.json` |
 | Package content | Passed | 18 packaged files; required entry points/declarations present; source, tests, docs, and GitHub workflow files excluded |
+| Demo | Passed | Type-check, Vite production build, and output structure verified |
 
-The plan-only commit `70322702b643057191a378a91cce468b09e1f728` also passed CI. Documentation updates after the verified implementation are checked by the normal branch CI workflow.
+The final CI run verified 339 tests across 16 files, both dependency audits (zero known vulnerabilities), lint, package build, npm package contents, source type-check, demo type-check, and demo production build. The GitHub Pages deploy job separately remains blocked until Pages is enabled in repository settings.
 
 ## Deferred follow-up — outside this branch's acceptance criteria
 
