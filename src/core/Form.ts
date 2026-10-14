@@ -4,7 +4,7 @@ import {ArrayFormField} from "@core/fields/ArrayFormField"
 import {DefaultErrorsSchema, ErrorsSchema} from "@core/ErrorsShema"
 
 export type FormFieldValue<TField> =
-  TField extends Field<infer TValue, any> ? TValue | null :
+  TField extends Field<infer TValue, infer _Options> ? TValue | null :
   TField extends ArrayField<infer TValue> ? (TValue | null)[] :
   TField extends ArrayFormField<infer TForm>
     ? TForm extends Form ? FormFieldsValue<TForm>[] : unknown[]
@@ -12,9 +12,9 @@ export type FormFieldValue<TField> =
 
 export type FormFieldsValue<TForm extends Form> = {
   [K in keyof TForm as TForm[K] extends
-    | Field<any, any>
-    | ArrayField<any>
-    | ArrayFormField<any>
+    | Field<infer _Value, infer _Options>
+    | ArrayField<infer _ArrayValue>
+    | ArrayFormField<infer _NestedForm>
     ? K
     : never]: FormFieldValue<TForm[K]>
 }
@@ -51,7 +51,7 @@ export abstract class Form {
   }
 
   get fieldsValue(): FormFieldsValue<this> {
-    const data: Record<string, any> = {}
+    const data: Record<string, unknown> = {}
     const fields = this._fields
 
     for (const key of Object.keys(fields)) {
@@ -313,8 +313,8 @@ export abstract class Form {
   }
 
   // Get all values in JSON-compatible form.
-  toJSON(): Record<string, any> {
-    const json: Record<string, any> = {}
+  toJSON(): Record<string, unknown> {
+    const json: Record<string, unknown> = {}
 
     for (const [key, value] of Object.entries(this.fieldsValue)) {
       json[key] = this.serializeJsonValue(value)
@@ -323,7 +323,7 @@ export abstract class Form {
     return json
   }
 
-  private serializeJsonValue(value: any): any {
+  private serializeJsonValue(value: unknown): unknown {
     if (value instanceof Date) {
       return value.toISOString()
     }
