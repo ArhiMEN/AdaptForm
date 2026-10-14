@@ -462,7 +462,8 @@ describe('ErrorSchema', () => {
       const result = schema.parseErrors({
         'accounts[0].email': 'Invalid email',
         'accounts[1].password': 'Too short',
-        'accounts.2.username': 'Taken'
+        'accounts.2.username': 'Taken',
+        'accounts2.email': 'Must not be mapped'
       })
 
       expect(result).toEqual({
