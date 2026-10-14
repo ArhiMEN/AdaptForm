@@ -325,11 +325,11 @@ describe('Form with ErrorsSchema', () => {
       const emptyForm = new SurveyForm()
 
       emptyForm.errors = {
-        'questions.0.text': 'Ошибка'
+        'questions.0.text': 'Error'
       }
 
       expect(emptyForm.globalErrors).toHaveProperty('questions.0.text')
-      expect(emptyForm.globalErrors['questions.0.text']).toBe('Ошибка')
+      expect(emptyForm.globalErrors['questions.0.text']).toBe('Error')
     })
   })
 
@@ -501,18 +501,18 @@ describe('Form with ErrorsSchema', () => {
       }
 
       form.errors = {
-        email: 'Email уже используется'
+        email: 'Email is already in use'
       }
 
       expect(form.fieldsValue).toEqual({
         email: 'test@example.com',
         password: 'password123'
       })
-      expect(form['_fields'].email.error).toBe('Email уже используется')
+      expect(form['_fields'].email.error).toBe('Email is already in use')
     })
   })
 
-  describe('Краевые случаи', () => {
+  describe('Edge cases', () => {
     it('should handle null values in errors', () => {
       const form = new LoginForm()
 
@@ -530,11 +530,11 @@ describe('Form with ErrorsSchema', () => {
       const form = new LoginForm()
 
       form.errors = {
-        'non_existent_field': 'Ошибка'
+        'non_existent_field': 'Error'
       }
 
       expect(form.globalErrors).toEqual({
-        'non_existent_field': 'Ошибка'
+        'non_existent_field': 'Error'
       })
     })
 
@@ -547,7 +547,7 @@ describe('Form with ErrorsSchema', () => {
 
       const manyErrors: Record<string, string> = {}
       for (let i = 0; i < 5; i++) {
-        manyErrors[`accounts.${i}.launcher_type`] = `Ошибка в аккаунте ${i}`
+        manyErrors[`accounts.${i}.launcher_type`] = `Error in account ${i}`
         manyErrors[`accounts.${i}.login`] = `Login is required ${i}`
       }
 
@@ -555,7 +555,7 @@ describe('Form with ErrorsSchema', () => {
 
       for (let i = 0; i < 5; i++) {
         const account = form.accounts.forms[i] as AccountForm
-        expect(account['_fields'].launcher_type.error).toBe(`Ошибка в аккаунте ${i}`)
+        expect(account['_fields'].launcher_type.error).toBe(`Error in account ${i}`)
         expect(account['_fields'].login.error).toBe(`Login is required ${i}`)
       }
     })
