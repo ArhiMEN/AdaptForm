@@ -1,6 +1,6 @@
 import {FieldPlugin} from "@core/plugins"
 
-// region messages
+// Region: validation messages
 
 export interface messagesOptions {
   isRequired?: string
@@ -51,9 +51,9 @@ export interface messagesArrayFormFieldOptions extends messagesOptions {
   maxForms?: string
 }
 
-// endregion
+// End region
 
-// region FieldTypes
+// Region: field types
 
 export interface FieldOptions {
   isRequired?: boolean | ((form?: any) => boolean)
@@ -70,16 +70,16 @@ export interface StringOptions extends FieldOptions {
 }
 
 export interface NumberOptions extends FieldOptions {
-  gt?: number // больше
-  ge?: number // больше или равно
-  lt?: number // меньше
-  le?: number // меньше или равно
+  gt?: number // greater than
+  ge?: number // greater than или равно
+  lt?: number // less than
+  le?: number // less than или равно
   messages?: messagesNumberOptions
 }
 
 export interface BooleanOptions extends FieldOptions {
-  mustBeTrue?: boolean   // если true — значение должно быть true
-  mustBeFalse?: boolean// если true — значение должно быть false
+  mustBeTrue?: boolean   // when true, the value must be true
+  mustBeFalse?: boolean// when true, the value must be false
   messages?: messagesBooleanOptions
 }
 
@@ -95,14 +95,14 @@ export interface DecimalOptions extends FieldOptions {
   ge?: number
   lt?: number
   le?: number
-  decimalPlaces?: number  // количество знаков после запятой
-  maxDigits?: number  // максимальное общее количество знаков
+  decimalPlaces?: number  // number of decimal places
+  maxDigits?: number  // maximum total number of digits
   messages?: messagesDecimalOptions
 }
 
-// endregion
+// End region
 
-// region additional fields
+// Region: additional fields
 
 export interface ArrayFieldOptions {
   isRequired?: boolean | ((form?: any) => boolean)
@@ -120,9 +120,9 @@ export interface ArrayFormFieldOptions {
   maxForms?: number
 }
 
-// endregion
+// End region
 
-// region plugins
+// Region: plugins
 
 export interface PluginOptions {
   priority?: number
@@ -134,4 +134,4 @@ export interface MaskPluginOptions{
   digitPattern: RegExp
 }
 
-// endregion
+// End region
