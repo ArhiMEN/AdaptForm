@@ -236,7 +236,7 @@ $('#reset-profile').addEventListener('click', () => {
     if (input instanceof HTMLInputElement && input.type === 'checkbox') input.checked = false
     else if (input) input.value = key === 'country' ? 'US' : ''
   }
-  $('#country').value = 'US'
+  ($('#country') as HTMLSelectElement).value = 'US'
   validatedProfile = false
   serverErrorsApplied = false
   renderProfile()
@@ -413,13 +413,6 @@ $('#masked-phone').addEventListener('input', event => {
   })
 })
 
-const schema = new ErrorsSchema()
-  .staticKey('email', 'email')
-  .fallback(key => key)
-void schema
-
-profile.setFields({ country: 'US' }, false)
-profile.checkValid()
 renderProfile()
 renderTags()
 renderAddresses()
