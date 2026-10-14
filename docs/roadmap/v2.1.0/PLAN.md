@@ -2,7 +2,7 @@
 
 ## Goal
 
-Improve the reliability, type safety, maintainability, and release confidence of AdaptForm while preserving existing consumer behavior wherever practical. PlayLease currently consumes `adaptform@^2.0.5`; compatibility with that integration is a release requirement.
+Improve the reliability, type safety, maintainability, and release confidence of AdaptForm while preserving existing consumer behavior wherever practical. This branch covers library-level work only; application-specific integration testing is tracked separately.
 
 ## Workstreams
 
@@ -11,42 +11,42 @@ Improve the reliability, type safety, maintainability, and release confidence of
 - [x] Run the existing test suite, build, and TypeScript type-check through GitHub Actions; record the actual results.
 - [x] Repair `npm run lint` with ESLint flat config and TypeScript ESLint; lint source and tests in CI.
 - [x] Remove the machine-specific absolute path from Vitest configuration and use a portable project-relative path.
-- [ ] Audit repository-authored text for English consistency.
+- [x] Audit repository-authored text for English consistency, excluding validation messages explicitly deferred for a later localization pass.
 
 ### 2. Core correctness
 - [x] Validate conditional-required rules after bulk assignment and document explicit `checkValid()` use after individual dependent-field changes.
 - [x] Make `isValid` reads side-effect-free; explicitly revalidate collections after mutations.
-- [ ] Review reset semantics, error lifecycle, and nested-form error propagation.
+- [x] Review reset semantics, error lifecycle, and nested-form error propagation; add regression coverage for reset state and recursive error clearing.
 - [x] Fix `ErrorsSchema.forArray()` to honor its custom index extractor and supplied item schema, with regression coverage.
 - [x] Add regression tests for the implemented validation, array-index, numeric precision, and regex correctness fixes.
 
 ### 3. Serialization contracts
 - [x] Define and test JSON serialization for primitives, arrays, nested forms, and Date values, including recursive Date conversion.
-- [x] Define and test FormData serialization for arrays, nested form values, Date values, and omission of nullish values. Blob/File handling is implemented; broader edge-case coverage remains to be added.
+- [x] Define and test FormData serialization for arrays, nested form values, Date values, Blob/File values, and omission of nullish values.
 - [x] Document intentional validation and serialization behavior changes in README and CHANGELOG.
 
 ### 4. Type safety
 - [x] Improve inference for form field values and keys without duplicating runtime field discovery logic.
-- [ ] Reduce avoidable `any` types in public APIs.
+- [x] Reduce avoidable `any` usage in form value inference, serialization return types, nullable array values, and nested collection values. Retain legacy callback `any` types where replacing them with `unknown` would be a source-compatibility change.
 - [x] Add compile-time type tests for representative forms, arrays, and nested forms.
 - [x] Ensure generated declaration files match the intended public API.
 
 ### 5. Error handling and localization
 - [x] Review error schema parsing for nested objects, arrays, unknown fields, and non-string values; add regression coverage for array mappings and fallback invocation.
-- [ ] Consider structured error codes and parameters as a path to localization without parsing human-readable messages.
-- [ ] Keep existing PlayLease localization behavior compatible or document coordinated migration before changing message contracts.
+- [deferred] Consider structured error codes and parameters as a path to localization without parsing human-readable messages; validation-message changes are outside this branch's scope.
+- [deferred] Review PlayLease adapter compatibility and coordinate any validation-message contract changes in a separate integration pass.
 
 ### 6. Dependency health
 - [x] Replace vulnerable transitive dependency versions with patched versions using reviewed overrides; `npm audit` and the lockfile vulnerability scan now report zero known vulnerabilities.
 
 ### 7. Release readiness
-- [ ] Expand regression and integration coverage for identified edge cases.
-- [x] Verify lint, tests, build, and TypeScript type-check through GitHub Actions; package-content review remains outstanding.
+- [x] Expand regression coverage for identified reset, nested-error, validation batching, nullable-array, and serialization edge cases. Application-specific integration testing is deferred.
+- [x] Verify lint, tests, build, TypeScript type-check, dependency audit, and npm package contents through GitHub Actions.
 - [x] Update README and CHANGELOG in English to reflect implemented behavior only.
 - [ ] Review the final diff and document remaining risks.
 - [ ] Do not publish or tag a release without explicit user approval.
 
-## Acceptance criteria
+## Deferred follow-up (outside this branch's acceptance criteria)\n\n- Validation-message localization and any structured error-code contract.\n- PlayLease integration tests and adapter changes.\n- Release version bump, npm publication, and release tagging; all require explicit approval.\n\n## Acceptance criteria
 
 - Existing tests pass, or any pre-existing failures are clearly documented and distinguished from regressions.
 - New behavior has regression tests, including relevant edge cases.
@@ -54,5 +54,5 @@ Improve the reliability, type safety, maintainability, and release confidence of
 - Public API and serialization behavior are documented accurately.
 - No duplicate implementation is introduced where an existing implementation can be improved.
 - Repository-authored text is in English.
-- PlayLease compatibility risks are documented and addressed before release.
+- Application-specific integration work and validation-message localization are explicitly deferred to a separate pass.
 - No repository or branch deletion, history rewrite, or npm publication occurs.
