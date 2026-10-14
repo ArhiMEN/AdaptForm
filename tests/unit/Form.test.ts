@@ -4,6 +4,7 @@ import { Field } from '@core/fields/Field'
 import { StringType } from '@core/types/StringType'
 import { NumberType } from '@core/types/NumberType'
 import { DateType } from '@core/types/DateType'
+import { FieldType } from '@core/types/FieldType'
 import { ArrayField } from '@core/fields/ArrayField'
 import { ArrayFormField } from '@core/fields/ArrayFormField'
 
@@ -281,6 +282,40 @@ describe('Form', () => {
         items: [{ date: date.toISOString() }]
       })
     })
+
+    it('should recursively serialize dates in plain object field values', () => {
+      class MetadataType extends FieldType<{ createdAt: Date }> {
+        cast(rawValue: unknown): { createdAt: Date } | null {
+          if (
+            rawValue !== null &&
+            typeof rawValue === 'object' &&
+            'createdAt' in rawValue &&
+            rawValue.createdAt instanceof Date
+          ) {
+            return rawValue as { createdAt: Date }
+          }
+          return null
+        }
+
+        validate(): string[] {
+          return []
+        }
+
+        getTypeName(): string {
+          return 'metadata'
+        }
+      }
+
+      class MetadataForm extends Form {
+        metadata = new Field(MetadataType)
+      }
+
+      const form = new MetadataForm()
+      const date = new Date('2023-01-01T00:00:00.000Z')
+      form.fields = { metadata: { createdAt: date } }
+
+      expect(form.toJSON()).toEqual({ metadata: { createdAt: date.toISOString() } })
+    })
   })
 
   describe('toFormData', () => {
@@ -345,6 +380,35 @@ describe('Form', () => {
       const formData = form.toFormData()
       expect(formData.has('name')).toBe(false)
       expect(formData.has('age')).toBe(false)
+    })
+
+    it('should preserve Blob values in FormData', () => {
+      class BlobType extends FieldType<Blob> {
+        cast(rawValue: unknown): Blob | null {
+          return rawValue instanceof Blob ? rawValue : null
+        }
+
+        validate(): string[] {
+          return []
+        }
+
+        getTypeName(): string {
+          return 'blob'
+        }
+      }
+
+      class AttachmentForm extends Form {
+        attachment = new Field(BlobType)
+      }
+
+      const form = new AttachmentForm()
+      const blob = new Blob(['file contents'], { type: 'text/plain' })
+      form.fields = { attachment: blob }
+
+      const value = form.toFormData().get('attachment')
+      expect(value).not.toBeNull()
+      expect((value as Blob).size).toBe(blob.size)
+      expect((value as Blob).type).toBe('text/plain')
     })
   })
 
