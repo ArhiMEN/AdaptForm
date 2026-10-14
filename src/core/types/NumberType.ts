@@ -4,18 +4,25 @@ import {NumberOptions} from "@core/options"
 export class NumberType extends FieldType<number, NumberOptions> {
   cast(rawValue: any): number | null {
     if (rawValue === null || rawValue === undefined) return null
-    if (typeof rawValue === 'number' && !isNaN(rawValue)) return rawValue
+    if (typeof rawValue === 'number') return Number.isFinite(rawValue) ? rawValue : null
 
     if (typeof rawValue === 'string') {
-      const num = Number(rawValue)
-      return isNaN(num) ? null : num
+      const normalized = rawValue.trim()
+      if (normalized.length === 0) return null
+      const num = Number(normalized)
+      return Number.isFinite(num) ? num : null
     }
 
     return null
   }
 
-    validate(value: number): string[] {
+  validate(value: number): string[] {
     const errors: string[] = []
+
+    if (!Number.isFinite(value)) {
+      errors.push(this.options.messages?.invalid ?? 'Значение должно быть конечным числом')
+      return errors
+    }
 
     if (!Number.isInteger(value)) {
       errors.push(this.options.messages?.invalid ?? 'Значение должно быть целым числом')
