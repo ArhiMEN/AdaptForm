@@ -37,7 +37,7 @@ export class ErrorsSchema {
    */
   dynamicKey(
     pattern: RegExp,
-    mapping: string | ((match: RegExpMatchArray) => string),
+    mapping: string | ((match: RegExpMatchArray, value?: any) => string),
     options?: { priority?: number }
   ): this {
     this._dynamicRules.push({
