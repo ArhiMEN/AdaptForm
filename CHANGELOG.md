@@ -1,33 +1,56 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to AdaptForm are documented here. The `2.1.0` section is prepared for release; it remains unreleased until the maintainer publishes it.
 
-## [Unreleased]
+**[Interactive demo](https://arhimen.github.io/AdaptForm/)** · [Demo source](https://github.com/ArhiMEN/AdaptForm/tree/v2.1.0/demo) · [Documentation](https://github.com/ArhiMEN/AdaptForm/blob/v2.1.0/README.md)
+
+## [2.1.0] - Unreleased
 
 ### Added
 
-- Configure ESLint for TypeScript source and tests, and add dependency auditing to CI.
-- Export `ErrorsSchema` from the package entry point.
+- Add a browser-based interactive playground covering field validation, conditional requirements, field state, arrays, nested forms, server-error handling, serialization, and input masks.
+- Add a GitHub Actions workflow to build and deploy the playground to GitHub Pages from the `v2.1.0` branch.
+- Add dedicated demo type-checking and production-build commands, and run both as part of CI.
+- Add automated npm package-content verification to ensure required ESM, CommonJS, and TypeScript declaration files are present while development sources and tests stay out of the published package.
+- Export `ErrorsSchema` from the public package entry point.
 - Infer `Form.fieldsValue` from declared `Field`, `ArrayField`, and `ArrayFormField` properties.
-- Document array error mapping and recursive JSON serialization behavior.
 
 ### Changed
 
-- Upgrade Vitest, Vite, ESLint, and TypeScript lint tooling; pin patched transitive dependencies and run CI on Node.js 22.
-- `Form.fields` batches direct field values before form-level validation; `Form.setFields()` and `Field.setRawValue()` allow advanced callers to defer validation explicitly. `Form.checkValid()` includes global server errors.
-- Array collections revalidate on mutation, validity reads avoid hidden repeated validation, invalid removal indices are ignored, and collection validity is left unvalidated after reset until the next check.
-- Resetting a field restores its default without running custom validators, clears errors, and leaves validity unset until the next check. Replacing server errors also clears stale errors recursively in nested forms and array items.
-- Constructor defaults start untouched; whitespace-only strings are treated as empty; global/sticky regex validation is deterministic.
-- Number parsing rejects blank/non-finite values, and decimal precision checks no longer silently round numeric input.
-- `Field.valueClear` now exposes its actual `T | null` type; `ArrayField.itemsValue` reflects nullable item values.
-- `Form.toFormData()` JSON-encodes arrays and nested objects and omits `null`/`undefined` values.
-- `Form.toJSON()` recursively converts `Date` values to ISO 8601 strings, including dates inside arrays and plain objects.
-- CI uses `npm ci` with a lockfile aligned to the package version and verifies the npm package file list after building.
+- Configure ESLint for TypeScript source, tests, and demo code; run linting and dependency audits in CI on Node.js 22.
+- Upgrade Vitest, Vite, ESLint, and TypeScript lint tooling; pin patched transitive dependency versions and align the lockfile.
+- Replace the machine-specific absolute Vitest alias with a portable project-relative path.
+- Batch direct field values before form-level validation so conditional-required rules can inspect the complete form state without invoking those direct field validators twice.
+- Add `Form.setFields(data, validate?)` and `Field.setRawValue(value, validate?)` for controlled assignment with optional deferred validation.
+- Make reset behavior explicit: field defaults are restored without running custom validators, errors are cleared, and validity remains unset until validation runs again.
+- Clear stale server errors recursively when a new error payload is assigned.
+- Revalidate collections after mutations, avoid hidden repeated validation when reading `ArrayFormField.isValid`, ignore invalid removal indices, and leave collection validity unset after reset until the next check.
+- Improve inferred form-value types, nullable array values, nested form collection types, and JSON serialization return types.
+- Serialize arrays and nested objects as JSON in `FormData`; omit `null`/`undefined`; preserve `Blob`/`File` values; recursively serialize nested JavaScript `Date` values to ISO 8601 strings in JSON output.
+- Rewrite the README to document supported APIs, validation lifecycle, collection options, error mapping, serialization, development commands, and the interactive demo.
 
 ### Fixed
 
-- `ErrorsSchema.forArray()` now honors custom index extractors, applies item-schema mappings and transformers, and supports bracket, dotted, and custom index notation.
-- `ErrorsSchema.parseErrors()` invokes a fallback handler only once when it declines an error.
+- Make string validation deterministic when patterns contain global or sticky regular-expression flags.
+- Reject blank and non-finite values in `NumberType`.
+- Reject numeric decimal values with excess precision instead of silently rounding them; correctly handle `decimalPlaces: 0`.
+- Treat whitespace-only strings as empty and keep constructor defaults untouched.
+- Correct conditional-required validation after bulk form assignment.
+- Refresh array validation after adding items/forms and avoid invalid negative, fractional, or out-of-range removal indices.
+- Fix `ErrorsSchema.forArray()` to honor custom index extractors, apply item-schema mappings and transformers, and support bracket, dotted, and custom index notation.
+- Invoke an `ErrorsSchema` fallback handler only once when it declines an error.
+- Correct regression coverage for a date-time boundary test and add tests for reset state, nested error clearing, assignment batching, nullable arrays, Date serialization, and Blob/File handling.
+
+### Security and maintenance
+
+- Add `npm audit --audit-level=moderate` to CI and update vulnerable transitive dependency versions using reviewed overrides. The final verified workflow reports zero known vulnerabilities from both dependency audit steps.
+- Verify lint, tests, ESM/CJS build, declaration generation, source type-checking, demo type-checking/build, and npm package contents in CI.
+
+### Compatibility notes
+
+- Validation messages and their language have not been changed in this release candidate. Localization and any structured error-code contract are deferred to a separate coordinated task.
+- PlayLease-specific integration work is explicitly out of scope for this branch.
+- This changelog describes the release candidate in branch `v2.1.0`; npm publication and the GitHub release are still maintainer actions.
 
 ## [2.0.5] - 2026-07-22
 
@@ -42,8 +65,8 @@ All notable changes to this project will be documented in this file.
 - `parseErrorsDetailed()` method returning `ParsedError` objects with metadata (sourceKey, matchedBy)
 - `nest()` method for creating prefixed schemas for nested forms
 - `clone()` and `merge()` methods for schema composition and reuse
-- `ErrorSchema.fromObject()` factory for quick mapping from plain objects
-- `ErrorSchema.forArray()` factory for array field error patterns
+- `ErrorsSchema.fromObject()` factory for quick mapping from plain objects
+- `ErrorsSchema.forArray()` factory for array field error patterns
 - Predefined schemas: `DefaultErrorSchema`, `LaravelErrorSchema`, `GraphQLErrorSchema`
 - Priority system for dynamic rules to control matching order
 - Value transformers chain for sequential error message normalization
