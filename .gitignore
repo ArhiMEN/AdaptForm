@@ -1,37 +1,37 @@
 # Node modules
 node_modules/
 
-# Сборка / дистрибутивы
+# Build artifacts
 dist/
 *.tsbuildinfo
 coverage
 
-# Логи
+# Logs
 logs/
 
-# Локальные конфигурации редакторов/IDE (пример)
+# Local editor and IDE configuration
 .vscode/
 .idea/
 
-# Файлы окружения с секретами
+# Environment files and secrets
 .env
 .env.local
 .env.*.local
 
-# Кэш и временные файлы
+# Cache and temporary files
 *.log
 *.tmp
 *.temp
 
-# OS системные файлы (опционально)
+# Operating system files
 .DS_Store
 Thumbs.db
 
 # AI
 .gigacode/
 
-# Vitest
+# Vitest cache
 .vitest/
 
-# TypeScript
+# TypeScript build artifacts
 *.tsbuildinfo
