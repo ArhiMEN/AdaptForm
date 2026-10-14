@@ -1,4 +1,4 @@
-import {Form} from "@core/Form"
+import {Form, type FormFieldsValue} from "@core/Form"
 import {ArrayFormFieldOptions} from "@core/options"
 import {isValidArrayIndex} from "@core/fields/arrayUtils"
 
@@ -38,7 +38,7 @@ export class ArrayFormField<T extends Form = Form> {
     return this._forms
   }
 
-  get formsFieldsValue(): unknown[] {
+  get formsFieldsValue(): FormFieldsValue<T>[] {
     return this._forms.map(form => form.fieldsValue)
   }
 
