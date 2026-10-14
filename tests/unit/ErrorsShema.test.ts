@@ -467,7 +467,7 @@ describe('ErrorSchema', () => {
 
       expect(result).toEqual({
         'accounts.0.email': 'Invalid email',
-        'accounts.1.password': 'Too short',
+        'accounts.1.password': 'TOO SHORT',
         'accounts.2.username': 'Taken'
       })
     })
@@ -476,6 +476,7 @@ describe('ErrorSchema', () => {
       const itemSchema = new ErrorsSchema()
         .staticKey('email', 'emailAddress')
         .dynamicKey(/^(.+)_error$/, (match) => match[1])
+        .transformValue((value) => typeof value === 'string' ? value.toUpperCase() : value)
 
       const schema = ErrorsSchema.forArray(itemSchema, 'accounts')
       const result = schema.parseErrors({
@@ -484,7 +485,7 @@ describe('ErrorSchema', () => {
       })
 
       expect(result).toEqual({
-        'accounts.0.emailAddress': 'Invalid email',
+        'accounts.0.emailAddress': 'INVALID EMAIL',
         'accounts.1.password': 'Too short'
       })
     })
