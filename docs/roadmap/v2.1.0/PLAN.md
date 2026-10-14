@@ -17,7 +17,7 @@ Improve the reliability, type safety, maintainability, and release confidence of
 - [ ] Review field validation and conditional-required behavior when dependent fields change.
 - [ ] Make validity reads predictable and avoid hidden repeated validation side effects.
 - [ ] Review reset semantics, error lifecycle, and nested-form error propagation.
-- [ ] Fix `ErrorsSchema.forArray()` so its public contract is implemented correctly, or simplify the API if the argument is not part of the intended design.
+- [x] Fix `ErrorsSchema.forArray()` to honor its custom index extractor and supplied item schema, with regression coverage.
 - [ ] Add regression tests before or alongside each fix.
 
 ### 3. Serialization contracts
