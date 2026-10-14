@@ -16,7 +16,8 @@ describe('Form', () => {
     it('should get field values', () => {
       const form = new TestForm()
       form.fields = { name: 'John', age: 25 }
-      expect(form.fieldsValue).toEqual({ name: 'John', age: 25 })
+      const typedValues: { name: string | null; age: number | null } = form.fieldsValue
+      expect(typedValues).toEqual({ name: 'John', age: 25 })
     })
 
     it('should handle null values', () => {
