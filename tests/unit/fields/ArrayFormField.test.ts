@@ -130,7 +130,7 @@ describe('ArrayFormField', () => {
     })
     it('should validate minForms', () => {
       const arrayFormField = new ArrayFormField(TestForm, { minForms: 2 })
-      // При создании пустой массив isValid = false из-за minForms
+      // An empty collection is invalid when minForms is configured.
       expect(arrayFormField.isValid).toBe(false)
       
       arrayFormField.add({ name: 'John' })
