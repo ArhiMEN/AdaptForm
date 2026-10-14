@@ -243,6 +243,8 @@ console.log(birthdate.valueClear); // Luxon DateTime object
 
 ## Form Submission
 
+`toFormData()` appends scalar values as strings, serializes JavaScript `Date` values as ISO 8601 strings, preserves `Blob`/`File` values, and JSON-encodes arrays and nested objects. `null` and `undefined` fields are omitted. This makes collection serialization explicit instead of relying on JavaScript's lossy default object-to-string conversion.
+
 ```TypeScript
 class ContactForm extends Form {
   name = new Field(StringType, null, {maxLength: 100});
