@@ -166,15 +166,16 @@ function updateProfileInspector(): void {
 
   $('#field-states').innerHTML = profileKeys.map(key => {
     const field = getField(key)
-    const state = field.isValid === null ? 'pending' : field.isValid ? 'valid' : 'invalid'
-    const label = field.isValid === null ? 'Pending' : field.isValid ? 'Valid' : 'Invalid'
+    const isPending = !validatedProfile && !serverErrorsApplied
+    const state = isPending || field.isValid === null ? 'pending' : field.isValid ? 'valid' : 'invalid'
+    const label = isPending || field.isValid === null ? 'Pending' : field.isValid ? 'Valid' : 'Invalid'
     return `<div class="state-row"><code>${key}</code><span class="state-badge state-${state}">${label}</span><span class="state-touched">${field.isTouched ? 'Touched' : 'Pristine'}</span></div>`
   }).join('')
   renderSerialization()
 }
 
 function renderFieldError(key: ProfileKey): void {
-  const errors = formFieldError(key)
+  const errors = validatedProfile || serverErrorsApplied ? formFieldError(key) : []
   const field = document.querySelector<HTMLElement>(`[data-field="${key}"]`)
   const error = document.querySelector<HTMLElement>(`#error-${key}`)
   if (error) error.textContent = errors.join(' ')
@@ -186,8 +187,8 @@ function renderFieldError(key: ProfileKey): void {
   if (state) {
     const current = getField(key)
     state.textContent = current.isTouched ? 'Touched' : 'Pristine'
-    state.classList.toggle('state-valid', current.isValid === true)
-    state.classList.toggle('state-invalid', current.isValid === false)
+    state.classList.toggle('state-valid', (validatedProfile || serverErrorsApplied) && current.isValid === true)
+    state.classList.toggle('state-invalid', (validatedProfile || serverErrorsApplied) && current.isValid === false)
   }
 }
 
