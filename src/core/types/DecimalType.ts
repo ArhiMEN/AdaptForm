@@ -17,7 +17,7 @@ export class DecimalType extends FieldType<number | string, DecimalOptions> {
       return this.castString(rawValue)
     }
 
-    if (typeof rawValue === 'number' && !isNaN(rawValue)) {
+    if (typeof rawValue === 'number' && Number.isFinite(rawValue)) {
       return rawValue
     }
 
@@ -50,8 +50,8 @@ export class DecimalType extends FieldType<number | string, DecimalOptions> {
       return errors
     }
 
-    const maxDigits = this.options.maxDigits || 8
-    const decimalPlaces = this.options.decimalPlaces || 2
+    const maxDigits = this.options.maxDigits ?? 8
+    const decimalPlaces = this.options.decimalPlaces ?? 2
     const maxIntDigits = maxDigits - decimalPlaces
 
     // Split the input into integer and decimal parts.
@@ -166,7 +166,7 @@ export class DecimalType extends FieldType<number | string, DecimalOptions> {
   private numberToString(value: number): string {
     const decimalPlaces = this.options.decimalPlaces
 
-    return value.toFixed(decimalPlaces)
+    return String(value)
   }
 
   getTypeName(): string {
