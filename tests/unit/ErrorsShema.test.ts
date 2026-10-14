@@ -9,7 +9,7 @@ describe('ErrorSchema', () => {
   })
 
   describe('staticKey', () => {
-    it('должен маппить точный ключ ошибки на имя поля', () => {
+    it('should map an exact error key to a field name', () => {
       schema.staticKey('email', 'email')
 
       const result = schema.parseErrors({email: 'Email is required'})
@@ -17,7 +17,7 @@ describe('ErrorSchema', () => {
       expect(result).toEqual({email: 'Email is required'})
     })
 
-    it('должен поддерживать функцию для динамического определения имени поля', () => {
+    it('should support a function that dynamically resolves a field name', () => {
       schema.staticKey('server_error', (value: any) => {
         return value.includes('email') ? 'email' : 'password'
       })
@@ -27,7 +27,7 @@ describe('ErrorSchema', () => {
       expect(result).toEqual({email: 'email is invalid'})
     })
 
-    it('должен возвращать null если функция возвращает falsy значение', () => {
+    it('should ignore a mapping function that returns a falsy value', () => {
       schema.staticKey('optional_error', () => '')
 
       const result = schema.parseErrors({optional_error: 'some error'})
@@ -35,7 +35,7 @@ describe('ErrorSchema', () => {
       expect(result).toEqual({})
     })
 
-    it('должен иметь приоритет над динамическими правилами', () => {
+    it('should take precedence over dynamic rules', () => {
       schema
         .dynamicKey(/^(.+)_error$/, (match) => match[1])
         .staticKey('email_error', 'userEmail')
@@ -45,7 +45,7 @@ describe('ErrorSchema', () => {
       expect(result).toEqual({userEmail: 'Invalid email'})
     })
 
-    it('должен поддерживать множественные статические правила', () => {
+    it('should support multiple static rules', () => {
       schema
         .staticKey('email', 'email')
         .staticKey('password', 'password')
@@ -66,7 +66,7 @@ describe('ErrorSchema', () => {
   })
 
   describe('dynamicKey', () => {
-    it('должен маппить ключи по регулярному выражению со строковым маппингом', () => {
+    it('should map keys with a regular expression and a string mapping', () => {
       schema.dynamicKey(/^user_(.+)$/, 'userField')
 
       const result = schema.parseErrors({user_email: 'Invalid email'})
@@ -74,7 +74,7 @@ describe('ErrorSchema', () => {
       expect(result).toEqual({userField: 'Invalid email'})
     })
 
-    it('должен маппить ключи с функцией извлечения', () => {
+    it('should map keys using an extraction function', () => {
       schema.dynamicKey(/^(.+)\.(.+)$/, (match) => match[2])
 
       const result = schema.parseErrors({'user.email': 'Invalid email'})
@@ -82,7 +82,7 @@ describe('ErrorSchema', () => {
       expect(result).toEqual({email: 'Invalid email'})
     })
 
-    it('должен обрабатывать множественные динамические правила', () => {
+    it('should process multiple dynamic rules', () => {
       schema
         .dynamicKey(/^field_(.+)_error$/, (match) => match[1])
         .dynamicKey(/^(.+)_error$/, (match) => match[1])
@@ -98,7 +98,7 @@ describe('ErrorSchema', () => {
       })
     })
 
-    it('должен соблюдать приоритеты динамических правил', () => {
+    it('should respect dynamic rule priorities', () => {
       schema
         .dynamicKey(/^(.+)_error$/, (match) => match[1], {priority: 10})
         .dynamicKey(/^custom_(.+)$/, (match) => `custom_${match[1]}`, {priority: 100})
@@ -114,7 +114,7 @@ describe('ErrorSchema', () => {
       })
     })
 
-    it('должен применять правило с более высоким приоритетом первым', () => {
+    it('should apply the highest-priority rule first', () => {
       schema
         .dynamicKey(/^(.+)\.(.+)$/, (match) => match[2], {priority: 10})
         .dynamicKey(/^user\.(.+)$/, (match) => `user_${match[1]}`, {priority: 100})
@@ -124,7 +124,7 @@ describe('ErrorSchema', () => {
       expect(result).toEqual({user_name: 'Required'})
     })
 
-    it('должен корректно работать с группами захвата', () => {
+    it('should work correctly with capture groups', () => {
       schema.dynamicKey(/^items\[(\d+)\]\.(.+)$/, (match) => {
         return `items.${match[1]}.${match[2]}`
       })
@@ -140,7 +140,7 @@ describe('ErrorSchema', () => {
       })
     })
 
-    it('должен возвращать null если паттерн не совпадает', () => {
+    it('should ignore a pattern that does not match', () => {
       schema.dynamicKey(/^user\.(.+)$/, (match) => match[1])
 
       const result = schema.parseErrors({'admin.email': 'Invalid'})
@@ -150,7 +150,7 @@ describe('ErrorSchema', () => {
   })
 
   describe('fallback', () => {
-    it('должен использовать fallback для нераспознанных ошибок', () => {
+    it('should use the fallback for unrecognized errors', () => {
       schema.fallback((key) => key)
 
       const result = schema.parseErrors({unknown_error: 'Something wrong'})
@@ -158,7 +158,7 @@ describe('ErrorSchema', () => {
       expect(result).toEqual({unknown_error: 'Something wrong'})
     })
 
-    it('должен возвращать null если fallback возвращает null', () => {
+    it('should ignore errors when the fallback returns null', () => {
       schema.fallback(() => null)
 
       const result = schema.parseErrors({unknown_error: 'Something wrong'})
@@ -166,7 +166,7 @@ describe('ErrorSchema', () => {
       expect(result).toEqual({})
     })
 
-    it('должен вызываться только если нет других совпадений', () => {
+    it('should run only when no other rule matches', () => {
       schema
         .staticKey('email', 'email')
         .fallback((key) => key)
@@ -182,7 +182,7 @@ describe('ErrorSchema', () => {
       })
     })
 
-    it('должен получать ключ и значение ошибки', () => {
+    it('should receive the error key and value', () => {
       const handler = vi.fn((key: string, value: any) => key)
       schema.fallback(handler)
 
@@ -193,7 +193,7 @@ describe('ErrorSchema', () => {
   })
 
   describe('transformValue', () => {
-    it('должен трансформировать значения ошибок', () => {
+    it('should transform error values', () => {
       schema
         .fallback((key) => key)
         .transformValue((value) => {
@@ -208,7 +208,7 @@ describe('ErrorSchema', () => {
       expect(result).toEqual({email: 'Email is required'})
     })
 
-    it('должен применять несколько трансформеров последовательно', () => {
+    it('should apply multiple transformers in sequence', () => {
       schema
         .fallback((key) => key)
         .transformValue((value) => {
@@ -229,7 +229,7 @@ describe('ErrorSchema', () => {
       expect(result).toEqual({email: 'Email is required'})
     })
 
-    it('должен трансформировать значения перед маппингом', () => {
+    it('should transform values before mapping', () => {
       schema
         .staticKey('email', 'email')
         .transformValue((value) => {
@@ -244,7 +244,7 @@ describe('ErrorSchema', () => {
   })
 
   describe('parseErrors', () => {
-    it('должен обрабатывать вложенные объекты ошибок', () => {
+    it('should process nested error objects', () => {
       schema
         .staticKey('email', 'email')
         .dynamicKey(/(.+)\.(.+)/, (match) => match[2])
@@ -262,7 +262,7 @@ describe('ErrorSchema', () => {
       })
     })
 
-    it('должен обрабатывать глубоко вложенные объекты', () => {
+    it('should process deeply nested objects', () => {
       schema.fallback((key) => key)
 
       const result = schema.parseErrors({
@@ -280,7 +280,7 @@ describe('ErrorSchema', () => {
       })
     })
 
-    it('должен игнорировать null и undefined значения', () => {
+    it('should ignore null and undefined values', () => {
       schema.fallback((key) => key)
 
       const result = schema.parseErrors({
@@ -289,14 +289,14 @@ describe('ErrorSchema', () => {
         username: undefined
       })
 
-      // Должна быть только ошибка email
+      // Only the email error should remain.
       expect(result).toEqual({email: 'Valid error'})
       expect(result.password).toBeUndefined()
       expect(result.username).toBeUndefined()
       expect(Object.keys(result)).toHaveLength(1)
     })
 
-    it('должен обрабатывать ошибки с префиксом', () => {
+    it('should process errors with a prefix', () => {
       schema.dynamicKey(/(.+)\.(.+)/, (match) => match[2])
 
       const result = schema.parseErrors(
@@ -307,7 +307,7 @@ describe('ErrorSchema', () => {
       expect(result).toEqual({name: 'Name is required'})
     })
 
-    it('должен преобразовывать нестроковые значения в JSON', () => {
+    it('should convert non-string values to JSON', () => {
       schema.fallback((key) => key)
 
       const result = schema.parseErrors({
@@ -321,7 +321,7 @@ describe('ErrorSchema', () => {
       })
     })
 
-    it('должен обрабатывать массивы как простые значения', () => {
+    it('should treat arrays as simple values', () => {
       schema.fallback((key) => key)
 
       const result = schema.parseErrors({
@@ -333,7 +333,7 @@ describe('ErrorSchema', () => {
       })
     })
 
-    it('должен обрабатывать Date как простое значение', () => {
+    it('should treat Date values as simple values', () => {
       schema.fallback((key) => key)
       const date = new Date('2024-01-01')
 
@@ -348,7 +348,7 @@ describe('ErrorSchema', () => {
   })
 
   describe('parseErrorsDetailed', () => {
-    it('должен возвращать расширенную информацию об ошибках', () => {
+    it('should return detailed error information', () => {
       schema
         .staticKey('email', 'email')
         .dynamicKey(/^(.+)_error$/, (match) => match[1])
@@ -382,7 +382,7 @@ describe('ErrorSchema', () => {
       })
     })
 
-    it('должен обрабатывать вложенные объекты в детальном режиме', () => {
+    it('should process nested objects in detailed mode', () => {
       schema.dynamicKey(/(.+)\.(.+)/, (match) => match[2])
 
       const result = schema.parseErrorsDetailed({
@@ -401,7 +401,7 @@ describe('ErrorSchema', () => {
       })
     })
 
-    it('должен применять трансформеры в детальном режиме', () => {
+    it('should apply transformers in detailed mode', () => {
       schema
         .fallback((key) => key)
         .transformValue((value) => {
@@ -419,7 +419,7 @@ describe('ErrorSchema', () => {
   })
 
   describe('fromObject', () => {
-    it('должен создавать схему из простого объекта', () => {
+    it('should create a schema from a simple object', () => {
       const schema = ErrorsSchema.fromObject({
         'email': 'email',
         'password': 'password',
@@ -498,7 +498,7 @@ describe('ErrorSchema', () => {
   })
 
   describe('nest', () => {
-    it('должен создавать вложенную схему с префиксом', () => {
+    it('should create a nested schema with a prefix', () => {
       schema
         .staticKey('email', 'email')
         .dynamicKey(/^(.+)_error$/, (match) => match[1])
@@ -517,7 +517,7 @@ describe('ErrorSchema', () => {
       })
     })
 
-    it('должен проксировать fallback с префиксом', () => {
+    it('should forward the fallback handler with a prefix', () => {
       schema.fallback((key) => key)
       const nested = schema.nest('user')
 
@@ -531,7 +531,7 @@ describe('ErrorSchema', () => {
       })
     })
 
-    it('должен проксировать трансформеры', () => {
+    it('should forward value transformers', () => {
       schema
         .fallback((key) => key)
         .transformValue((value) => {
@@ -552,7 +552,7 @@ describe('ErrorSchema', () => {
   })
 
   describe('clone', () => {
-    it('должен создавать независимую копию схемы', () => {
+    it('should create an independent schema clone', () => {
       schema
         .staticKey('email', 'email')
         .dynamicKey(/^(.+)_error$/, (match) => match[1])
@@ -561,10 +561,10 @@ describe('ErrorSchema', () => {
 
       const cloned = schema.clone()
 
-      // Модифицируем оригинал
+      // Modify the original schema.
       schema.staticKey('password', 'password')
 
-      // Клон не должен измениться
+      // The clone must remain unchanged.
       const result = cloned.parseErrors({
         email: 'Invalid email',
         password: 'Too short',
@@ -574,11 +574,11 @@ describe('ErrorSchema', () => {
       expect(result).toEqual({
         email: 'Invalid email',
         name: 'Required',
-        password: 'Too short' // fallback обрабатывает
+        password: 'Too short' // handled by fallback
       })
     })
 
-    it('должен копировать все типы правил', () => {
+    it('should copy all rule types', () => {
       schema
         .staticKey('email', 'email')
         .dynamicKey(/^(.+)_error$/, (match) => match[1])
@@ -600,7 +600,7 @@ describe('ErrorSchema', () => {
   })
 
   describe('merge', () => {
-    it('должен объединять статические правила', () => {
+    it('should merge static rules', () => {
       const schema1 = new ErrorsSchema().staticKey('email', 'email')
       const schema2 = new ErrorsSchema().staticKey('password', 'password')
 
@@ -617,7 +617,7 @@ describe('ErrorSchema', () => {
       })
     })
 
-    it('должен объединять динамические правила', () => {
+    it('should merge dynamic rules', () => {
       const schema1 = new ErrorsSchema().dynamicKey(/^(.+)_error$/, (match) => match[1])
       const schema2 = new ErrorsSchema().dynamicKey(/^(.+)\.(.+)$/, (match) => match[2])
 
@@ -634,7 +634,7 @@ describe('ErrorSchema', () => {
       })
     })
 
-    it('должен сохранять приоритеты при слиянии', () => {
+    it('should preserve priorities when merging schemas', () => {
       const schema1 = new ErrorsSchema()
         .dynamicKey(/^(.+)\.(.+)$/, (match) => match[2], {priority: 10})
 
@@ -648,7 +648,7 @@ describe('ErrorSchema', () => {
       expect(result).toEqual({user_name: 'Required'})
     })
 
-    it('должен объединять трансформеры', () => {
+    it('should merge value transformers', () => {
       const schema1 = new ErrorsSchema()
         .fallback((key) => key)
         .transformValue((value) => {
@@ -668,12 +668,12 @@ describe('ErrorSchema', () => {
         email: ['invalid email']
       })
 
-      // Трансформеры применяются последовательно:
-      // сначала schema1 (берет первый элемент), потом schema2 (в верхний регистр)
+      // Transformers are applied in sequence:
+      // schema1 selects the first item, then schema2 converts it to uppercase.
       expect(result).toEqual({email: 'INVALID EMAIL'})
     })
 
-    it('должен заменять fallback при наличии в второй схеме', () => {
+    it('should replace the fallback when the other schema defines one', () => {
       const schema1 = new ErrorsSchema().fallback((key) => key)
       const schema2 = new ErrorsSchema().fallback(() => null)
 
@@ -681,13 +681,13 @@ describe('ErrorSchema', () => {
 
       const result = merged.parseErrors({unknown: 'error'})
 
-      // Должен использоваться fallback из schema2
+      // The fallback from schema2 should be used.
       expect(result).toEqual({})
     })
   })
 
   describe('DefaultErrorSchema', () => {
-    it('должен использовать ключ как имя поля по умолчанию', () => {
+    it('should use the key as the default field name', () => {
       const result = DefaultErrorsSchema.parseErrors({
         email: 'Invalid email',
         password: 'Too short',
@@ -702,8 +702,8 @@ describe('ErrorSchema', () => {
     })
   })
 
-  describe('интеграционные тесты', () => {
-    it('должен обрабатывать сложный сценарий со всеми типами правил', () => {
+  describe('integration tests', () => {
+    it('should handle a complex scenario with all rule types', () => {
       const schema = new ErrorsSchema()
         .staticKey('server_error', 'global')
         .dynamicKey(
@@ -745,7 +745,7 @@ describe('ErrorSchema', () => {
       })
     })
 
-    it('должен корректно обрабатывать Pydantic-подобные ошибки', () => {
+    it('should handle Pydantic-style errors', () => {
       const pydanticSchema = new ErrorsSchema()
         .dynamicKey(
           /^(\w+)\.(\d+)\.(.+)$/,
@@ -784,7 +784,7 @@ describe('ErrorSchema', () => {
       })
     })
 
-    it('должен игнорировать ошибки, которые не подходят ни под одно правило и без fallback', () => {
+    it('should ignore unmatched errors when no fallback is configured', () => {
       const schema = new ErrorsSchema()
         .staticKey('email', 'email')
 
