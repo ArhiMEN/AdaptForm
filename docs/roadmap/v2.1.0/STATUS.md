@@ -10,6 +10,8 @@ Starting package version: `2.0.5`
 Package version in this branch: `2.1.0` (prepared for maintainer release; not published)  
 Release status: Release candidate prepared; npm publication, GitHub release, and release tagging have not been performed.
 
+Interactive demo: [https://arhimen.github.io/AdaptForm/](https://arhimen.github.io/AdaptForm/) — deployment is pending the one-time Pages setting.
+
 ## Completed
 
 - [x] Created the `v2.1.0` branch from `master` without changing existing branches.
