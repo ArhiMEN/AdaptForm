@@ -14,7 +14,7 @@ export class ArrayField<T = any> {
   constructor(
     protected factory: (value?: T) => Field<T>,
     options: ArrayFieldOptions = {},
-    initial: T[] = []
+    initial: (T | null)[] = []
   ) {
     this.options = {
       isRequired: true,
@@ -27,11 +27,11 @@ export class ArrayField<T = any> {
 
   // ===== value =====
 
-  set itemsValue(items: T[]) {
+  set itemsValue(items: (T | null)[]) {
     this.clear()
 
     for (const item of items) {
-      this.add(item, false)
+      this.add(item as T, false)
     }
 
     this.checkValid()
