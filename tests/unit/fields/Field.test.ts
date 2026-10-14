@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { Field } from '@core/fields/Field'
 import { StringType } from '@core/types/StringType'
 import { NumberType } from '@core/types/NumberType'
@@ -203,6 +203,23 @@ describe('Field', () => {
       expect(field.errors.length).toBeGreaterThan(0)
       field.reset()
       expect(field.errors).toEqual([])
+    })
+
+    it('should restore defaults without validating until the next explicit check', () => {
+      const validate = vi.fn(() => false)
+      const field = new Field(StringType, 'default', { validate })
+      expect(validate).toHaveBeenCalledTimes(1)
+
+      field.rawValue = 'changed'
+      expect(validate).toHaveBeenCalledTimes(2)
+
+      field.reset()
+
+      expect(field.rawValue).toBe('default')
+      expect(field.isTouched).toBe(false)
+      expect(field.isValid).toBeNull()
+      expect(field.errors).toEqual([])
+      expect(validate).toHaveBeenCalledTimes(2)
     })
   })
 
