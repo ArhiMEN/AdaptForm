@@ -19,9 +19,9 @@
 
 ## Language
 
-- All repository-authored text must be in English: documentation, comments, identifiers where practical, test descriptions, examples, and default validation messages.
+- Keep repository-authored documentation, comments, identifiers where practical, test descriptions, and examples in English.
+- Preserve existing user-facing validation/error messages and type names during the v2.1.0 library-only pass. Their localization is deferred to a separately coordinated task; do not change their language or public message contract without explicit approval and a compatibility/migration plan.
 - Keep language-neutral data and user-supplied values unchanged.
-- When changing existing public validation messages, assess consumer impact and provide a compatibility/migration strategy. Do not silently break integrations that depend on current messages.
 
 ## Workflow and tracking
 
