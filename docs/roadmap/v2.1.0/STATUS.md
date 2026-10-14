@@ -19,9 +19,9 @@ Release status: Not released; npm publication is not authorized by this plan.
 
 ## In progress
 
-- [ ] Establish the executable test/build/lint baseline.
-- [ ] Inspect test and build configuration for machine-specific paths.
-- [ ] Turn source-review findings into minimal reproducible regression tests.
+- [ ] Establish the executable test/build/lint baseline (not yet executable from the GitHub connector session).
+- [x] Inspect test configuration and replace the machine-specific absolute alias path with a portable path.
+- [x] Add regression tests for FormData collection serialization and omission of nullish values.\n- [ ] Turn remaining source-review findings into minimal reproducible regression tests.
 
 ## Verification log
 
