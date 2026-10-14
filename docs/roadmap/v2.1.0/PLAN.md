@@ -21,7 +21,7 @@ Improve the reliability, type safety, maintainability, and release confidence of
 - [ ] Add regression tests before or alongside each fix.
 
 ### 3. Serialization contracts
-- [x] Define and test JSON serialization for primitive values and Date values; arrays and nested forms remain represented by existing tests.
+- [ ] Define and test JSON serialization for primitives, arrays, dates, nested forms, nulls, and optional values. Primitive and Date cases are covered; array/nested JSON cases remain to be added.
 - [x] Define and test FormData serialization for arrays, nested form values, Date values, and omission of nullish values. Blob/File handling is implemented; broader edge-case coverage remains to be added.
 - [ ] Preserve existing supported behavior or document migration steps for intentional changes.
 
