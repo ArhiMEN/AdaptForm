@@ -21,16 +21,16 @@ Release status: Not released; npm publication is not authorized by this plan.
 
 - [ ] Establish the executable test/build/lint baseline (not yet executable from the GitHub connector session).
 - [x] Inspect test configuration and replace the machine-specific absolute alias path with a portable path.
-- [x] Add regression tests for FormData collection serialization and omission of nullish values.\n- [ ] Turn remaining source-review findings into minimal reproducible regression tests.
+- [x] Add regression tests for FormData collection serialization and omission of nullish values.\n- [x] Replace the machine-specific Vitest alias with a portable path derived from `import.meta.url`.\n- [ ] Turn remaining source-review findings into minimal reproducible regression tests.
 
 ## Verification log
 
 | Check | Status | Notes |
 |---|---|---|
 | Repository and branch | Passed | Branch created from `master`; no existing branch changed. |
-| Test suite | Not run yet | Must be executed in a working checkout. |
-| Build | Not run yet | Must be executed in a working checkout. |
-| Lint | Not run yet | Must be executed in a working checkout. |
+| Test suite | Not run | The execution environment cannot resolve GitHub, so a local checkout and npm install were unavailable. CI workflow was added; no run is visible yet. |
+| Build | Not run | Same environment limitation; CI is configured to run the build. |
+| Lint | Not run | Same environment limitation; CI is configured to run lint. |
 | PlayLease integration tests | Not run | Review only; no application runtime was started. |
 
 ## Decisions and constraints
