@@ -8,7 +8,8 @@ Improve the reliability, type safety, maintainability, and release confidence of
 
 ### 1. Baseline and repository hygiene
 - [ ] Inspect the current public API, package exports, build configuration, and existing test coverage.
-- [x] Run the existing test suite, build, and TypeScript type-check through GitHub Actions; record the actual results.\n- [ ] Repair the pre-existing `npm run lint` command: ESLint is not installed or configured.
+- [x] Run the existing test suite, build, and TypeScript type-check through GitHub Actions; record the actual results.
+- [ ] Repair the pre-existing `npm run lint` command: ESLint is not installed or configured.
 - [x] Remove the machine-specific absolute path from Vitest configuration and use a portable project-relative path.
 - [ ] Audit repository-authored text for English consistency.
 
@@ -35,7 +36,10 @@ Improve the reliability, type safety, maintainability, and release confidence of
 - [ ] Consider structured error codes and parameters as a path to localization without parsing human-readable messages.
 - [ ] Keep existing PlayLease localization behavior compatible or document coordinated migration before changing message contracts.
 
-### 6. Dependency health\n- [ ] Investigate the 11 npm audit findings reported during CI dependency installation (2 moderate, 6 high, 3 critical); identify direct/transitive causes and safe upgrades without blindly applying breaking fixes.\n\n### 7. Release readiness
+### 6. Dependency health
+- [ ] Investigate the 11 npm audit findings reported during CI dependency installation (2 moderate, 6 high, 3 critical); identify direct/transitive causes and safe upgrades without blindly applying breaking fixes.
+
+### 7. Release readiness
 - [ ] Expand regression and integration coverage for identified edge cases.
 - [ ] Verify tests, build, lint, and package contents in the available environment.
 - [ ] Update README and CHANGELOG in English to reflect implemented behavior only.
