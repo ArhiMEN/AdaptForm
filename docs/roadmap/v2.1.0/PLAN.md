@@ -42,9 +42,10 @@ Improve the reliability, type safety, maintainability, and release confidence of
 ### 7. Release readiness
 - [x] Expand regression coverage for identified reset, nested-error, validation batching, nullable-array, and serialization edge cases. Application-specific integration testing is deferred.
 - [x] Verify lint, tests, build, TypeScript type-check, dependency audit, and npm package contents through GitHub Actions.
-- [x] Update README and CHANGELOG in English to reflect implemented behavior only.
+- [x] Update README and CHANGELOG in English to reflect implemented behavior only, and link the interactive demo from the main documentation.
 - [x] Review the final diff and document remaining risks in `STATUS.md`.
-- [ ] Do not publish or tag a release without explicit user approval.
+- [x] Prepare package metadata and lockfile for version `2.1.0` without publishing or tagging a release.
+- [x] Build an interactive demo from branch source and add automated GitHub Pages deployment plus CI verification.
 
 ## Deferred follow-up (outside this branch's acceptance criteria)\n\n- Validation-message localization and any structured error-code contract.\n- PlayLease integration tests and adapter changes.\n- Release version bump, npm publication, and release tagging; all require explicit approval.\n\n## Acceptance criteria
 
@@ -55,4 +56,4 @@ Improve the reliability, type safety, maintainability, and release confidence of
 - No duplicate implementation is introduced where an existing implementation can be improved.
 - Repository-authored documentation, comments, and test descriptions are in English; existing user-facing validation/error text is explicitly deferred.
 - Application-specific integration work and validation-message localization are explicitly deferred to a separate pass.
-- No repository or branch deletion, history rewrite, or npm publication occurs.
+- No repository or branch deletion, history rewrite, GitHub release, or npm publication occurs.
