@@ -88,18 +88,23 @@ export class ErrorsSchema {
   ): ErrorsSchema {
     const schema = new ErrorsSchema()
 
-    const extractIndex = indexExtractor || ((key: string) => {
-      const match = key.match(/\[(\d+)\]/)
-      return match ? parseInt(match[1]) : -1
-    })
+    const escapedArrayFieldName = arrayFieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-    // Динамически обрабатывает ошибки массива
+    // Accept bracket, angle-bracket, and dotted index notations.
     schema.dynamicKey(
-      new RegExp(`^${arrayFieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\[(\\d+)\\]\\.(.+)$`),
+      new RegExp(`^${escapedArrayFieldName}(.+?)\\.(.+)$`),
       (match) => {
-        const index = match[1]
-        const fieldName = match[2]
-        return `${arrayFieldName}.${index}.${fieldName}`
+        const sourceKey = match[0]
+        const index = indexExtractor
+          ? indexExtractor(sourceKey)
+          : Number(match[1].match(/\\d+/)?.[0] ?? NaN)
+
+        if (!Number.isInteger(index) || index < 0) {
+          return ''
+        }
+
+        const fieldPath = match[2]
+        return `${arrayFieldName}.${index}.${fieldPath}`
       },
       {priority: 100}
     )
