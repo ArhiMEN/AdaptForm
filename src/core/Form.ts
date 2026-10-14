@@ -68,20 +68,24 @@ export abstract class Form {
   }
 
   set fields(data: Record<string, unknown>) {
+    this.setFields(data)
+  }
+
+  setFields(data: Record<string, unknown>, validate: boolean = true): void {
     const fields = this._fields
 
     for (const key of Object.keys(data)) {
       const field = fields[key]
       if (field) {
-        if (field instanceof Field) field.rawValue = data[key]
+        if (field instanceof Field) field.setRawValue(data[key], false)
         else if (field instanceof ArrayField) field.itemsValue = data[key] as any[]
-        else if (field instanceof ArrayFormField) field.forms = data[key] as unknown[]
+        else if (field instanceof ArrayFormField) field.setForms(data[key] as unknown[], false)
         else console.error(`Invalid field "${key}" type`)
       }
     }
 
-    // Validate once after all values have been assigned so conditional rules see the complete form.
-    this.checkValid()
+    // Validate after assignment so conditional rules see the complete form.
+    if (validate) this.checkValid()
   }
 
   get allErrors(): Record<string, string[]> {
