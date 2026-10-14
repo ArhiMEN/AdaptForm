@@ -135,7 +135,7 @@ describe('ErrorSchema', () => {
       })
 
       expect(result).toEqual({
-        'items.0.name': 'Required',
+        'items.7.name': 'Required',
         'items.1.price': 'Invalid price'
       })
     })
@@ -441,7 +441,7 @@ describe('ErrorSchema', () => {
   })
 
   describe('forArray', () => {
-    it('должен создавать схему для массива форм', () => {
+    it('should create a schema for array-form errors', () => {
       const schema = ErrorsSchema.forArray(
         new ErrorsSchema(),
         'accounts'
@@ -449,16 +449,18 @@ describe('ErrorSchema', () => {
 
       const result = schema.parseErrors({
         'accounts[0].email': 'Invalid email',
-        'accounts[1].password': 'Too short'
+        'accounts[1].password': 'Too short',
+        'accounts.2.username': 'Taken'
       })
 
       expect(result).toEqual({
         'accounts.0.email': 'Invalid email',
-        'accounts.1.password': 'Too short'
+        'accounts.1.password': 'Too short',
+        'accounts.2.username': 'Taken'
       })
     })
 
-    it('должен поддерживать кастомный экстрактор индекса', () => {
+    it('should use a custom index extractor for non-standard index notation', () => {
       const schema = ErrorsSchema.forArray(
         new ErrorsSchema(),
         'items',
@@ -468,9 +470,8 @@ describe('ErrorSchema', () => {
         }
       )
 
-      // Этот тест показывает, что forArray использует дефолтный экстрактор
       const result = schema.parseErrors({
-        'items[0].name': 'Required'
+        'items<7>.name': 'Required'
       })
 
       expect(result).toEqual({
