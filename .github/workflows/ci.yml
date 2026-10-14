@@ -31,5 +31,7 @@ jobs:
         run: npm test
       - name: Build package
         run: npm run build
+      - name: Verify npm package contents
+        run: npm run check:package
       - name: Type-check source
         run: npx tsc --noEmit -p tsconfig.json
