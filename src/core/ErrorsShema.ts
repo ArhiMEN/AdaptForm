@@ -168,13 +168,6 @@ export class ErrorsSchema {
             ? transformedValue
             : JSON.stringify(transformedValue)
         }
-      } else if (this._fallbackHandler) {
-        const fieldName = this._fallbackHandler(fullKey, transformedValue)
-        if (fieldName) {
-          result[fieldName] = typeof transformedValue === 'string'
-            ? transformedValue
-            : JSON.stringify(transformedValue)
-        }
       }
     }
 
