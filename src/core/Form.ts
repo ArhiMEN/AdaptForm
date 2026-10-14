@@ -47,7 +47,7 @@ export abstract class Form {
       }
     }
 
-    return isFormValid
+    return isFormValid && Object.keys(this._globalErrors).length === 0
   }
 
   get fieldsValue(): FormFieldsValue<this> {
@@ -79,6 +79,9 @@ export abstract class Form {
         else console.error(`Invalid field "${key}" type`)
       }
     }
+
+    // Validate once after all values have been assigned so conditional rules see the complete form.
+    this.checkValid()
   }
 
   get allErrors(): Record<string, string[]> {
