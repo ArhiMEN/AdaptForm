@@ -60,10 +60,19 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
   }
 
   set rawValue(input: any) {
+    this.setRawValue(input)
+  }
+
+  setRawValue(input: any, validate: boolean = true): void {
     this.assignRawValue(input)
     this._errors = []
     this.isTouched = true
-    this.checkAndSetValid()
+
+    if (validate) {
+      this.checkAndSetValid()
+    } else {
+      this.isValid = null
+    }
   }
 
   private assignRawValue(input: any): void {
