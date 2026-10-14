@@ -1,5 +1,7 @@
 # AdaptForm 2.1.0 Improvement Plan
 
+[English](PLAN.md) · [Русский](PLAN.ru.md)
+
 ## Goal
 
 Improve the reliability, type safety, maintainability, and release confidence of AdaptForm while preserving existing consumer behavior wherever practical. This branch covers library-level work only; application-specific integration testing is tracked separately.
@@ -44,18 +46,30 @@ Interactive demo: [https://arhimen.github.io/AdaptForm/](https://arhimen.github.
 ### 7. Release readiness
 - [x] Expand regression coverage for identified reset, nested-error, validation batching, nullable-array, and serialization edge cases. Application-specific integration testing is deferred.
 - [x] Verify lint, tests, build, TypeScript type-check, dependency audit, and npm package contents through GitHub Actions.
-- [x] Update README and CHANGELOG in English to reflect implemented behavior only, and link the interactive demo from the main documentation.
+- [x] Update README and CHANGELOG in English and Russian to reflect implemented behavior only, and link the interactive demo from the main documentation.
 - [x] Review the final diff and document remaining risks in `STATUS.md`.
 - [x] Prepare package metadata and lockfile for version `2.1.0` without publishing or tagging a release.
 - [x] Build an interactive demo from branch source and add automated GitHub Pages deployment plus CI verification.
 
-## Deferred follow-up (outside this branch's acceptance criteria)\n\n- Validation-message localization and any structured error-code contract.\n- PlayLease integration tests and adapter changes.\n- Release version bump, npm publication, and release tagging; all require explicit approval.\n\n## Acceptance criteria
+### 8. Bilingual demo and documentation (maintainer-requested extension)
+- [x] Add a persistent English/Russian language selector to the demo without changing entered data or library validation contracts.
+- [x] Provide complete English/Russian versions of README, CHANGELOG, demo guide, release plan, status log, repository instructions, and license information.
+- [x] Add regression coverage for language selection, switching, validation messages, collections, and serialization.
+- [ ] Recheck the 2.1.0 acceptance criteria, pass local and CI checks, then push and merge `v2.1.0` into `master` without deleting either branch.
+
+## Deferred follow-up (outside this branch's acceptance criteria)
+
+- Validation-message localization and any structured error-code contract.
+- PlayLease integration tests and adapter changes.
+- Release version bump, npm publication, and release tagging; all require explicit approval.
+
+## Acceptance criteria
 
 - Existing tests pass, or any pre-existing failures are clearly documented and distinguished from regressions.
 - New behavior has regression tests, including relevant edge cases.
 - Build and generated TypeScript declarations succeed.
 - Public API and serialization behavior are documented accurately.
 - No duplicate implementation is introduced where an existing implementation can be improved.
-- Repository-authored documentation, comments, and test descriptions are in English; existing user-facing validation/error text is explicitly deferred.
+- Documentation and the demo are available in English and Russian. Comments, test descriptions, and code examples remain in English; library validation-message localization is explicitly deferred.
 - Application-specific integration work and validation-message localization are explicitly deferred to a separate pass.
 - No repository or branch deletion, history rewrite, GitHub release, or npm publication occurs.

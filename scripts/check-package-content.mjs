@@ -6,7 +6,8 @@ const output = execFileSync('npm', ['pack', '--dry-run', '--json'], {
   stdio: ['ignore', 'pipe', 'inherit'],
 })
 
-const [packageManifest] = JSON.parse(output)
+const manifests = JSON.parse(output)
+const packageManifest = Array.isArray(manifests) ? manifests[0] : manifests.adaptform
 assert.ok(packageManifest, 'npm pack did not return a package manifest')
 
 const files = new Set(packageManifest.files.map(file => file.path))
@@ -14,6 +15,9 @@ const requiredFiles = [
   'README.md',
   'LICENSE.md',
   'CHANGELOG.md',
+  'README.ru.md',
+  'LICENSE.ru.md',
+  'CHANGELOG.ru.md',
   'dist/index.mjs',
   'dist/index.cjs',
   'dist/index.d.ts',

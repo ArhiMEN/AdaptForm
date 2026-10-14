@@ -1,11 +1,13 @@
 # AdaptForm
 
+[English](README.md) · [Русский](README.ru.md)
+
 [![npm version](https://img.shields.io/npm/v/adaptform.svg)](https://www.npmjs.com/package/adaptform)
 [![npm downloads](https://img.shields.io/npm/dm/adaptform.svg)](https://www.npmjs.com/package/adaptform)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
-**[Open the interactive demo](https://arhimen.github.io/AdaptForm/)** · **[Read the 2.1.0 changelog](https://github.com/ArhiMEN/AdaptForm/blob/v2.1.0/CHANGELOG.md)** · **[Browse the demo source](https://github.com/ArhiMEN/AdaptForm/tree/v2.1.0/demo)**
+**[Open the interactive demo](https://arhimen.github.io/AdaptForm/)** · **[Read the 2.1.0 changelog](https://github.com/ArhiMEN/AdaptForm/blob/master/CHANGELOG.md)** · **[Browse the demo source](https://github.com/ArhiMEN/AdaptForm/tree/master/demo)**
 
 AdaptForm is a TypeScript-first form modeling library inspired by Django Forms and Pydantic. Define forms as classes with typed fields. Each field owns its value, casting, validation, transformation plugins, errors, and state.
 
@@ -36,7 +38,9 @@ Luxon integration is optional:
 npm install luxon
 ```
 
-The [interactive demo](https://arhimen.github.io/AdaptForm/) runs from this repository's `v2.1.0` source branch. This branch is prepared with package version `2.1.0`; npm continues to serve the last published version until the maintainer publishes the release.
+The [interactive demo](https://arhimen.github.io/AdaptForm/) runs from repository source, with automatic deployment from `v2.1.0` and `master`. Version `2.1.0` is prepared in the repository; npm continues to serve the last published version until the maintainer publishes the release.
+
+The demo supports English and Russian with a persistent language selector: [English](https://arhimen.github.io/AdaptForm/?lang=en) · [Русский](https://arhimen.github.io/AdaptForm/?lang=ru). Switching languages preserves form data and validation state.
 
 ## Quick start
 
@@ -366,7 +370,7 @@ To run the interactive demo locally:
 npm run dev -- --config demo/vite.config.ts
 ```
 
-The demo is built by GitHub Actions from `v2.1.0` and, after the demo workflow is merged, from `master`. GitHub Pages is configured to allow both branches to publish to the same demo URL; see [Demo and GitHub Pages notes](https://github.com/ArhiMEN/AdaptForm/blob/v2.1.0/docs/DEMO.md).
+The demo is built by GitHub Actions from `v2.1.0` and `master`. GitHub Pages is configured to allow both branches to publish to the same demo URL; see [Demo and GitHub Pages notes](https://github.com/ArhiMEN/AdaptForm/blob/master/docs/DEMO.md).
 
 ## Links
 
@@ -374,8 +378,8 @@ The demo is built by GitHub Actions from `v2.1.0` and, after the demo workflow i
 - [GitHub repository](https://github.com/ArhiMEN/AdaptForm)
 - [npm package](https://www.npmjs.com/package/adaptform)
 - [Issue tracker](https://github.com/ArhiMEN/AdaptForm/issues)
-- [Changelog](https://github.com/ArhiMEN/AdaptForm/blob/v2.1.0/CHANGELOG.md)
-- [License](https://github.com/ArhiMEN/AdaptForm/blob/v2.1.0/LICENSE.md)
+- [Changelog](https://github.com/ArhiMEN/AdaptForm/blob/master/CHANGELOG.md)
+- [License](https://github.com/ArhiMEN/AdaptForm/blob/master/LICENSE.md)
 
 ## License
 

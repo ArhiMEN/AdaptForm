@@ -45,7 +45,10 @@
     "dist",
     "README.md",
     "LICENSE.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "README.ru.md",
+    "LICENSE.ru.md",
+    "CHANGELOG.ru.md"
   ],
   "sideEffects": false,
   "repository": {

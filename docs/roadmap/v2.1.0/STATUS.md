@@ -1,5 +1,7 @@
 # AdaptForm 2.1.0 Status
 
+[English](STATUS.md) · [Русский](STATUS.ru.md)
+
 ## Current stage
 
 **Stage 3 — Final verification and release readiness**
@@ -39,7 +41,7 @@ Interactive demo: [https://arhimen.github.io/AdaptForm/](https://arhimen.github.
 - [x] Updated README, CHANGELOG, and this tracker to describe the implemented behavior and deferred work.
 - [x] Reviewed the branch comparison against `master`: no files are deleted, and no release, tag, or published package version was changed.
 
-## Latest verified implementation
+## Previous verified implementation (before bilingual extension)
 
 CI run: [38539391483](https://github.com/ArhiMEN/AdaptForm/actions/runs/38539391483)
 
@@ -67,6 +69,31 @@ The final CI run verified 339 tests across 16 files, npm dependency auditing (ze
 - After pushing the workflow change, [CI run 38539391483](https://github.com/ArhiMEN/AdaptForm/actions/runs/38539391483) and the automatic [Deploy demo run 38539392190](https://github.com/ArhiMEN/AdaptForm/actions/runs/38539392190) both passed for commit `8e80018`.
 - Added `master` to the deployment workflow's push triggers. No merge into `master` was performed; automatic deployment there becomes available when this branch is merged.
 - Local checks passed: lint, demo type-check, demo production build, and all 339 tests across 16 files with coverage. No library source files changed, so per-file source coverage thresholds do not apply to this workflow/documentation change.
+
+## Bilingual extension — 2026-10-14
+
+- [x] Completed the English/Russian demo, persistent language selection, shareable language URLs, localized documentation links, and complete companion documents.
+- [x] Kept library built-in validation messages and public APIs unchanged. Language switching preserves entered values, collection items, validation state, and serialization selection.
+- [x] Added demo regression tests, documentation completeness/link checks, and package-manifest tests. The package includes English/Russian README, CHANGELOG, and license information.
+- [ ] Verify the final CI and Pages deployment, then merge `v2.1.0` into `master` without deleting either branch.
+
+### Local verification of the bilingual extension
+
+- All 367 tests across 19 files passed, including 28 new checks for demo interactions, documentation, and package manifests.
+- Lint, library build, source type-check, demo type-check/build, separate new-test type-check, and package-content verification passed. The package has 21 files, including the three Russian companion documents; no npm publication was performed.
+- `npm audit --audit-level=moderate` reported zero known vulnerabilities.
+- The same exploratory test type-check failures were reproduced against the pre-change commit `e829bad` in an isolated temporary snapshot.
+
+| Changed runtime file | Lines | Branches | Functions |
+|---|---|---|---|
+| `demo/main.ts` | 100% | 95.89% | 100% |
+| `demo/i18n.ts` | 100% | 100% | 100% |
+| `demo/translations.ts` | 100% | 100% | 100% |
+| `scripts/check-package-content.mjs` | 100% | 100% | 100% |
+
+### Verification scope
+
+The required source type-check and demo type-check pass. An additional exploratory `tsconfig.test.json` check exposes pre-existing test typing problems (such as zero-argument type constructors, intentionally asynchronous validators, and recursive type instantiation). This is not a configured CI gate; the runtime regression suite remains the test acceptance criterion. New test typing is checked separately. No standalone browser e2e framework is configured; demo interaction coverage uses the existing Vitest/jsdom setup.
 
 ## Deferred follow-up — outside this branch's acceptance criteria
 

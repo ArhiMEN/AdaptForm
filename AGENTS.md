@@ -1,5 +1,7 @@
 # Repository Agent Instructions
 
+[English](AGENTS.md) · [Русский](AGENTS.ru.md)
+
 ## Non-negotiable safety rules
 
 - Never delete this repository.
@@ -19,7 +21,7 @@
 
 ## Language
 
-- Keep repository-authored documentation, comments, identifiers where practical, test descriptions, and examples in English.
+- Keep comments, identifiers where practical, test descriptions, and code examples in English. Maintain English documentation with complete Russian companion files (`*.ru.md`), as authorized by the maintainer. Keep both versions aligned when documentation changes.
 - Preserve existing user-facing validation/error messages and type names during the v2.1.0 library-only pass. Their localization is deferred to a separately coordinated task; do not change their language or public message contract without explicit approval and a compatibility/migration plan.
 - Keep language-neutral data and user-supplied values unchanged.
 

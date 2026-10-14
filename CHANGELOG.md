@@ -1,15 +1,20 @@
 # Changelog
 
+[English](CHANGELOG.md) · [Русский](CHANGELOG.ru.md)
+
 All notable changes to AdaptForm are documented here. The `2.1.0` section is prepared for release; it remains unreleased until the maintainer publishes it.
 
-**[Interactive demo](https://arhimen.github.io/AdaptForm/)** · [Demo source](https://github.com/ArhiMEN/AdaptForm/tree/v2.1.0/demo) · [Documentation](https://github.com/ArhiMEN/AdaptForm/blob/v2.1.0/README.md)
+**[Interactive demo](https://arhimen.github.io/AdaptForm/)** · [Demo source](https://github.com/ArhiMEN/AdaptForm/tree/master/demo) · [Documentation](https://github.com/ArhiMEN/AdaptForm/blob/master/README.md)
 
 ## [2.1.0] - Unreleased
 
 ### Added
 
+- Add English/Russian demo localization with persistent language selection and language-specific documentation links, preserving entered values and validation state.
+- Add complete Russian companion documentation, changelog, release tracking, repository instructions, and license information alongside the English originals.
+
 - Add a browser-based interactive playground covering field validation, conditional requirements, field state, arrays, nested forms, server-error handling, serialization, and input masks.
-- Add a GitHub Actions workflow to build and deploy the playground to GitHub Pages from the `v2.1.0` branch.
+- Add a GitHub Actions workflow to build and deploy the playground to GitHub Pages from `v2.1.0` and `master`.
 - Add dedicated demo type-checking and production-build commands, and run both as part of CI.
 - Add automated npm package-content verification to ensure required ESM, CommonJS, and TypeScript declaration files are present while development sources and tests stay out of the published package.
 - Export `ErrorsSchema` from the public package entry point.
@@ -43,12 +48,14 @@ All notable changes to AdaptForm are documented here. The `2.1.0` section is pre
 
 ### Security and maintenance
 
-- Add `npm audit --audit-level=moderate` to CI and update vulnerable transitive dependency versions using reviewed overrides. The final verified workflow reports zero known vulnerabilities from both dependency audit steps.
+- Support both array and keyed-object npm pack JSON manifests in the package-content check; require English/Russian package documentation.
+
+- Add `npm audit --audit-level=moderate` to CI and update vulnerable transitive dependency versions using reviewed overrides. The final verified workflow reports zero known vulnerabilities from npm audit; the previous lockfile scan also reported zero.
 - Verify lint, tests, ESM/CJS build, declaration generation, source type-checking, demo type-checking/build, and npm package contents in CI.
 
 ### Compatibility notes
 
-- Validation messages and their language have not been changed in this release candidate. Localization and any structured error-code contract are deferred to a separate coordinated task.
+- Built-in library validation messages and their language have not been changed in this release candidate. Localization and any structured error-code contract are deferred to a separate coordinated task.
 - PlayLease-specific integration work is explicitly out of scope for this branch.
 - This changelog describes the release candidate in branch `v2.1.0`; npm publication and the GitHub release are still maintainer actions.
 

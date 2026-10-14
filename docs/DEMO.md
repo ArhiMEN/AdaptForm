@@ -1,5 +1,7 @@
 # Interactive demo and GitHub Pages
 
+[English](DEMO.md) · [Русский](DEMO.ru.md)
+
 The live playground URL is **[https://arhimen.github.io/AdaptForm/](https://arhimen.github.io/AdaptForm/)**. GitHub Pages uses GitHub Actions for deployment, and the `github-pages` environment allows both `v2.1.0` and `master` to deploy.
 
 The page is built from the `demo/` application and the library source in `src/` on the deploying branch. The initial deployment uses `v2.1.0`, so the playground exercises the code being prepared for the 2.1.0 release candidate. After this branch is merged into `master`, changes on `master` also deploy automatically. Both branches publish to the same URL; the latest successful deployment becomes the live demo.
@@ -16,6 +18,14 @@ The page is built from the `demo/` application and the library source in `src/` 
 - Reset behavior and the distinction between pristine, pending, valid, and invalid state.
 
 All example values remain in the current browser page. The playground does not submit them to a server.
+
+## Languages
+
+Use the **Language** selector to choose English or Russian. The choice is saved in browser storage when available. A `?lang=en` or `?lang=ru` URL parameter takes precedence over the saved choice; otherwise, the demo uses the saved language or the browser language, falling back to English.
+
+Switching languages preserves values, validation state, collection items, and the selected serialization tab. Demo validation and simulated server messages are translated for display; the library's built-in validation messages and public API remain unchanged. Documentation and changelog links open the selected language.
+
+Direct links: [English demo](https://arhimen.github.io/AdaptForm/?lang=en) · [Russian demo](https://arhimen.github.io/AdaptForm/?lang=ru).
 
 ## Run locally
 
@@ -44,7 +54,7 @@ Under **Settings → Environments → github-pages → Deployment branches and t
 
 ## Updating the demo
 
-- Keep all demo UI text, comments, and documentation in English.
+- Maintain English and Russian demo UI text and documentation. Keep comments and code examples in English.
 - Prefer importing the public API from `../src/index.ts`, not reimplementing library behavior inside the demo.
 - Keep the Vite base path aligned with the repository name.
 - Add meaningful interactions to `demo/main.ts` and their presentation to `demo/style.css`.
