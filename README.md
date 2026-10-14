@@ -243,7 +243,7 @@ console.log(birthdate.valueClear); // Luxon DateTime object
 
 ## Form Submission
 
-`toFormData()` appends scalar values as strings, serializes JavaScript `Date` values as ISO 8601 strings, preserves `Blob`/`File` values, and JSON-encodes arrays and nested objects. `null` and `undefined` fields are omitted. This makes collection serialization explicit instead of relying on JavaScript's lossy default object-to-string conversion.
+`toFormData()` appends scalar values as strings, serializes JavaScript `Date` values as ISO 8601 strings, preserves `Blob`/`File` values, and JSON-encodes arrays and nested objects. `null` and `undefined` fields are omitted. This makes collection serialization explicit instead of relying on JavaScript's lossy default object-to-string conversion. `toJSON()` recursively converts `Date` values to ISO 8601 strings, including dates nested in arrays and plain objects.
 
 ```TypeScript
 class ContactForm extends Form {
@@ -280,6 +280,36 @@ if (form.checkValid()) {
 }
 ```
 
+## Error Schema Mapping
+
+`ErrorsSchema` maps server error keys to form fields. `forArray()` supports array-item paths written with bracket, dotted, or custom index notation, and applies the item schema's mappings and value transformers.
+
+```TypeScript
+import {ErrorsSchema} from 'adaptform';
+
+const itemSchema = new ErrorsSchema()
+  .staticKey('email', 'emailAddress');
+
+const schema = ErrorsSchema.forArray(itemSchema, 'accounts');
+const errors = schema.parseErrors({
+  'accounts[0].email': 'Invalid email'
+});
+
+// { 'accounts.0.emailAddress': 'Invalid email' }
+```
+
+For a custom index format, provide an `indexExtractor` that returns the index or `-1` when the key does not contain a valid index.
+
+```TypeScript
+const schema = ErrorsSchema.forArray(
+  new ErrorsSchema(),
+  'items',
+  (key) => {
+    const match = key.match(/<(\\d+)>/);
+    return match ? Number(match[1]) : -1;
+  }
+);
+```
 ## Global Errors
 
 ```TypeScript
