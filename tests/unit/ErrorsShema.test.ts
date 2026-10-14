@@ -467,7 +467,7 @@ describe('ErrorSchema', () => {
 
       expect(result).toEqual({
         'accounts.0.email': 'Invalid email',
-        'accounts.1.password': 'TOO SHORT',
+        'accounts.1.password': 'Too short',
         'accounts.2.username': 'Taken'
       })
     })
@@ -486,7 +486,7 @@ describe('ErrorSchema', () => {
 
       expect(result).toEqual({
         'accounts.0.emailAddress': 'INVALID EMAIL',
-        'accounts.1.password': 'Too short'
+        'accounts.1.password': 'TOO SHORT'
       })
     })
 
