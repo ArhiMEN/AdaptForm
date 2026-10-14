@@ -59,6 +59,13 @@ Interactive demo: [https://arhimen.github.io/AdaptForm/](https://arhimen.github.
 
 ## Deferred follow-up (outside this branch's acceptance criteria)
 
+### Maintainer-requested npm publication automation — 2026-10-14
+
+- [x] Prepare publication after successful `master` CI, gated by an explicit repository variable.
+- [x] Use the exact package version from `package.json`; skip versions already on npm and reject a mismatched lockfile.
+- [x] Document npm Trusted Publisher and granular-token setup in English and Russian.
+- [ ] Configure either an npm Trusted Publisher or a granular `NPM_TOKEN` secret, then set `NPM_PUBLISH_ENABLED=true` and verify an eligible publish run.
+
 - Validation-message localization and any structured error-code contract.
 - PlayLease integration tests and adapter changes.
 - Release version bump, npm publication, and release tagging; all require explicit approval.

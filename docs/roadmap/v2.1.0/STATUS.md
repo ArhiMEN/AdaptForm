@@ -112,6 +112,11 @@ The required source type-check and demo type-check pass. An additional explorato
 
 ## Known limitations
 
+### npm publication automation — 2026-10-14
+
+The maintainer requested automatic npm publication after merges into `master`, using the version in `package.json`. The guarded workflow and release preflight are prepared, with seven new regression tests. Activation remains pending: npm rejected Trusted Publisher management with HTTP 403, asking the account owner to enable 2FA. No GitHub npm secret is configured. The workflow skips publication until either the npm Trusted Publisher or a granular `NPM_TOKEN` secret is configured and `NPM_PUBLISH_ENABLED=true`. This setup does not create tags or GitHub releases. See [setup instructions](../../NPM_PUBLISH.md).
+
+
 - Both permitted branches share one live demo URL; the latest successful deployment replaces the previous site. Automatic deployment from `master` has been verified.
 
 - Legacy callback APIs still contain some `any` types where replacing them with `unknown` would cause a source-compatibility change. Form value inference, serialization results, and nested collection values have been made more precise without broad callback API changes.
