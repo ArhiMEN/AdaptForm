@@ -766,7 +766,7 @@ describe('ErrorSchema', () => {
         .fallback((key) => key)
 
       const pydanticErrors = {
-        'accounts.0.launcher_type': 'Value error, Выберите лаунчер',
+        'accounts.0.launcher_type': 'Value error, Select a launcher',
         'accounts.0.login': 'ensure this value has at most 50 characters',
         'accounts.0.game_ids.0': 'Value error, ensure this value is greater than 0',
         'accounts.1.email': 'value is not a valid email address',
@@ -776,7 +776,7 @@ describe('ErrorSchema', () => {
       const result = pydanticSchema.parseErrors(pydanticErrors)
 
       expect(result).toEqual({
-        'accounts.0.launcher_type': 'Выберите лаунчер',
+        'accounts.0.launcher_type': 'Select a launcher',
         'accounts.0.login': 'ensure this value has at most 50 characters',
         'accounts.0.game_ids.0': 'ensure this value is greater than 0',
         'accounts.1.email': 'value is not a valid email address',
