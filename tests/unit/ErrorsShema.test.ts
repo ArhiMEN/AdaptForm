@@ -135,7 +135,7 @@ describe('ErrorSchema', () => {
       })
 
       expect(result).toEqual({
-        'items.7.name': 'Required',
+        'items.0.name': 'Required',
         'items.1.price': 'Invalid price'
       })
     })
