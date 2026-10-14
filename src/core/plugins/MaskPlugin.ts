@@ -220,7 +220,7 @@ export class MaskPlugin extends BasePlugin {
           } else if (part.pushToNext) {
             // Insert mismatchReplacement and pass the character onward
             result += part.transformOnMismatch || ''
-            // НЕ сдвигаем inputIndex
+            // Do not advance inputIndex; the next placeholder will process this character.
             continue
           } else {
             result += part.transformOnMatch || ''
