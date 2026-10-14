@@ -120,14 +120,14 @@ export class DecoratorPlugin<T = any> extends BasePlugin<T> {
     return this
   }
 
-  init(field: Field<T>) {
+  init(_field: Field<T>) {
   }
 
-  toRawValue(value: any, field: Field<T>) {
+  toRawValue(value: any, _field: Field<T>) {
     return this.process(String(value ?? '')).rawValue
   }
 
-  toValueClear(value: any, field: Field<T>) {
+  toValueClear(value: any, _field: Field<T>) {
     return this.process(String(value ?? '')).valueClear
   }
 
