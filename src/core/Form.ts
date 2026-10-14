@@ -258,15 +258,23 @@ export abstract class Form {
     return Object.keys(this._globalErrors).length === 0
   }
 
-  // Получить все значения в виде FormData (для отправки на сервер)
+  // Serialize form values for multipart requests.
   toFormData(): FormData {
     const formData = new FormData()
     const data = this.fieldsValue
 
     for (const [key, value] of Object.entries(data)) {
-      if (value instanceof Date) {
+      if (value === null || value === undefined) continue
+
+      if (typeof Blob !== 'undefined' && value instanceof Blob) {
+        formData.append(key, value)
+      } else if (value instanceof Date) {
         formData.append(key, value.toISOString())
-      } else if (value !== null && value !== undefined) {
+      } else if (typeof value === 'object') {
+        // Encode collections and nested objects as JSON instead of lossy String(value).
+        const serialized = JSON.stringify(value)
+        if (serialized !== undefined) formData.append(key, serialized)
+      } else {
         formData.append(key, String(value))
       }
     }
