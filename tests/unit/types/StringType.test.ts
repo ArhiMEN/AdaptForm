@@ -73,7 +73,7 @@ describe('StringType', () => {
     })
 
     it('should validate global patterns consistently across repeated calls', () => {
-      const type = new StringType({ pattern: /abc/g })
+      const type = new StringType({ pattern: /^abc$/g })
 
       expect(type.validate('abc')).toEqual([])
       expect(type.validate('abc')).toEqual([])
