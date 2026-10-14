@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Export `ErrorsSchema` from the package entry point.
+- Infer `Form.fieldsValue` from declared `Field`, `ArrayField`, and `ArrayFormField` properties.
+- Document array error mapping and recursive JSON serialization behavior.
+
+### Changed
+
+- `Field.valueClear` now exposes its actual `T | null` type; `ArrayField.itemsValue` reflects nullable item values.
+- `Form.toFormData()` JSON-encodes arrays and nested objects and omits `null`/`undefined` values.
+- `Form.toJSON()` recursively converts `Date` values to ISO 8601 strings, including dates inside arrays and plain objects.
+- CI uses `npm ci` with a lockfile aligned to the package version.
+
+### Fixed
+
+- `ErrorsSchema.forArray()` now honors custom index extractors, applies item-schema mappings and transformers, and supports bracket, dotted, and custom index notation.
+- `ErrorsSchema.parseErrors()` invokes a fallback handler only once when it declines an error.
+
 ## [2.0.5] - 2026-07-22
 
 ### Added
