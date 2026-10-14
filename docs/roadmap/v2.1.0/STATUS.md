@@ -17,7 +17,7 @@ Release status: Not released; npm publication is not authorized by this plan.
 - [x] Identified priority areas from source review: type inference, serialization, validation side effects, array error schema composition, and localization compatibility.
 - [x] Confirmed PlayLease consumes `adaptform@^2.0.5` and has a custom adapter that currently translates Russian validation messages.
 
-## Completed
+## Implementation checklist
 
 - [x] Establish the executable test/build/type-check baseline through GitHub Actions.
 - [x] Inspect test configuration and replace the machine-specific absolute alias path with a portable path.

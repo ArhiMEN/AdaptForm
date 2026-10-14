@@ -23,7 +23,7 @@ Improve the reliability, type safety, maintainability, and release confidence of
 ### 3. Serialization contracts
 - [x] Define and test JSON serialization for primitives, arrays, nested forms, and Date values, including recursive Date conversion.
 - [x] Define and test FormData serialization for arrays, nested form values, Date values, and omission of nullish values. Blob/File handling is implemented; broader edge-case coverage remains to be added.
-- [ ] Preserve existing supported behavior or document migration steps for intentional changes.
+- [x] Document intentional validation and serialization behavior changes in README and CHANGELOG.
 
 ### 4. Type safety
 - [x] Improve inference for form field values and keys without duplicating runtime field discovery logic.
@@ -42,7 +42,7 @@ Improve the reliability, type safety, maintainability, and release confidence of
 ### 7. Release readiness
 - [ ] Expand regression and integration coverage for identified edge cases.
 - [x] Verify lint, tests, build, and TypeScript type-check through GitHub Actions; package-content review remains outstanding.
-- [ ] Update README and CHANGELOG in English to reflect implemented behavior only.
+- [x] Update README and CHANGELOG in English to reflect implemented behavior only.
 - [ ] Review the final diff and document remaining risks.
 - [ ] Do not publish or tag a release without explicit user approval.
 
