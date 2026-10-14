@@ -176,10 +176,10 @@ describe('Validation Tests', () => {
     })
 
     it('should support async validation (mock)', () => {
-      // В реальном приложении можно добавить async validation
+      // An application may add asynchronous validation here.
       const field = new Field(StringType, null, {
         validate: async (value) => {
-          // Имитация async проверки (например, проверка уникальности на сервере)
+          // Simulate an asynchronous check, such as server-side uniqueness validation.
           return new Promise<boolean>((resolve) => {
             setTimeout(() => {
               resolve(value !== 'taken')
@@ -188,9 +188,9 @@ describe('Validation Tests', () => {
         }
       })
       
-      // Тест для синхронной части
+      // Test the synchronous portion.
       field.rawValue = 'available'
-      expect(field.isValid).toBe(true) // Так как validate возвращает true
+      expect(field.isValid).toBe(true) // The validate callback returns true.
     })
 
     it('should pass form context to validator', () => {
