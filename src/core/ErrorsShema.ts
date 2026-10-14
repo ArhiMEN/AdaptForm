@@ -9,7 +9,7 @@ export interface ParsedError {
 
 export interface DynamicRule {
   pattern: RegExp
-  mapping: ErrorFieldMapping | ((match: RegExpMatchArray) => string)
+  mapping: ErrorFieldMapping | ((match: RegExpMatchArray, value?: any) => string)
   priority: number
 }
 
@@ -93,7 +93,7 @@ export class ErrorsSchema {
     // Accept bracket, angle-bracket, and dotted index notations.
     schema.dynamicKey(
       new RegExp(`^${escapedArrayFieldName}(.+?)\\.(.+)$`),
-      (match) => {
+      (match, value) => {
         const sourceKey = match[0]
         const index = indexExtractor
           ? indexExtractor(sourceKey)
@@ -104,7 +104,19 @@ export class ErrorsSchema {
         }
 
         const fieldPath = match[2]
-        return `${arrayFieldName}.${index}.${fieldPath}`
+        let transformedValue = value
+        for (const transformer of itemSchema._valueTransformers) {
+          transformedValue = transformer(transformedValue)
+        }
+
+        const itemMapping = itemSchema.findMapping(fieldPath, transformedValue)
+        const mappedFieldPath = itemMapping
+          ? typeof itemMapping === 'function'
+            ? itemMapping(transformedValue)
+            : itemMapping
+          : fieldPath
+
+        return `${arrayFieldName}.${index}.${mappedFieldPath}`
       },
       {priority: 100}
     )
@@ -319,7 +331,7 @@ export class ErrorsSchema {
       const match = key.match(rule.pattern)
       if (match) {
         const fieldName = typeof rule.mapping === 'function'
-          ? rule.mapping(match)
+          ? rule.mapping(match, value)
           : rule.mapping
         return fieldName ? {fieldName, matchedBy: 'dynamic'} : null
       }
