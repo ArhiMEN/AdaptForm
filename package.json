@@ -53,7 +53,7 @@
   "sideEffects": false,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ArhiMEN/adaptform.git"
+    "url": "git+https://github.com/ArhiMEN/AdaptForm.git"
   },
   "bugs": {
     "url": "https://github.com/ArhiMEN/adaptform/issues"
