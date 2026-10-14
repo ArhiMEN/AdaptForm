@@ -43,7 +43,7 @@ export class ArrayFormField<T extends Form = Form> {
 
   // ===== actions =====
 
-  add(data?: any, force_check?: boolean): T {
+  add(data?: any, force_check: boolean = true): T {
     const form = new this.FormConstructor()
 
     if (data) form.fields = data
@@ -148,7 +148,7 @@ export class ArrayFormField<T extends Form = Form> {
     if (this._errors.length > 0) return false
     
     // Every nested form must be valid (checkValid() === true).
-    return this._forms.every(i => i.checkValid() === true)
+    return this._forms.every(form => form.isValid)
   }
 
   get errors(): string[] {
