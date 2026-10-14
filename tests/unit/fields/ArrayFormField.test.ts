@@ -42,6 +42,20 @@ describe('ArrayFormField', () => {
       arrayFormField.forms = [{ name: null }]
       expect(arrayFormField.isValid).toBe(false)
     })
+
+    it('should run nested field validators once when replacing forms', () => {
+      const validate = vi.fn(() => true)
+      class ValidatedForm extends Form {
+        name = new Field(StringType, null, { validate })
+      }
+
+      const arrayFormField = new ArrayFormField(ValidatedForm)
+      validate.mockClear()
+
+      arrayFormField.forms = [{ name: 'Ada' }]
+
+      expect(validate).toHaveBeenCalledTimes(1)
+    })
   })
 
   describe('add', () => {
