@@ -55,7 +55,7 @@ Interactive demo: [https://arhimen.github.io/AdaptForm/](https://arhimen.github.
 - [x] Add a persistent English/Russian language selector to the demo without changing entered data or library validation contracts.
 - [x] Provide complete English/Russian versions of README, CHANGELOG, demo guide, release plan, status log, repository instructions, and license information.
 - [x] Add regression coverage for language selection, switching, validation messages, collections, and serialization.
-- [ ] Recheck the 2.1.0 acceptance criteria, pass local and CI checks, then push and merge `v2.1.0` into `master` without deleting either branch.
+- [x] Recheck the 2.1.0 acceptance criteria, pass local and CI checks, then push and merge `v2.1.0` into `master` without deleting either branch.
 
 ## Deferred follow-up (outside this branch's acceptance criteria)
 

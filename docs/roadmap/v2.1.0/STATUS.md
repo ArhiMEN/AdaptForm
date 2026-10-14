@@ -4,15 +4,15 @@
 
 ## Current stage
 
-**Stage 3 — Final verification and release readiness**
+**Stage 3 — Source delivery complete; release publication pending**
 
-Branch: `v2.1.0`  
+Branch: `v2.1.0` (merged into `master`)
 Baseline branch: `master`  
 Starting package version: `2.0.5`  
 Package version in this branch: `2.1.0` (prepared for maintainer release; not published)  
-Release status: Release candidate prepared; npm publication, GitHub release, and release tagging have not been performed.
+Release status: Source merged into `master`; npm publication, GitHub release, and release tagging have not been performed.
 
-Interactive demo: [https://arhimen.github.io/AdaptForm/](https://arhimen.github.io/AdaptForm/) — live and verified against the `v2.1.0` source; deployment permissions allow `v2.1.0` and `master`.
+Interactive demo: [https://arhimen.github.io/AdaptForm/](https://arhimen.github.io/AdaptForm/) — live in English and Russian, verified after deployment from `master`; deployment permissions allow `v2.1.0` and `master`.
 
 ## Completed
 
@@ -75,7 +75,15 @@ The final CI run verified 339 tests across 16 files, npm dependency auditing (ze
 - [x] Completed the English/Russian demo, persistent language selection, shareable language URLs, localized documentation links, and complete companion documents.
 - [x] Kept library built-in validation messages and public APIs unchanged. Language switching preserves entered values, collection items, validation state, and serialization selection.
 - [x] Added demo regression tests, documentation completeness/link checks, and package-manifest tests. The package includes English/Russian README, CHANGELOG, and license information.
-- [ ] Verify the final CI and Pages deployment, then merge `v2.1.0` into `master` without deleting either branch.
+- [x] Verify the final CI and Pages deployment, then merge `v2.1.0` into `master` without deleting either branch.
+
+### Verified delivery to master
+
+Implementation commit: `fa8a39d82a2e7f742af08e4d171dc3dab21f49de`. Branch [CI 38543186144](https://github.com/ArhiMEN/AdaptForm/actions/runs/38543186144) and [Pages deployment 38543185730](https://github.com/ArhiMEN/AdaptForm/actions/runs/38543185730) passed before merging.
+
+Merged into `master` as [117116a](https://github.com/ArhiMEN/AdaptForm/commit/117116a107e874af7ad2121091532644e9d4ecbe). Master [CI 38543404401](https://github.com/ArhiMEN/AdaptForm/actions/runs/38543404401) and [Pages deployment 38543404388](https://github.com/ArhiMEN/AdaptForm/actions/runs/38543404388) both passed. Both branches remain present.
+
+Live HTML, JavaScript, and CSS returned HTTP 200. The downloaded production bundle matches the local build and passed RU/EN runtime checks in jsdom, including translated errors and language-specific documentation links. These checks do not constitute a real-browser e2e run. The remaining changes only record delivery status and do not change implementation.
 
 ### Local verification of the bilingual extension
 
@@ -104,7 +112,7 @@ The required source type-check and demo type-check pass. An additional explorato
 
 ## Known limitations
 
-- Both permitted branches share one live demo URL; the latest successful deployment replaces the previous site. The `master` deployment trigger must reach `master` through the normal merge process.
+- Both permitted branches share one live demo URL; the latest successful deployment replaces the previous site. Automatic deployment from `master` has been verified.
 
 - Legacy callback APIs still contain some `any` types where replacing them with `unknown` would cause a source-compatibility change. Form value inference, serialization results, and nested collection values have been made more precise without broad callback API changes.
 - No PlayLease application runtime or integration suite was run, by explicit scope decision.
@@ -114,7 +122,7 @@ The required source type-check and demo type-check pass. An additional explorato
 
 - [x] Correctness fixes have regression tests.
 - [x] Lint, tests, build, type-check, dependency audit, and package-content validation pass in CI.
-- [x] Documentation and tracking files are updated in English, excluding deferred user-facing validation/error text.
+- [x] Documentation and tracking files are updated in English and Russian, excluding deferred user-facing validation/error text.
 - [x] No duplicate implementation was added where existing logic could be improved.
 - [x] Repository and branch safety constraints were preserved.
 - [x] Confirm the final branch CI after the last code and documentation updates.
