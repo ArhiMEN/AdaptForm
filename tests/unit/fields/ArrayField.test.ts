@@ -127,7 +127,7 @@ describe('ArrayField', () => {
     it('should validate minItems', () => {
       const factory = (value?: string) => new Field(StringType, value)
       const arrayField = new ArrayField(factory, { minItems: 2 })
-      // При создании пустого массива isValid = false из-за minItems
+      // An empty array is invalid when minItems is configured.
       expect(arrayField.isValid).toBe(false)
       
       arrayField.add('a')
