@@ -71,9 +71,9 @@ export interface StringOptions extends FieldOptions {
 
 export interface NumberOptions extends FieldOptions {
   gt?: number // greater than
-  ge?: number // greater than или равно
+  ge?: number // greater than or equal to
   lt?: number // less than
-  le?: number // less than или равно
+  le?: number // less than or equal to
   messages?: messagesNumberOptions
 }
 
