@@ -38,7 +38,7 @@ describe('MaskPlugin', () => {
       
       plugin.init({} as any)
       const rawValue = plugin.toRawValue('01012023', {} as any)
-      // Маска не применяется корректно без правильной конфигурации
+      // The mask is not applied correctly without a valid configuration.
       expect(rawValue).toBeDefined()
     })
   })
