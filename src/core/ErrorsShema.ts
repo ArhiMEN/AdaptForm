@@ -97,7 +97,7 @@ export class ErrorsSchema {
         const sourceKey = match[0]
         const index = indexExtractor
           ? indexExtractor(sourceKey)
-          : Number(match[1].match(/\\d+/)?.[0] ?? NaN)
+          : Number(match[1].match(/\d+/)?.[0] ?? NaN)
 
         if (!Number.isInteger(index) || index < 0) {
           return ''
