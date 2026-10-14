@@ -195,7 +195,7 @@ describe('ErrorSchema', () => {
     })
 
     it('should receive the error key and value', () => {
-      const handler = vi.fn((key: string, _value: any) => key
+      const handler = vi.fn((key: string, _value: any) => key)
       schema.fallback(handler)
 
       schema.parseErrors({test: 'error message'})
