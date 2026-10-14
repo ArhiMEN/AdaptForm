@@ -24,21 +24,21 @@ export function expectInvalid(field: Field, expectedErrors: string[] = [], form?
 }
 
 /**
- * Утилита для проверки пустого поля
+ * Utility to assert that a field is empty
  */
 export function expectEmpty(field: Field) {
   expect(field.isEmpty).toBe(true)
 }
 
 /**
- * Утилита для проверки непустого поля
+ * Utility to assert that a field is not empty
  */
 export function expectNotEmpty(field: Field) {
   expect(field.isEmpty).toBe(false)
 }
 
 /**
- * Утилита для проверки сброса поля
+ * Utility to assert that a field was reset
  */
 export function expectReset(field: Field, defaultValue?: any) {
   field.reset()
@@ -51,28 +51,28 @@ export function expectReset(field: Field, defaultValue?: any) {
 }
 
 /**
- * Утилита для проверки isTouched
+ * Utility to assert the isTouched state
  */
 export function expectTouched(field: Field) {
   expect(field.isTouched).toBe(true)
 }
 
 /**
- * Утилита для проверки isTouched = false
+ * Utility to assert the isTouched state = false
  */
 export function expectNotTouched(field: Field) {
   expect(field.isTouched).toBe(false)
 }
 
 /**
- * Утилита для создания формы в тестах
+ * Utility to create a form for tests
  */
 export function createTestForm<T extends Form>(FormConstructor: new () => T): T {
   return new FormConstructor()
 }
 
 /**
- * Утилита для проверки формы как валидной
+ * Utility to assert that a form is valid
  */
 export function expectFormValid(form: Form) {
   expect(form.isValid).toBe(true)
@@ -80,7 +80,7 @@ export function expectFormValid(form: Form) {
 }
 
 /**
- * Утилита для проверки формы как невалидной
+ * Utility to assert that a form is invalid
  */
 export function expectFormInvalid(form: Form) {
   expect(form.isValid).toBe(false)
