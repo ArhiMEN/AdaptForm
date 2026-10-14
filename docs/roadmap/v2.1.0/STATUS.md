@@ -29,6 +29,7 @@ Release status: Release candidate prepared; npm publication, GitHub release, and
 - [x] Added an npm package content check and integrated it into CI.
 - [x] Created a styled interactive demo at `demo/`, built directly against the branch source.
 - [x] Added a GitHub Pages deployment workflow and independent demo type-check/build checks in CI.
+- [ ] Complete the first live deployment after a repository owner enables GitHub Pages with the source set to GitHub Actions. The workflow token cannot enable the repository setting.
 - [x] Linked the demo from README, CHANGELOG, and project tracking; added deployment instructions in `docs/DEMO.md`.
 - [x] Prepared `package.json` and `package-lock.json` with version `2.1.0` without publishing.
 - [x] Updated README, CHANGELOG, and this tracker to describe the implemented behavior and deferred work.
@@ -61,6 +62,8 @@ The plan-only commit `70322702b643057191a378a91cce468b09e1f728` also passed CI. 
 
 ## Known limitations
 
+- The demo build and type-check pass in CI, but the first GitHub Pages deployment is blocked by repository settings. An owner/admin must enable **Settings → Pages → Build and deployment → GitHub Actions**, then rerun the **Deploy demo** workflow. The workflow attempted automatic enablement but GitHub rejected the repository-settings operation for the workflow token.
+
 - Legacy callback APIs still contain some `any` types where replacing them with `unknown` would cause a source-compatibility change. Form value inference, serialization results, and nested collection values have been made more precise without broad callback API changes.
 - No PlayLease application runtime or integration suite was run, by explicit scope decision.
 - The latest published npm version remains `2.0.5`; this branch is prepared as `2.1.0` but has not been released.
@@ -74,5 +77,5 @@ The plan-only commit `70322702b643057191a378a91cce468b09e1f728` also passed CI. 
 - [x] Repository and branch safety constraints were preserved.
 - [x] Confirm the final branch CI after the last code and documentation updates.
 - [x] Prepare version `2.1.0` in package metadata and changelog without publishing or tagging.
-- [ ] Confirm GitHub Pages is enabled and verify the live demo URL after deployment.
+- [ ] Enable GitHub Pages in repository settings, rerun deployment, and verify the live demo URL.
 - [ ] Obtain explicit approval before creating a GitHub release, tag, or npm publication.
