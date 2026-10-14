@@ -88,7 +88,13 @@ export class ErrorsSchema {
   ): ErrorsSchema {
     const schema = new ErrorsSchema()
 
-    const escapedArrayFieldName = arrayFieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    for (const transformer of itemSchema._valueTransformers) {
+      schema.transformValue(transformer)
+    }
+
+    const escapedArrayFieldName = arrayFieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\    const escapedArrayFieldName = arrayFieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+    // Accept bracket, angle-bracket, and dotted index notations.')
 
     // Accept bracket, angle-bracket, and dotted index notations.
     schema.dynamicKey(
@@ -104,15 +110,10 @@ export class ErrorsSchema {
         }
 
         const fieldPath = match[2]
-        let transformedValue = value
-        for (const transformer of itemSchema._valueTransformers) {
-          transformedValue = transformer(transformedValue)
-        }
-
-        const itemMapping = itemSchema.findMapping(fieldPath, transformedValue)
+        const itemMapping = itemSchema.findMapping(fieldPath, value)
         const mappedFieldPath = itemMapping
           ? typeof itemMapping === 'function'
-            ? itemMapping(transformedValue)
+            ? itemMapping(value)
             : itemMapping
           : fieldPath
 
