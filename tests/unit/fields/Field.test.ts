@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import { Field } from '@core/fields/Field'
 import { StringType } from '@core/types/StringType'
 import { NumberType } from '@core/types/NumberType'
-import { BooleanType } from '@core/types/BooleanType'
 
 describe('Field', () => {
   describe('construction', () => {
@@ -120,10 +119,6 @@ describe('Field', () => {
       })
 
       it('should support function for isRequired', () => {
-        class TestForm {
-          country = new Field(StringType)
-        }
-        
         const field = new Field(StringType, null, {
           isRequired: (form?: any) => form?.country?.valueClear === 'USA'
         })
@@ -163,7 +158,6 @@ describe('Field', () => {
       })
 
       it('should pass form to validator', () => {
-        const field = new Field(StringType)
         const field2 = new Field(StringType, null, {
           validate: (value, form) => {
             return value === (form as any)?.otherField?.valueClear || 'Must match'
