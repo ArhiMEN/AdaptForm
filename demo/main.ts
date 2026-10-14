@@ -146,6 +146,8 @@ $('#serialization').insertAdjacentElement('afterend', phoneSection)
 
 let validatedProfile = false
 let serverErrorsApplied = false
+let tagsInteracted = false
+let addressesValidated = false
 let activeSerializationTab: 'json' | 'formdata' = 'json'
 const profileKeys: ProfileKey[] = ['name', 'email', 'age', 'birthDate', 'country', 'region', 'terms']
 
@@ -209,22 +211,51 @@ function renderProfile(): void {
   renderMappedErrors()
 }
 
-function syncProfileFromInputs(): void {
-  profile.setFields({
-    name: ($('#name') as HTMLInputElement).value,
-    email: ($('#email') as HTMLInputElement).value,
-    age: ($('#age') as HTMLInputElement).value,
-    birthDate: ($('#birthDate') as HTMLInputElement).value || null,
-    country: ($('#country') as HTMLSelectElement).value,
-    region: ($('#region') as HTMLInputElement).value,
-    terms: ($('#terms') as HTMLInputElement).checked,
-  }, false)
+function syncProfileFromInputs(event?: Event): void {
+  const target = event?.target
+
+  if (target instanceof HTMLInputElement || target instanceof HTMLSelectElement) {
+    switch (target.id) {
+      case 'name':
+        profile.name.setRawValue(target.value, false)
+        break
+      case 'email':
+        profile.email.setRawValue(target.value, false)
+        break
+      case 'age':
+        profile.age.setRawValue(target.value, false)
+        break
+      case 'birthDate':
+        profile.birthDate.setRawValue(target.value || null, false)
+        break
+      case 'country':
+        profile.country.setRawValue(target.value, false)
+        break
+      case 'region':
+        profile.region.setRawValue(target.value, false)
+        break
+      case 'terms':
+        profile.terms.setRawValue((target as HTMLInputElement).checked, false)
+        break
+    }
+  } else {
+    profile.setFields({
+      name: ($('#name') as HTMLInputElement).value,
+      email: ($('#email') as HTMLInputElement).value,
+      age: ($('#age') as HTMLInputElement).value,
+      birthDate: ($('#birthDate') as HTMLInputElement).value || null,
+      country: ($('#country') as HTMLSelectElement).value,
+      region: ($('#region') as HTMLInputElement).value,
+      terms: ($('#terms') as HTMLInputElement).checked,
+    }, false)
+  }
+
   if (validatedProfile) profile.checkValid()
   renderProfile()
 }
 
-$('#profile-form').addEventListener('input', syncProfileFromInputs)
-$('#profile-form').addEventListener('change', syncProfileFromInputs)
+$('#profile-form').addEventListener('input', event => syncProfileFromInputs(event))
+$('#profile-form').addEventListener('change', event => syncProfileFromInputs(event))
 $('#profile-form').addEventListener('submit', event => {
   event.preventDefault()
   validatedProfile = true
@@ -254,7 +285,7 @@ function renderTags(): void {
       <button type="button" class="icon-button" data-remove-tag="${index}" aria-label="Remove tag ${index + 1}" title="Remove tag">×</button>
     </div>
   `).join('')
-  $('#tags-error').textContent = tags.errors.join(' ')
+  $('#tags-error').textContent = tagsInteracted ? tags.errors.join(' ') : ''
   $('#tags-values').textContent = pretty(tags.itemsValue)
   const addButton = $('#add-tag') as HTMLButtonElement
   addButton.disabled = tags.items.length >= 4
@@ -264,6 +295,7 @@ $('#tags-list').addEventListener('input', event => {
   const target = event.target
   if (!(target instanceof HTMLInputElement) || !target.dataset.tagIndex) return
   const index = Number(target.dataset.tagIndex)
+  tagsInteracted = true
   tags.items[index]?.setRawValue(target.value, false)
   tags.checkValid()
   renderTags()
@@ -276,14 +308,17 @@ $('#tags-list').addEventListener('click', event => {
   if (!(target instanceof HTMLElement)) return
   const button = target.closest<HTMLElement>('[data-remove-tag]')
   if (!button) return
+  tagsInteracted = true
   tags.remove(Number(button.dataset.removeTag))
   renderTags()
 })
 $('#add-tag').addEventListener('click', () => {
+  tagsInteracted = true
   if (tags.items.length < 4) tags.add('')
   renderTags()
 })
 $('#clear-tags').addEventListener('click', () => {
+  tagsInteracted = true
   tags.clear()
   renderTags()
 })
@@ -296,7 +331,7 @@ function renderAddresses(): void {
       <div class="form-field ${form.postalCode.errors.length ? 'has-error' : ''}"><label for="address-postal-${index}">Postal code</label><input id="address-postal-${index}" data-address-postal="${index}" value="${escapeHtml(form.postalCode.rawValue)}" inputmode="numeric" placeholder="12345" /><p class="field-error">${escapeHtml(form.postalCode.errors.join(' '))}</p></div>
     </div>
   `).join('')
-  $('#addresses-error').textContent = addresses.errors.join(' ')
+  $('#addresses-error').textContent = addressesValidated ? addresses.errors.join(' ') : ''
   $('#addresses-values').textContent = pretty(addresses.formsFieldsValue)
   ;($('#add-address') as HTMLButtonElement).disabled = addresses.forms.length >= 3
 }
@@ -309,6 +344,7 @@ $('#addresses-list').addEventListener('input', event => {
   const index = Number(cityIndex ?? postalIndex)
   const form = addresses.forms[index]
   if (!form) return
+  addressesValidated = true
   if (cityIndex !== undefined) form.city.setRawValue(target.value, false)
   if (postalIndex !== undefined) form.postalCode.setRawValue(target.value, false)
   addresses.checkValid()
@@ -323,14 +359,17 @@ $('#addresses-list').addEventListener('click', event => {
   if (!(target instanceof HTMLElement)) return
   const button = target.closest<HTMLElement>('[data-remove-address]')
   if (!button) return
+  addressesValidated = true
   addresses.remove(Number(button.dataset.removeAddress))
   renderAddresses()
 })
 $('#add-address').addEventListener('click', () => {
+  addressesValidated = true
   if (addresses.forms.length < 3) addresses.add()
   renderAddresses()
 })
 $('#validate-addresses').addEventListener('click', () => {
+  addressesValidated = true
   addresses.checkValid()
   renderAddresses()
 })
