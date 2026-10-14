@@ -1,11 +1,9 @@
 import { expect } from 'vitest'
 import type { Field } from '@core/fields/Field'
-import type { ArrayField } from '@core/fields/ArrayField'
-import type { ArrayFormField } from '@core/fields/ArrayFormField'
 import type { Form } from '@core/Form'
 
 /**
- * Утилита для проверки валидации поля
+ * Assert that a field is valid.
  */
 export function expectValid(field: Field, form?: Form) {
   const isValid = field.checkAndSetValid(form)
@@ -16,7 +14,7 @@ export function expectValid(field: Field, form?: Form) {
 }
 
 /**
- * Утилита для проверки невалидности поля
+ * Assert that a field is invalid.
  */
 export function expectInvalid(field: Field, expectedErrors: string[] = [], form?: Form) {
   const isValid = field.checkAndSetValid(form)
