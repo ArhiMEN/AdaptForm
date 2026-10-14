@@ -9,6 +9,8 @@
 
 **[Открыть интерактивное демо](https://arhimen.github.io/AdaptForm/?lang=ru)** · **[История изменений 2.1.0](https://github.com/ArhiMEN/AdaptForm/blob/master/CHANGELOG.ru.md)** · **[Исходный код демо](https://github.com/ArhiMEN/AdaptForm/tree/master/demo)**
 
+Для сопровождающих: [настройка автоматической публикации в npm](docs/NPM_PUBLISH.ru.md).
+
 AdaptForm — библиотека моделирования форм с приоритетом TypeScript, вдохновлённая Django Forms и Pydantic. Формы описываются классами с типизированными полями. Каждое поле управляет своим значением, приведением типов, валидацией, плагинами преобразования, ошибками и состоянием.
 
 ## Возможности

@@ -10,6 +10,8 @@ All notable changes to AdaptForm are documented here. The `2.1.0` section is pre
 
 ### Added
 
+- Prepare gated npm publication after successful `master` CI, using the version in `package.json` and either npm Trusted Publisher or a repository-scoped npm secret; activation awaits authentication setup.
+
 - Add English/Russian demo localization with persistent language selection and language-specific documentation links, preserving entered values and validation state.
 - Add complete Russian companion documentation, changelog, release tracking, repository instructions, and license information alongside the English originals.
 

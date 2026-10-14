@@ -9,6 +9,8 @@
 
 **[Open the interactive demo](https://arhimen.github.io/AdaptForm/)** · **[Read the 2.1.0 changelog](https://github.com/ArhiMEN/AdaptForm/blob/master/CHANGELOG.md)** · **[Browse the demo source](https://github.com/ArhiMEN/AdaptForm/tree/master/demo)**
 
+Maintainers: [automatic npm publication setup](docs/NPM_PUBLISH.md).
+
 AdaptForm is a TypeScript-first form modeling library inspired by Django Forms and Pydantic. Define forms as classes with typed fields. Each field owns its value, casting, validation, transformation plugins, errors, and state.
 
 ## Features
