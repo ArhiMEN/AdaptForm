@@ -3,15 +3,15 @@ import {MaskPluginOptions, PluginOptions} from "@core/options"
 import {Field} from "@core/fields"
 
 interface MaskPart {
-  char: string                   // символ для отображения
-  isPlaceholder: boolean         // true если это заполнитель (можно вводить)
-  isEscaped: boolean             // true если символ экранирован (попадает в rawValue)
-  replacementValue?: string      // фиксированная замена
-  allowedChars?: string          // разрешенные символы (вместо сложного паттерна)
-  transformOnMatch?: string      // во что преобразовать при совпадении
-  transformOnMismatch?: string   // во что преобразовать при несовпадении
+  char: string                   // Character to display
+  isPlaceholder: boolean         // True when this is an editable placeholder
+  isEscaped: boolean             // True when the character is escaped and should be included in rawValue
+  replacementValue?: string      // Fixed replacement
+  allowedChars?: string          // Allowed characters, as an alternative to a complex pattern
+  transformOnMatch?: string      // Value to use on a match
+  transformOnMismatch?: string   // Value to use on a mismatch
   defaultValue?: string
-  pushToNext?: boolean           // если true, отправить символ в следующий placeholder
+  pushToNext?: boolean           // When true, pass the character to the next placeholder
 }
 
 export class MaskPlugin extends BasePlugin {
@@ -43,7 +43,7 @@ export class MaskPlugin extends BasePlugin {
     while (i < this.config.maskFormat.length) {
       const char = this.config.maskFormat[i]
 
-      // Проверяем на экранирование
+      // Check for escaping
       if (char === '/' && !escaped) {
         escaped = true
         i++
@@ -66,16 +66,16 @@ export class MaskPlugin extends BasePlugin {
             const allowedChars = parts[0].trim()
             const replacementOnMatch = parts[1]?.trim() || ''
 
-            // Проверяем на >> (pushToNext)
+            // Check for >> (pushToNext)
             let replacementOnMismatch = parts[2]?.trim() || ''
             let pushToNext = false
 
             if (parts.length > 2 && parts[2] === '' && parts[3] !== undefined) {
-              // Синтаксис: allowedChars > match > > pushValue
+              // Syntax: allowedChars > match > > pushValue
               pushToNext = true
               replacementOnMismatch = parts[3]?.trim() || ''
             } else if (replacementOnMismatch === '' && parts.length > 3) {
-              // Синтаксис: allowedChars > match > > pushValue
+              // Syntax: allowedChars > match > > pushValue
               pushToNext = true
               replacementOnMismatch = parts[3]?.trim() || ''
             }
@@ -147,23 +147,23 @@ export class MaskPlugin extends BasePlugin {
           inputIndex++
         } else if (part.allowedChars) {
           if (part.allowedChars.includes(inputChar)) {
-            // Символ разрешен - заменяем на matchReplacement
+            // The character is allowed; replace it with matchReplacement
             result += part.transformOnMatch || inputChar
             inputIndex++
           } else if (part.pushToNext) {
-            // Символ не разрешен, но pushToNext = true
-            // Вставляем mismatchReplacement, а символ идет дальше
+            // The character is not allowed, but pushToNext is true
+            // Insert mismatchReplacement and pass the character onward
             result += part.transformOnMismatch || this.config.maskPlaceholder
-            // НЕ сдвигаем inputIndex - символ обработается в следующем placeholder
+            // Do not advance inputIndex; the next placeholder will process this character
           } else if (part.transformOnMismatch !== undefined) {
-            // Обычная замена при несовпадении
+            // Standard replacement on mismatch
             result += part.transformOnMismatch || this.config.maskPlaceholder
             inputIndex++
           } else {
             result += this.config.maskPlaceholder
           }
         } else {
-          // Обычный placeholder
+          // Standard placeholder
           if (this.config.digitPattern.test(inputChar)) {
             result += inputChar
             inputIndex++
@@ -176,7 +176,7 @@ export class MaskPlugin extends BasePlugin {
           }
         }
       } else {
-        // Литерал
+        // Literal character
         if (inputChar === part.char) {
           result += part.char
           inputIndex++
@@ -218,7 +218,7 @@ export class MaskPlugin extends BasePlugin {
           if (part.allowedChars.includes(inputChar)) {
             result += part.transformOnMatch || inputChar
           } else if (part.pushToNext) {
-            // Вставляем mismatchReplacement, символ идет дальше
+            // Insert mismatchReplacement and pass the character onward
             result += part.transformOnMismatch || ''
             // НЕ сдвигаем inputIndex
             continue
