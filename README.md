@@ -184,9 +184,9 @@ class SignUpForm extends Form {
 
 ## Validation Lifecycle
 
-Form value assignment validates the completed form after all provided values have been applied. This allows conditional-required rules to inspect the complete form state. When changing dependent fields individually, call `form.checkValid()` to recompute cross-field rules.
+Form value assignment validates the completed form after all provided values have been applied. This allows conditional-required rules to inspect the complete form state and prevents ordinary field validators from running once during assignment and again during the form-level check. Nested form collections also defer nested-form validation until the completed collection is checked. When changing dependent fields individually, call `form.checkValid()` to recompute cross-field rules.
 
-`checkValid()` returns `false` when any field is invalid or when global server errors remain. Reading `isValid` is side-effect-free; it does not invoke custom validators.
+`checkValid()` returns `false` when any field is invalid or when global server errors remain. Reading `isValid` is side-effect-free; it does not invoke custom validators. `reset()` restores field defaults, clears field and global errors, and leaves field validity unset until the next validation. Collection validity is false after reset until the collection is validated again.
 
 - Constructor default values start untouched.
 - Empty and whitespace-only strings are treated as empty values.
@@ -377,6 +377,8 @@ const field = new Field(StringType, null, {
 
 * `checkValid(form?)` - Validate all fields
 
+* `setFields(data, validate?)` - Assign values from a record; validation is enabled by default. Use `validate: false` only when composing a larger assignment, then call `checkValid()` before relying on validity
+
 * `fieldsValue` - Get all field values
 
 * `allErrors` - Get all validation errors
@@ -392,6 +394,8 @@ const field = new Field(StringType, null, {
 ### Field
 
 * `rawValue` - Set raw input value
+
+* `setRawValue(value, validate?)` - Apply input transformations and optionally defer validation; when validation is deferred, call `checkValid()` before relying on validity
 
 * `valueClear` - Get cleaned/validated value
 
