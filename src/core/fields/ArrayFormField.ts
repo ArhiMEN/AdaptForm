@@ -144,10 +144,10 @@ export class ArrayFormField<T extends Form = Form> {
   }
 
   get isValid(): boolean {
-    // Если есть ошибки массива форм - не валиден
+    // An array of forms with its own errors is invalid.
     if (this._errors.length > 0) return false
     
-    // Проверяем, что все формы валидны (checkValid() === true)
+    // Every nested form must be valid (checkValid() === true).
     return this._forms.every(i => i.checkValid() === true)
   }
 
