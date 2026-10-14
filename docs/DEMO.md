@@ -1,6 +1,6 @@
 # Interactive demo and GitHub Pages
 
-The live playground is published at **[https://arhimen.github.io/AdaptForm/](https://arhimen.github.io/AdaptForm/)**.
+The intended live playground URL is **[https://arhimen.github.io/AdaptForm/](https://arhimen.github.io/AdaptForm/)**. The build and type-check pass in CI, but the first deployment is currently blocked because GitHub Pages is not enabled for the repository and the workflow token cannot change that repository setting.
 
 The page is built from the `demo/` application and the library source in `src/` on branch `v2.1.0`. It does not load the published npm package, so the playground exercises the code being prepared for the 2.1.0 release candidate.
 
@@ -38,7 +38,7 @@ The workflow type-checks the demo, creates the production build, and uploads the
 
 ### If Pages has not been enabled for this repository
 
-In the repository's GitHub settings, open **Settings → Pages** and set the build and deployment source to **GitHub Actions**. Then rerun the **Deploy demo** workflow from branch `v2.1.0`. Repository Pages settings cannot be changed by a commit in this branch.
+In the repository's GitHub settings, open **Settings → Pages** and set the build and deployment source to **GitHub Actions**. This one-time setting requires repository-owner/admin access and cannot be changed by a commit in this branch. After saving it, rerun **Deploy demo** from branch `v2.1.0`. The workflow will then build the site and deploy it to the URL above.
 
 ## Updating the demo
 
