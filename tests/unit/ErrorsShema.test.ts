@@ -1,7 +1,12 @@
 import {describe, it, expect, beforeEach} from 'vitest'
 import {ErrorsSchema, DefaultErrorsSchema} from '@core/ErrorsShema'
+import {ErrorsSchema as ExportedErrorsSchema} from '@core'
 
 describe('ErrorSchema', () => {
+  it('should export ErrorsSchema from the public core entry point', () => {
+    expect(new ExportedErrorsSchema()).toBeInstanceOf(ErrorsSchema)
+  })
+
   let schema: ErrorsSchema
 
   beforeEach(() => {
