@@ -194,7 +194,6 @@ describe('Validation Tests', () => {
     })
 
     it('should pass form context to validator', () => {
-      const field = new Field(StringType)
       const field2 = new Field(StringType, null, {
         validate: (value, form) => {
           return value === (form as any)?.field?.valueClear || 'Must match field'
