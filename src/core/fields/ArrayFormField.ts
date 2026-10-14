@@ -1,5 +1,6 @@
 import {Form} from "@core/Form"
 import {ArrayFormFieldOptions} from "@core/options"
+import {isValidArrayIndex} from "@core/fields/arrayUtils"
 
 export class ArrayFormField<T extends Form = Form> {
   private _forms: T[] = []
@@ -57,6 +58,8 @@ export class ArrayFormField<T extends Form = Form> {
   }
 
   remove(index: number): void {
+    if (!isValidArrayIndex(index, this._forms.length)) return
+
     this._forms.splice(index, 1)
     this.checkValid()
   }
