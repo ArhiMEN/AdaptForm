@@ -116,6 +116,8 @@ The required source type-check and demo type-check pass. An additional explorato
 
 The maintainer requested automatic npm publication after merges into `master`, using the version in `package.json`. The guarded workflow and release preflight are prepared, with seven new regression tests. Activation remains pending: npm rejected Trusted Publisher management with HTTP 403, asking the account owner to enable 2FA. No GitHub npm secret is configured. The workflow skips publication until either the npm Trusted Publisher or a granular `NPM_TOKEN` secret is configured and `NPM_PUBLISH_ENABLED=true`. This setup does not create tags or GitHub releases. See [setup instructions](../../NPM_PUBLISH.md).
 
+Delivered by [PR #2](https://github.com/ArhiMEN/AdaptForm/pull/2), merged as `391db730`. Branch CI and [master CI 38546431178](https://github.com/ArhiMEN/AdaptForm/actions/runs/38546431178) passed. The [publication run 38546494455](https://github.com/ArhiMEN/AdaptForm/actions/runs/38546494455) was skipped as intended because `NPM_PUBLISH_ENABLED=false`. Local verification passed 374 tests, lint, audit, library/demo build and type checks, and package-content validation. The new preflight has 95% statement, 96.4% branch, and 100% function coverage. The current npm release remains 2.0.5.
+
 
 - Both permitted branches share one live demo URL; the latest successful deployment replaces the previous site. Automatic deployment from `master` has been verified.
 
