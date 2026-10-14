@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { Form } from '@core/Form'
 import { Field } from '@core/fields/Field'
 import { StringType } from '@core/types/StringType'
@@ -64,6 +64,20 @@ describe('Form', () => {
       form.country.rawValue = 'CA'
       expect(form.checkValid()).toBe(true)
       expect(form.isValid).toBe(true)
+    })
+
+    it('should run each field validator once during bulk assignment', () => {
+      const validate = vi.fn(() => true)
+      class ValidatedForm extends Form {
+        name = new Field(StringType, null, { validate })
+      }
+
+      const form = new ValidatedForm()
+      validate.mockClear()
+
+      form.fields = { name: 'Ada' }
+
+      expect(validate).toHaveBeenCalledTimes(1)
     })
     it('should return false if any field is invalid', () => {
       const form = new TestForm()
