@@ -28,7 +28,7 @@ npm run build:demo
 npm run dev -- --config demo/vite.config.ts
 ```
 
-The Vite configuration uses the project Pages base path, `/AdaptForm/`. The production build is written to `dist-demo/`, which is intentionally excluded from the npm package.
+The Vite development server uses the root path locally, while production builds use the GitHub Pages base path, `/AdaptForm/`. The production build is written to `dist-demo/`, which is intentionally excluded from the npm package.
 
 ## Automatic deployment
 
