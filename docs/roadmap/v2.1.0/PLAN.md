@@ -4,6 +4,8 @@
 
 Improve the reliability, type safety, maintainability, and release confidence of AdaptForm while preserving existing consumer behavior wherever practical. This branch covers library-level work only; application-specific integration testing is tracked separately.
 
+Interactive demo: [https://arhimen.github.io/AdaptForm/](https://arhimen.github.io/AdaptForm/) (deployment requires the one-time GitHub Pages setting documented in [docs/DEMO.md](../../DEMO.md)).
+
 ## Workstreams
 
 ### 1. Baseline and repository hygiene
