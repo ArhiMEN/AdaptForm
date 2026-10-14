@@ -16,7 +16,7 @@ export class ArrayFormField<T extends Form = Form> {
   ) {
     this._forms = initial.map(data => {
       const form = new this.FormConstructor()
-      form.fields = data as Record<string, unknown>
+      form.setFields(data as Record<string, unknown>, false)
       return form
     })
     this.checkValid()
@@ -25,13 +25,17 @@ export class ArrayFormField<T extends Form = Form> {
   // ===== value =====
 
   set forms(forms: unknown[]) {
-    this.clear()
+    this.setForms(forms)
+  }
+
+  setForms(forms: unknown[], validate: boolean = true): void {
+    this._forms = []
 
     for (const formData of forms) {
       this.add(formData, false)
     }
 
-    this.checkValid()
+    if (validate) this.checkValid()
   }
 
   get forms(): T[] {
@@ -48,7 +52,7 @@ export class ArrayFormField<T extends Form = Form> {
     const form = new this.FormConstructor()
 
     if (data !== undefined && data !== null) {
-      form.fields = data as Record<string, unknown>
+      form.setFields(data as Record<string, unknown>, false)
     }
 
     this.isTouched = true
