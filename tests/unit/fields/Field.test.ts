@@ -10,6 +10,10 @@ describe('Field', () => {
       expect(field.rawValue).toBe('hello')
     })
 
+    it('should keep constructor default values untouched', () => {
+      const field = new Field(StringType, 'initial')
+      expect(field.isTouched).toBe(false)
+    })
     it('should create field with null default', () => {
       const field = new Field(StringType, null)
       expect(field.rawValue).toBeNull()
@@ -85,6 +89,11 @@ describe('Field', () => {
       expect(field.isEmpty).toBe(true)
     })
 
+    it('should return true for whitespace-only strings', () => {
+      const field = new Field(StringType)
+      field.rawValue = '   '
+      expect(field.isEmpty).toBe(true)
+    })
     it('should return true for empty string', () => {
       const field = new Field(StringType)
       field.rawValue = ''
