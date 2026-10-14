@@ -92,9 +92,7 @@ export class ErrorsSchema {
       schema.transformValue(transformer)
     }
 
-    const escapedArrayFieldName = arrayFieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\    const escapedArrayFieldName = arrayFieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-
-    // Accept bracket, angle-bracket, and dotted index notations.')
+    const escapedArrayFieldName = arrayFieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
     // Accept bracket, angle-bracket, and dotted index notations.
     schema.dynamicKey(
