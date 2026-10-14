@@ -1,9 +1,10 @@
+import './style.css'
+
 import {
   ArrayField,
   ArrayFormField,
   BooleanType,
   DateType,
-  ErrorsSchema,
   Field,
   Form,
   MaskPlugin,
@@ -209,13 +210,13 @@ function renderProfile(): void {
 
 function syncProfileFromInputs(): void {
   profile.setFields({
-    name: $('#name').value,
-    email: $('#email').value,
-    age: $('#age').value,
-    birthDate: $('#birthDate').value || null,
-    country: $('#country').value,
-    region: $('#region').value,
-    terms: $('#terms').checked,
+    name: ($('#name') as HTMLInputElement).value,
+    email: ($('#email') as HTMLInputElement).value,
+    age: ($('#age') as HTMLInputElement).value,
+    birthDate: ($('#birthDate') as HTMLInputElement).value || null,
+    country: ($('#country') as HTMLSelectElement).value,
+    region: ($('#region') as HTMLInputElement).value,
+    terms: ($('#terms') as HTMLInputElement).checked,
   }, false)
   if (validatedProfile) profile.checkValid()
   renderProfile()
@@ -372,11 +373,13 @@ function renderSerialization(): void {
     output.textContent = pretty(profile.toJSON())
     $('#serialization-note').textContent = 'JSON-compatible values, including ISO date strings.'
   } else {
-    const entries = [...profile.toFormData().entries()].map(([key, value]) => [
-      key,
-      value instanceof File ? { name: value.name, size: value.size, type: value.type } : value,
-    ])
-    output.textContent = pretty(Object.fromEntries(entries))
+    const preview: Record<string, unknown> = {}
+    for (const [key, value] of profile.toFormData().entries()) {
+      preview[key] = value instanceof File
+        ? { name: value.name, size: value.size, type: value.type }
+        : value
+    }
+    output.textContent = pretty(preview)
     $('#serialization-note').textContent = 'FormData values shown as a readable key/value preview; null and undefined values are omitted.'
   }
 }
