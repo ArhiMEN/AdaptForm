@@ -168,8 +168,10 @@ export class ArrayFormField<T extends Form = Form> {
   set error(message: string | null) {
     if (message) {
       this._errors = [message]
+      this._hasValidationResult = true
     } else {
       this._errors = []
+      this._hasValidationResult = false
     }
   }
 }
