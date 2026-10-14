@@ -33,6 +33,9 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
       // Keep isValid as null until checkValid has been called.
       this.isValid = null
     }
+
+    // Constructor defaults are pristine values, not user edits.
+    this.isTouched = false
   }
 
   // ========== Getters and setters ==========
@@ -167,7 +170,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
   get isEmpty(): boolean {
     let isEmpty = false
     if (this._rawValue === null || this._rawValue === undefined) isEmpty = true
-    else if (this._rawValue === '') isEmpty = true
+    else if (typeof this._rawValue === 'string' && this._rawValue.trim() === '') isEmpty = true
     else if (Array.isArray(this._rawValue) && this._rawValue.length === 0) isEmpty = true
     return isEmpty
   }
