@@ -171,6 +171,13 @@ describe('ErrorSchema', () => {
       expect(result).toEqual({})
     })
 
+    it('should call a declining fallback only once', () => {
+      const fallback = vi.fn(() => null)
+      schema.fallback(fallback)
+
+      expect(schema.parseErrors({unknown_error: 'Something went wrong'})).toEqual({})
+      expect(fallback).toHaveBeenCalledTimes(1)
+    })
     it('should run only when no other rule matches', () => {
       schema
         .staticKey('email', 'email')
