@@ -25,8 +25,12 @@ export class StringType extends FieldType<string, StringOptions> {
       )
     }
 
-    if (this.options.pattern != null && !this.options.pattern.test(value)) {
-      errors.push(this.options.messages?.pattern ?? 'Неверный формат')
+    if (this.options.pattern != null) {
+      const {source, flags} = this.options.pattern
+      const stablePattern = new RegExp(source, flags.replace(/[gy]/g, ''))
+      if (!stablePattern.test(value)) {
+        errors.push(this.options.messages?.pattern ?? 'Неверный формат')
+      }
     }
 
     return errors
