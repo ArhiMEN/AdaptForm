@@ -30,12 +30,12 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
     } else {
       this._rawValue = null
       this._valueClear = null
-      // Пока не вызвали checkValid, isValid = null
+      // Keep isValid as null until checkValid has been called.
       this.isValid = null
     }
   }
 
-  // ========== Геттеры/сеттеры ==========
+  // ========== Getters and setters ==========
 
   protected get plugins() {
     return [...(this.options.plugins ?? [])].sort((a, b) => {
@@ -102,7 +102,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
     return this._valueClear
   }
 
-  // ========== Валидация ==========
+  // ========== Validation ==========
 
   private isRequired(form?: Form): boolean {
     let isRequired
@@ -118,7 +118,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
   checkValid(form?: Form): boolean {
     this._errors = []
 
-    // 1. Проверка на пустоту и обязательность
+    // 1. Check emptiness and required status.
     if (this.isEmpty) {
       if (this.isRequired(form)) {
         this._errors.push(this.options.messages?.isRequired ?? 'Поле обязательно для заполнения')
@@ -127,7 +127,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
       return true
     }
 
-    // 2. Проверка, что значение привелось к нужному типу
+    // 2. Check whether the value could be cast to the expected type.
     if (this._valueClear === null) {
       this._errors.push(
         this.options.messages?.type ??
@@ -136,14 +136,14 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
       return false
     }
 
-    // 3. Специфичная валидация типа
+    // 3. Run type-specific validation.
     const typeErrors = this.fieldType.validate(this._valueClear, form)
     if (typeErrors.length > 0) {
       this._errors.push(...typeErrors)
       return false
     }
 
-    // 4. Кастомная валидация
+    // 4. Run custom validation.
     if (this.options.validate) {
       const result = this.options.validate(this._valueClear, form)
       if (result === false) {
@@ -172,7 +172,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
     return isEmpty
   }
 
-  // ========== Вспомогательные методы ==========
+  // ========== Helper methods ==========
 
   reset(): void {
     if (this.defaultValue !== null && this.defaultValue !== undefined) {
