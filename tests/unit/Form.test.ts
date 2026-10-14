@@ -205,6 +205,24 @@ describe('Form', () => {
       form.fields = { date }
       expect(form.toJSON()).toEqual({ date: date.toISOString() })
     })
+
+    it('should serialize Date values inside arrays and nested forms', () => {
+      class ItemForm extends Form {
+        date = new Field(DateType)
+      }
+      class DateCollectionForm extends Form {
+        dates = new ArrayField((value?: Date) => new Field(DateType, value))
+        items = new ArrayFormField(ItemForm)
+      }
+      const form = new DateCollectionForm()
+      const date = new Date('2023-01-01T00:00:00.000Z')
+      form.fields = { dates: [date], items: [{ date }] }
+
+      expect(form.toJSON()).toEqual({
+        dates: [date.toISOString()],
+        items: [{ date: date.toISOString() }]
+      })
+    })
   })
 
   describe('toFormData', () => {
