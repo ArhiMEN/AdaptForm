@@ -48,7 +48,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
   }
 
   set options(options: O) {
-    let cur_options = this.fieldType.options
+    const cur_options = this.fieldType.options
     this.fieldType.options = Object.assign(cur_options, options)
   }
 
