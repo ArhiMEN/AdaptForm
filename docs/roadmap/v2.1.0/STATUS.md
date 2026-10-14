@@ -23,7 +23,13 @@ Release status: Not released; npm publication is not authorized by this plan.
 - [x] Inspect test configuration and replace the machine-specific absolute alias path with a portable path.
 - [x] Add regression tests for FormData collection serialization and omission of nullish values.
 - [x] Replace the machine-specific Vitest alias with a portable path derived from `import.meta.url`.
+- [x] Add regression tests for default and custom array-error index extraction, dotted index notation, and item-schema field mappings.
 - [ ] Turn remaining source-review findings into minimal reproducible regression tests.
+
+## Latest changes awaiting CI verification
+
+- Updated `ErrorsSchema.forArray()` to use its custom index extractor, accept bracket/angle-bracket/dotted index notation, and apply the supplied item schema's field mappings and value transformers.
+- Added regression tests for the above behaviors. The newest GitHub Actions run must pass before these changes are considered verified.
 
 ## Verification log
 
@@ -48,4 +54,4 @@ Release status: Not released; npm publication is not authorized by this plan.
 
 1. Inspect and correct the Vitest configuration if it contains a machine-specific absolute path.
 2. Run tests, build, and lint in a real checkout and record results.
-3. Add regression coverage for the most important correctness issues before refactoring the implementation.
+3. Continue the English-language audit and resolve the remaining type-safety and validation-side-effect findings.
