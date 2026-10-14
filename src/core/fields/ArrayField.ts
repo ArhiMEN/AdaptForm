@@ -155,8 +155,10 @@ export class ArrayField<T = any> {
   set error(message: string | null) {
     if (message) {
       this._errors = [message]
+      this._hasValidationResult = true
     } else {
       this._errors = []
+      this._hasValidationResult = false
     }
   }
 
