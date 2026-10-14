@@ -3,8 +3,24 @@
   "compilerOptions": {
     "noEmit": true,
     "rootDir": "..",
-    "types": ["vite/client", "node"]
+    "types": [
+      "vite/client",
+      "node"
+    ],
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ]
   },
-  "include": ["./main.ts", "./vite.config.ts", "../src/**/*.ts"],
-  "exclude": ["../node_modules", "../dist", "../tests"]
+  "include": [
+    "./main.ts",
+    "./vite.config.ts",
+    "../src/**/*.ts"
+  ],
+  "exclude": [
+    "../node_modules",
+    "../dist",
+    "../tests"
+  ]
 }
