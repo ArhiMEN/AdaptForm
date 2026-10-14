@@ -8,7 +8,7 @@ Improve the reliability, type safety, maintainability, and release confidence of
 
 ### 1. Baseline and repository hygiene
 - [ ] Inspect the current public API, package exports, build configuration, and existing test coverage.
-- [ ] Run the existing test suite, build, and lint checks; record the actual baseline results.
+- [x] Run the existing test suite, build, and TypeScript type-check through GitHub Actions; record the actual results.\n- [ ] Repair the pre-existing `npm run lint` command: ESLint is not installed or configured.
 - [x] Remove the machine-specific absolute path from Vitest configuration and use a portable project-relative path.
 - [ ] Audit repository-authored text for English consistency.
 
@@ -21,7 +21,7 @@ Improve the reliability, type safety, maintainability, and release confidence of
 
 ### 3. Serialization contracts
 - [ ] Define and test JSON serialization for primitives, arrays, dates, nested forms, nulls, and optional values.
-- [ ] Define and test FormData serialization, including the behavior of arrays, objects, dates, and files. (Implementation and regression tests started; execution still pending.)
+- [x] Define and test FormData serialization for arrays and nested form values, with nullish values omitted. Dates and Blob/File handling are implemented; broader edge-case coverage remains to be added.
 - [ ] Preserve existing supported behavior or document migration steps for intentional changes.
 
 ### 4. Type safety
@@ -35,7 +35,7 @@ Improve the reliability, type safety, maintainability, and release confidence of
 - [ ] Consider structured error codes and parameters as a path to localization without parsing human-readable messages.
 - [ ] Keep existing PlayLease localization behavior compatible or document coordinated migration before changing message contracts.
 
-### 6. Release readiness
+### 6. Dependency health\n- [ ] Investigate the 11 npm audit findings reported during CI dependency installation (2 moderate, 6 high, 3 critical); identify direct/transitive causes and safe upgrades without blindly applying breaking fixes.\n\n### 7. Release readiness
 - [ ] Expand regression and integration coverage for identified edge cases.
 - [ ] Verify tests, build, lint, and package contents in the available environment.
 - [ ] Update README and CHANGELOG in English to reflect implemented behavior only.
