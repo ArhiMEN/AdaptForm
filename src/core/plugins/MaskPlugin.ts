@@ -23,15 +23,15 @@ export class MaskPlugin extends BasePlugin {
     this.config = config
   }
 
-  init(field: Field<any>): void {
+  init(_field: Field<any>): void {
     this.parseMask()
   }
 
-  toRawValue(value: string, field: Field): string {
+  toRawValue(value: string, _field: Field): string {
     return this.applyMask(value)
   }
 
-  toValueClear(value: string, field: Field): string {
+  toValueClear(value: string, _field: Field): string {
     return this.removeMask(value)
   }
 
