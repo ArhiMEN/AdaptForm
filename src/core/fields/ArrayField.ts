@@ -137,10 +137,10 @@ export class ArrayField<T = any> {
   }
 
   get isValid(): boolean {
-    // Если есть ошибки массива - не валиден
+    // An array with its own errors is invalid.
     if (this._errors.length > 0) return false
     
-    // Проверяем, что все элементы валидны (isValid === true)
+    // All items must be valid (isValid === true).
     return this._items.every(i => i.isValid === true)
   }
 
