@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
-**[Open the interactive demo](https://arhimen.github.io/AdaptForm/)** · **[Read the 2.1.0 changelog](https://github.com/ArhiMEN/AdaptForm/blob/master/CHANGELOG.md)** · **[Browse the demo source](https://github.com/ArhiMEN/AdaptForm/tree/master/demo)**
+**[Open the interactive demo](https://arhimen.github.io/AdaptForm/)** · **[Read the changelog](https://github.com/ArhiMEN/AdaptForm/blob/master/CHANGELOG.md)** · **[Browse the demo source](https://github.com/ArhiMEN/AdaptForm/tree/master/demo)**
 
 Maintainers: [automatic npm publication setup](docs/NPM_PUBLISH.md).
 
@@ -40,7 +40,7 @@ Luxon integration is optional:
 npm install luxon
 ```
 
-The [interactive demo](https://arhimen.github.io/AdaptForm/) runs from repository source, with automatic deployment from `v2.1.0` and `master`. Version `2.1.0` is available on npm.
+The [interactive demo](https://arhimen.github.io/AdaptForm/) runs from repository source, with automatic deployment from `v2.1.0` and `master`. Check the [npm package](https://www.npmjs.com/package/adaptform) for the latest published version; repository changes may not yet be released.
 
 The demo supports English and Russian with a persistent language selector: [English](https://arhimen.github.io/AdaptForm/?lang=en) · [Русский](https://arhimen.github.io/AdaptForm/?lang=ru). Switching languages preserves form data and validation state.
 
@@ -127,7 +127,7 @@ const price = new Field(DecimalType, null, {
 })
 ```
 
-Supports `gt`, `ge`, `lt`, `le`, `decimalPlaces`, and `maxDigits`. Numeric inputs with excess precision are rejected rather than silently rounded. String inputs may use a comma or a period as the decimal separator.
+Supports `gt`, `ge`, `lt`, `le`, `decimalPlaces`, and `maxDigits`. Numeric inputs with excess precision are rejected rather than silently rounded. String inputs may use a comma or a period as the decimal separator. Incomplete values such as `"123."` retain their editable text but fail explicit validation; call `Form.checkValid()` before submitting. `toJSON()` does not validate automatically.
 
 ### BooleanType
 
