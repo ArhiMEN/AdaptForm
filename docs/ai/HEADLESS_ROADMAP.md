@@ -29,9 +29,11 @@
 
 ## Small task cards
 
-Every task is independent in scope but must obey its prerequisites. No task may opportunistically implement later tasks. **Proposed / not started** is the default status of every task. Size S/M is relative and not a time estimate. A decision gate means stop for explicit approval before a public behavioral/API change.
+Every task is independent in scope but must obey its prerequisites. No task may opportunistically implement later tasks. **Proposed / not started** is the default except for tasks explicitly confirmed complete in HANDOFF. Size S/M is relative and not a time estimate. A decision gate means stop for explicit approval before a public behavioral/API change.
 
 ### HF-001 — Characterize existing behavior
+
+**Status: completed in PR #8; see [HANDOFF](HANDOFF.md) for evidence.**
 
 - Depends on: none; phase/size: P0 / S; model/effort: Sol / Medium; API decision gate: no.
 - Scope: Read focused Form/Field/ArrayField/ArrayFormField/DecimalType tests and add only passing characterization tests; document reproducible suspected defects without changing production code.
