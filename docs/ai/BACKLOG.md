@@ -13,5 +13,5 @@ No other improvements are specified by this foundation task. Add only concrete p
 ## Proposed headless engine track
 
 - Direction B was selected in ChatGPT on 2026-10-17. The [Headless Engine roadmap](HEADLESS_ROADMAP.md) splits the work into **HF-001 through HF-020** with prerequisites and acceptance criteria. This is not approval of implementation or any release.
-- Initial candidate: **HF-001**, characterize current Field/Form/collection/DecimalType behavior with focused tests; source changes are out of scope.
+- **HF-001 completed** in [PR #8](https://github.com/ArhiMEN/AdaptForm/pull/8): 34 characterization tests, no production code changes, CI passed. See [HANDOFF](HANDOFF.md). Next candidate is HF-002 (deferred ArrayField validation), requiring separate authorization.
 - Owners approve one task at a time before Codex Cloud work. Do not auto-advance.
