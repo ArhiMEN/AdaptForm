@@ -1,0 +1,162 @@
+# AdaptForm: Headless Form Engine roadmap (draft)
+
+[English](HEADLESS_ROADMAP.md) · [Русский](HEADLESS_ROADMAP.ru.md)
+
+**Status: direction B (headless engine) selected; tasks below are a proposed decomposition, not blanket implementation approval.** Each code task needs separately approved scope via ChatGPT and runs only in Codex Cloud. No release version or date is committed.
+
+## Target boundaries
+
+- Preserve the class-based `Form` / `Field` façade; optional UI adapters for Vue/React/Electron only.
+- Model raw input, cleaned value, baseline, validation status and errors; derive aggregate Form state from descendants.
+- Framework-independent selectors/subscriptions, stable snapshots and synchronous batched mutations; commit once before notifying. No required RxJS/Vue/React.
+- Explicit validation dependencies, one collection lifecycle, stable item identities, fenced async results and optional submission orchestration.
+- No private data, secrets, raw field-value logs, automatic npm publish or unapproved breaking API changes.
+
+## Decisions still required
+
+- Meaning of `isTouched` for programmatic assignment, `isDirty`, baseline/reinitialize and reset migration from 2.1.0.
+- Handling incomplete numeric edit strings such as `123.`, typed `valueClear` and final submit validity.
+- Public subscribe/snapshot API shape, batch exception policy, dependency cycles, error lifetime and trigger defaults.
+- Async cancellation semantics, duplicate submits and adapter distribution approach.
+
+## Phases
+
+- **P0: Contract stabilization** — Tests and defect isolation before changing observable behavior.
+- **P1: State and notifications** — Dirty/baseline, snapshots, batching, nested subscriptions and collection identity.
+- **P2: Validation intelligence** — Explicit dependencies, triggers and structured errors.
+- **P3: Async and submission** — Race-safe asynchronous checks and user-controlled submit handler.
+- **P4: Integration and quality gates** — Vue integration design/pilot and measured acceptance.
+
+## Small task cards
+
+Every task is independent in scope but must obey its prerequisites. No task may opportunistically implement later tasks. **Proposed / not started** is the default status of every task. Size S/M is relative and not a time estimate. A decision gate means stop for explicit approval before a public behavioral/API change.
+
+### HF-001 — Characterize existing behavior
+
+- Depends on: none; phase/size: P0 / S; model/effort: Sol / Medium; API decision gate: no.
+- Scope: Read focused Form/Field/ArrayField/ArrayFormField/DecimalType tests and add only passing characterization tests; document reproducible suspected defects without changing production code.
+- Acceptance: Baseline tests pass; report actual observed behavior, gaps, and isolated reproduction commands.
+
+### HF-002 — Defer ArrayField validation correctly
+
+- Depends on: HF-001; phase/size: P0 / S; model/effort: Sol / Medium; API decision gate: no.
+- Scope: Ensure form.setFields(data,false) does not invoke collection validators through itemsValue/clear; apply values before optional validation.
+- Acceptance: Regression tests confirm zero premature validation calls and one final check when enabled; preserve public setter.
+
+### HF-003 — Specify decimal edit vs submit validity
+
+- Depends on: HF-001; phase/size: P0 / S; model/effort: Sol / High; API decision gate: yes.
+- Scope: Test 123. and boundary bypass; propose minimal backward-compatible policy for incomplete decimal input before modifying behavior.
+- Acceptance: Tests cover incomplete input, min/max bounds, locale separators, casting and submission-safety; behavior change requires approval.
+
+### HF-004 — Define and repair collection reset
+
+- Depends on: HF-001; phase/size: P0 / M; model/effort: Sol / High; API decision gate: yes.
+- Scope: Specify whether reset restores initial element count/order and distinguish initial baseline from later server hydration; fix only the approved semantics.
+- Acceptance: Focused tests for add/remove/reorder/reset on both collection classes, nested fields and no leaked subscriptions.
+
+### HF-005 — Freeze Field/Form state semantics
+
+- Depends on: HF-001; phase/size: P1 / S; model/effort: Sol / High; API decision gate: yes.
+- Scope: Document raw/clean/initial, dirty/touched/focused/visited, validity tri-state, validation status and state transition table; no code changes.
+- Acceptance: Document explicitly distinguishes programmatic assignment from user interaction and records compatibility/migration decisions.
+
+### HF-006 — Add Field baseline and dirty tracking
+
+- Depends on: HF-005; phase/size: P1 / S; model/effort: Sol / Medium; API decision gate: yes.
+- Scope: Implement baseline comparison and explicit reinitialize/commit semantics if approved; retain reset and existing isTouched behavior unless migrated.
+- Acceptance: Tests cover edit/revert, defaults, null, transformed inputs and programmatic updates without unexpected touched changes.
+
+### HF-007 — Aggregate Form state safely
+
+- Depends on: HF-006; phase/size: P1 / S; model/effort: Sol / Medium; API decision gate: no.
+- Scope: Derive isDirty, isTouched and validation metadata from children and global errors; avoid independent duplicated mutable truth.
+- Acceptance: Nested forms/collections propagate aggregate state correctly; existing isValid contract remains stable.
+
+### HF-008 — Implement subscription snapshots
+
+- Depends on: HF-005, HF-007; phase/size: P1 / M; model/effort: Sol / High; API decision gate: yes.
+- Scope: Introduce a tiny framework-free subscribe/unsubscribe/getSnapshot mechanism with referentially stable unchanged snapshots.
+- Acceptance: One notification per actual committed change; no notification for identical states; unsubscribe works, no sensitive logging.
+
+### HF-009 — Implement atomic batches
+
+- Depends on: HF-008; phase/size: P1 / M; model/effort: Sol / High; API decision gate: yes.
+- Scope: Implement nested-safe synchronous batch semantics for multi-field writes and failure handling; publish only consistent final snapshots.
+- Acceptance: Cross-field validators see complete new values; subscribers see no intermediate state; exception policy tested.
+
+### HF-010 — Propagate nested state updates
+
+- Depends on: HF-008, HF-009; phase/size: P1 / M; model/effort: Sol / High; API decision gate: no.
+- Scope: Wire child Field/Form changes to parents without circular notifications, duplicate owners or memory leaks.
+- Acceptance: Direct child edits notify relevant parents once; detach/remove stops obsolete notifications.
+
+### HF-011 — Stabilize dynamic collection identity
+
+- Depends on: HF-010; phase/size: P1 / M; model/effort: Sol / High; API decision gate: yes.
+- Scope: Add internal stable element identity across reorder and index shifts, without changing existing indexed serialization.
+- Acceptance: Insert/delete/reorder retain surviving item identity and appropriate subscriptions; index paths stay accurate.
+
+### HF-012 — Specify dependency graph semantics
+
+- Depends on: HF-005, HF-009; phase/size: P2 / S; model/effort: Sol / High; API decision gate: yes.
+- Scope: Specify explicit dependsOn paths, cycle handling, nested/array paths and invalidation rules before implementation.
+- Acceptance: Decision record includes cycle handling, non-mutating validators and backward-compatibility boundary.
+
+### HF-013 — Implement selective dependency revalidation
+
+- Depends on: HF-012, HF-011; phase/size: P2 / M; model/effort: Sol / High; API decision gate: no.
+- Scope: Revalidate explicit dependents once per committed batch; do not introduce implicit Proxy tracking.
+- Acceptance: Diamond dependencies, chained changes and cycles are deterministic; unrelated validators do not run.
+
+### HF-014 — Add validation trigger policies
+
+- Depends on: HF-013; phase/size: P2 / M; model/effort: Sol / High; API decision gate: yes.
+- Scope: Design and implement opt-in onChange/onBlur/onSubmit/manual triggers, separating validation truth from error visibility.
+- Acceptance: Default 2.1.0 semantics retained; targeted tests for untouched fields, blur, submit and dependency changes.
+
+### HF-015 — Introduce structured error internals
+
+- Depends on: HF-005, HF-011; phase/size: P2 / M; model/effort: Sol / High; API decision gate: yes.
+- Scope: Model path/code/source/params/message internally; keep errors, allErrors and ErrorsSchema compatibility façade.
+- Acceptance: Multi-error and indexed paths retained; server-error invalidation policy explicitly approved and tested.
+
+### HF-016 — Implement async validation fencing
+
+- Depends on: HF-009, HF-014; phase/size: P3 / M; model/effort: Sol / High; API decision gate: yes.
+- Scope: Add opt-in async validation with value/version fencing and cancellation; stale results cannot overwrite new state.
+- Acceptance: Out-of-order responses, aborts, rapid edits and removed nodes covered with deterministic tests.
+
+### HF-017 — Add submission lifecycle
+
+- Depends on: HF-016, HF-015; phase/size: P3 / M; model/effort: Sol / High; API decision gate: yes.
+- Scope: Implement opt-in submit orchestration, full validation, frozen submission payload and duplicate-submit protection; do not own transport.
+- Acceptance: Submit flags/counts reflect success, failure and cancellation; no double handler execution.
+
+### HF-018 — Design a Vue integration boundary
+
+- Depends on: HF-008, HF-014; phase/size: P4 / S; model/effort: Sol / Medium; API decision gate: yes.
+- Scope: Evaluate Vue 3 shallowRef/subscription integration and disposal; produce API design without adding a dependency to core.
+- Acceptance: Design and minimal usage example reviewed before any adapter package code.
+
+### HF-019 — Build optional Vue adapter pilot
+
+- Depends on: HF-018, HF-017; phase/size: P4 / M; model/effort: Sol / High; API decision gate: yes.
+- Scope: Implement only approved Vue 3 binding surface as optional package/subpath; exercise actual multi-field and nested form cases.
+- Acceptance: Framework-independent core stays dependency-free; lifecycle/disposal and TypeScript examples pass.
+
+### HF-020 — Run integrity and performance gates
+
+- Depends on: HF-009, HF-011, HF-013, HF-015, HF-017, HF-019; phase/size: P4 / M; model/effort: Sol / High; API decision gate: no.
+- Scope: Define baselines and run API/types, real-browser integration, dependency and snapshot efficiency benchmarks; release choice separate.
+- Acceptance: Measured results and regressions published without unsupported speed claims; no version change or release.
+
+## Execution and verification policy
+
+1. Before each HF task read `AGENTS.md`, `docs/ai/PROJECT_CONTEXT.md`, the relevant skill, and **only task-specific source/tests**. Do not scan full repo/history.
+2. Use one focused branch and small PR per task. Never auto-merge, delete branches, publish npm, rename public APIs or bump version.
+3. Start with `npx vitest run <test-file>`, expand to typechecks/build/lint/integration only as required by changed behavior. CI success alone is not sufficient review.
+4. Summarize ID, files, actual checks, limitations, risk, next task in `docs/ai/HANDOFF.md` and Russian companion. Update `DECISIONS` only after approval; do not include private discussion in public git.
+5. Do not automatically start the next task. ChatGPT Library is not synced with GitHub: this roadmap is the public plan and Library holds a separate copy.
+
+**Suggested first task: HF-001.** Characterization tests and evidence only, no production fixes. Discuss HF-002 and HF-003/HF-005 contract decisions separately after baseline.
