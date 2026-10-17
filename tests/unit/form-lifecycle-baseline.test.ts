@@ -261,11 +261,11 @@ describe('HF-001 form lifecycle baseline', () => {
 
   describe('decimal input and submission', () => {
     it.each([
-      [{ gt: 123 }, '123', false], [{ gt: 123 }, '123.', true],
-      [{ ge: 124 }, '123', false], [{ ge: 124 }, '123.', true],
-      [{ lt: 123 }, '123', false], [{ lt: 123 }, '123.', true],
-      [{ le: 122 }, '123', false], [{ le: 122 }, '123.', true],
-    ])('characterizes bounds %j for input %s', (options, input, valid) => {
+      [{ gt: 123 }, '123', false], [{ gt: 123 }, '123.', false],
+      [{ ge: 124 }, '123', false], [{ ge: 124 }, '123.', false],
+      [{ lt: 123 }, '123', false], [{ lt: 123 }, '123.', false],
+      [{ le: 122 }, '123', false], [{ le: 122 }, '123.', false],
+    ])('rejects out-of-bounds or incomplete input with bounds %j for input %s', (options, input, valid) => {
       class Example extends Form {
         amount = new Field(DecimalType, null, options)
       }
@@ -276,6 +276,69 @@ describe('HF-001 form lifecycle baseline', () => {
       expect(form.isValid).toBe(valid)
       expect(form.checkValid()).toBe(valid)
       expect(form.toJSON()).toEqual({ amount: input })
+    })
+
+    it.each([
+      ['123.', '123.'], ['0.', '0.'], ['-123.', '-123.'], ['123,', '123.'],
+    ])('retains incomplete raw input %s, rejects it, and accepts a completed replacement', (input, clean) => {
+      class Example extends Form {
+        amount = new Field(DecimalType)
+      }
+      const form = new Example()
+      form.setFields({ amount: input })
+      expect(form.amount.rawValue).toBe(input)
+      expect(form.amount.valueClear).toBe(clean)
+      expect(form.amount.isValid).toBe(false)
+      expect(form.isValid).toBe(false)
+      expect(form.checkValid()).toBe(false)
+      expect(form.amount.errors).toEqual(['После точки должен быть минимум 1 знак'])
+
+      form.setFields({ amount: '123.5' })
+      expect(form.amount.rawValue).toBe('123.5')
+      expect(form.amount.valueClear).toBe('123.5')
+      expect(form.amount.errors).toEqual([])
+      expect(form.isValid).toBe(true)
+      expect(form.checkValid()).toBe(true)
+    })
+
+    it('defers field validation while retaining incomplete input until an explicit check', () => {
+      const field = new Field(DecimalType)
+      field.setRawValue('123.', false)
+      expect(field.rawValue).toBe('123.')
+      expect(field.valueClear).toBe('123.')
+      expect(field.isValid).toBeNull()
+      expect(field.errors).toEqual([])
+      expect(field.checkAndSetValid()).toBe(false)
+      expect(field.isValid).toBe(false)
+      expect(field.errors).toEqual(['После точки должен быть минимум 1 знак'])
+    })
+
+    it('serializes deferred values without validation; applications must check before submission', () => {
+      class Example extends Form {
+        amount = new Field(DecimalType, null, { gt: 0, le: 200 })
+      }
+      const form = new Example()
+      form.setFields({ amount: '123.5' })
+      expect(form.isValid).toBe(true)
+      const checkField = vi.spyOn(form.amount, 'checkAndSetValid')
+
+      form.setFields({ amount: '123,' }, false)
+      expect(form.amount.rawValue).toBe('123,')
+      expect(form.amount.valueClear).toBe('123.')
+      expect(form.amount.isValid).toBeNull()
+      expect(form.amount.errors).toEqual([])
+      expect(form.isValid).toBe(false)
+      expect(form.toJSON()).toEqual({ amount: '123.' })
+      expect(checkField).not.toHaveBeenCalled()
+      expect(form.amount.isValid).toBeNull()
+      expect(form.amount.errors).toEqual([])
+
+      // Serialization does not authorize submission; the application must run this final check.
+      expect(form.checkValid()).toBe(false)
+      expect(form.amount.isValid).toBe(false)
+      expect(form.amount.errors).toEqual(['После точки должен быть минимум 1 знак'])
+      expect(form.toJSON()).toEqual({ amount: '123.' })
+      expect(checkField).toHaveBeenCalledTimes(1)
     })
 
     it.each([

@@ -2,34 +2,31 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
-## HF-002 — Deferred ArrayField validation — 2026-10-17
+## HF-003 — Incomplete decimal validation — 2026-10-17
 
-**Completed:** collection assignment defers validation through `Form.setFields(data, false)`; enabled validation runs once per collection after all form values are assigned, with the parent form as context.
+**Implementation verified; independent review and PR acceptance pending.** HF-003 is not complete until both occur.
 
-Base: current `origin/master` at `77ae564b7a87d967f5700aa676d4735d7f00687d`. Branch: `fix/hf-002-arrayfield-deferred-validation`. Submit a PR into `master`; do not merge automatically.
+Base: `origin/master` at `0e69f07`, containing accepted HF-001 and HF-002. Branch: `fix/hf-003-decimal-validation`; target: `master`.
 
 ### Changes and compatibility
 
-- `src/core/fields/ArrayField.ts`: `itemsValue` delegates to `setItemsValue(items, validate = true)`. Replacement clears stale collection errors/results without validating an intermediate empty array. The public setter still validates the completed collection immediately.
-- `src/core/Form.ts`: assign ArrayField values with validation disabled; the existing final form check owns parent-aware validation.
-- `tests/unit/fields/ArrayField.test.ts` and `tests/unit/Form.test.ts`: eight regression cases cover empty/null/multiple items, deferred required/custom callbacks, stale errors and validity, multiple collections, and reversed assignment order.
-- `tests/unit/form-lifecycle-baseline.test.ts`: only HF-002 assertions changed; separate constructor validation calls from final collection checks. Decimal, reset, touched, and nested-form characterizations remain unchanged.
-- This handoff and its Russian companion record the result. No dependencies, version, demo, Field constructor, DecimalType, reset, or nested-form implementation changes.
+- `src/core/types/DecimalType.ts`: remove the early successful return for trailing-dot input. The existing empty-decimal-part check now returns `messages.invalid` or `После точки должен быть минимум 1 знак`. Integer digit checks still apply; complete values keep the existing precision, total-digit and numeric-bound checks.
+- `tests/unit/types/DecimalType.test.ts`: regressions for incomplete dot/comma input with and without each bound, strict/inclusive boundaries for strings and numbers, complete/negative/zero values, malformed strings, digit/precision limits, zero decimal places and custom messages.
+- `tests/unit/form-lifecycle-baseline.test.ts`: replace the four old trailing-dot acceptance expectations, add deferred Field/Form checks, raw/clean representation assertions, completion recovery and a serialization validation spy. Other baseline tests remain intact.
+- This handoff and EN/RU decisions record the approved policy. `rawValue`, normalized string/number `valueClear`, casting, deferred assignment and serialization contracts are unchanged. Validation intentionally rejects previously accepted incomplete decimals; applications must run final validation before submission. `toJSON()` still serializes even invalid or unchecked values.
+- Production changes are limited to DecimalType. Package version remains 2.1.0; dependencies, Field/Form implementation, collections, reset and touched behavior are unchanged.
 
 ### Actual checks
 
-- `npx --no-install vitest run tests/unit/fields/ArrayField.test.ts` before changes — **22 passed**.
-- Regression run before the production fix — **11 failed, 92 passed**, reproducing the targeted behavior.
-- `npx --no-install vitest run tests/unit/fields/ArrayField.test.ts tests/unit/Form.test.ts tests/unit/form-lifecycle-baseline.test.ts` after the fix — **103 passed**, 3 files.
-- `npm test` — **416 passed**, 21 files.
-- `npm test -- --maxWorkers=2` — repeated full run, **416 passed**, 21 files.
-- `npm run lint`, `npx --no-install tsc --noEmit -p tsconfig.json`, `npm run build`, `npm run check:package` — passed; package check verified 21 files and entry points/declarations.
-- `npx --no-install tsc --noEmit -p tsconfig.test.json` — **54 existing diagnostics** both before and after the change. Diagnostic messages and multiplicities match after ignoring shifted line/column positions; no new diagnostics. No unrelated typing fixes.
+- `npx --no-install vitest run tests/unit/types/DecimalType.test.ts tests/unit/form-lifecycle-baseline.test.ts` on the base — **53 passed**, 2 files.
+- Initial regressions before the production fix — **22 failed, 88 passed**, confirming the defect. After the fix — **110 passed**; after adding four further bound cases, final focused run — **114 passed**, 2 files.
+- `npm test` — **477 passed**, 21 files (**61 more than the base's 416**).
+- `npm run lint`, `npx --no-install tsc --noEmit -p tsconfig.json`, `npm run build` — passed.
+- `npm run check:package` — passed; **21 package files**, required entry points and declarations present.
+- `npx --no-install tsc --noEmit -p tsconfig.test.json` — fails with **54 existing diagnostics**, exactly matching the untouched base log, including positions and multiplicities. No new diagnostics, unrelated typing fixes or configuration changes.
 - `npm audit --audit-level=moderate` — passed, **0 vulnerabilities**.
 - `git diff --check` and final diff/Markdown/local-link/EN-RU review — passed.
 
 ### Limits and next action
 
-Non-null Field constructor defaults still validate during item creation, including deferred assignment; HF-002 suppresses collection-driven checks, not constructor validation. Deferred replacement clears collection errors and leaves collection validity false until explicitly checked; item constructor state is retained. Existing decimal-bound, reset-membership, and touched-aggregation questions remain outside scope.
-
-Demo-specific builds/typechecks and coverage were not run because demo and coverage scope did not change. Review the HF-002 PR only. HF-003 and later tasks require separate approval and were not started. Do not merge, release, or publish automatically.
+Review and accept only the HF-003 PR. Error visibility and onChange/onBlur/onSubmit policies, richer parsing states, collection reset membership, touched aggregation and existing test typing diagnostics remain outside scope. Demo-specific builds/typechecks and coverage were not run. No later task has been started; do not merge, release or publish automatically.

@@ -61,18 +61,6 @@ export class DecimalType extends FieldType<number | string, DecimalOptions> {
     const intPart = parts[0]
     const decPart = parts.length > 1 ? parts[1] : ''
 
-    // Handle a trailing decimal point while the user is still typing.
-    if (normalizedValue.endsWith('.')) {
-      // Validate only the integer part.
-      if (intPart.length > maxIntDigits) {
-        errors.push(
-          this.options.messages?.maxDigits ??
-          `Максимальное количество знаков перед запятой ${maxIntDigits}`
-        )
-      }
-      return errors
-    }
-
     // Validate the integer part.
     if (intPart.length === 0) {
       errors.push(this.options.messages?.invalid ?? 'Пример: 1.00')
