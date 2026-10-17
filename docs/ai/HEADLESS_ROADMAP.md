@@ -49,6 +49,8 @@ Every task is independent in scope but must obey its prerequisites. No task may 
 
 ### HF-003 — Specify decimal edit vs submit validity
 
+**Status: completed in [PR #12](https://github.com/ArhiMEN/AdaptForm/pull/12), CI and GitGuardian passed; [HANDOFF](HANDOFF.md) contains the evidence.**
+
 - Depends on: HF-001; phase/size: P0 / S; model/effort: Sol / High; API decision gate: yes.
 - Scope: Test 123. and boundary bypass; propose minimal backward-compatible policy for incomplete decimal input before modifying behavior.
 - Acceptance: Tests cover incomplete input, min/max bounds, locale separators, casting and submission-safety; behavior change requires approval.
