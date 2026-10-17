@@ -4,7 +4,7 @@
 
 ## Status
 
-**Prepared release candidate; NOT published to npm.** This document tracks the 2.1.1 package metadata and release readiness; it is not a GitHub release or tag. The published npm `latest` was `2.1.0` when preparation began on 2026-10-17; the registry did not list `2.1.1`. Recheck at actual publication time.
+**Source prepared and merged into `master`; NOT published to npm.** The 2.1.1 package metadata was squash-merged in [PR #14](https://github.com/ArhiMEN/AdaptForm/pull/14) as `a048dfef779ebc62669d4ed38ab36f81cf7d6d25`. No GitHub release or tag was created. The published npm `latest` was `2.1.0` when preparation began on 2026-10-17; the registry did not list `2.1.1`. Recheck at actual publication time.
 
 ## Release scope
 
@@ -27,13 +27,20 @@ No new public types, serialization format, mandatory runtime dependencies, frame
 
 ## Required gates
 
-- [ ] PR for this release preparation reviewed; verify the diff contains only version metadata, release documentation and precise README notes.
-- [ ] Release candidate GitHub Actions `verify` succeeds (includes `npm ci`, dependency audit, lint, full tests, build, package integrity, TypeScript source/demo checks and demo build).
-- [ ] GitGuardian security check succeeds.
-- [ ] Verify the package version is still unpublished; confirm `package.json`/`package-lock.json` agree.
+- [x] PR for this release preparation reviewed; verify the diff contains only version metadata, release documentation and precise README notes.
+- [x] Release candidate GitHub Actions `verify` succeeds (includes `npm ci`, dependency audit, lint, full tests, build, package integrity, TypeScript source/demo checks and demo build).
+- [x] GitGuardian security check succeeds.
+- [x] Verify the package version is still unpublished; confirm `package.json`/`package-lock.json` agree.
 - [ ] Confirm `NPM_PUBLISH_ENABLED` is **not `true`** before any version-bump merge intended as preparation only. The publish workflow automatically executes after successful `master` CI when that variable is enabled; the GitHub connector currently does not establish its value.
 - [ ] Independently authorize the actual npm publication and decide release/tag policy; never treat a merge as authorization to publish.
 - [ ] After publication, verify the npm registry version, dist tag and package tarball, then change this document/CHANGELOG from Unreleased to the actual date.
+
+## Verified result after merge — 2026-10-17
+
+- [Master CI #39022290980](https://github.com/ArhiMEN/AdaptForm/actions/runs/39022290980) succeeded; [demo deployment #39022290982](https://github.com/ArhiMEN/AdaptForm/actions/runs/39022290982) succeeded.
+- [Publish npm package #39022327944](https://github.com/ArhiMEN/AdaptForm/actions/runs/39022327944) **skipped**. Historical runs also skipped, but the actual `NPM_PUBLISH_ENABLED` variable is not readable through the connector. This is evidence of no GitHub Actions publication from the merge, not proof of permanent configuration.
+- Public registry's `latest` remained `2.1.0` when rechecked after merging. The 2.1.1 source lives in master, not yet npm.
+- The final PR CI passed all **477 tests**, lint, source and demo types, package verification, builds, dependency audit and GitGuardian. The existing 54 diagnostics in the separate test type-check were not fixed.
 
 ## Known technical debt
 
