@@ -41,6 +41,8 @@ Every task is independent in scope but must obey its prerequisites. No task may 
 
 ### HF-002 — Defer ArrayField validation correctly
 
+**Status: completed in [PR #10](https://github.com/ArhiMEN/AdaptForm/pull/10); CI passed, details in [HANDOFF](HANDOFF.md).**
+
 - Depends on: HF-001; phase/size: P0 / S; model/effort: Sol / Medium; API decision gate: no.
 - Scope: Ensure form.setFields(data,false) does not invoke collection validators through itemsValue/clear; apply values before optional validation.
 - Acceptance: Regression tests confirm zero premature validation calls and one final check when enabled; preserve public setter.
