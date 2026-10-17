@@ -78,7 +78,7 @@ export abstract class Form {
       const field = fields[key]
       if (field) {
         if (field instanceof Field) field.setRawValue(data[key], false)
-        else if (field instanceof ArrayField) field.itemsValue = data[key] as any[]
+        else if (field instanceof ArrayField) field.setItemsValue(data[key] as unknown[], false)
         else if (field instanceof ArrayFormField) field.setForms(data[key] as unknown[], false)
         else console.error(`Invalid field "${key}" type`)
       }

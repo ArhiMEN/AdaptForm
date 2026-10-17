@@ -44,6 +44,70 @@ describe('Form', () => {
   })
 
   describe('checkValid', () => {
+    it.each([{ values: [] }, { values: [null] }, { values: ['new', 'other'] }])(
+      'should defer all collection rules for $values until an explicit parent check',
+      ({ values }) => {
+        const isRequired = vi.fn(() => false)
+        const validate = vi.fn(() => true)
+        class CollectionForm extends Form {
+          values = new ArrayField(
+            (value?: string) => new Field(StringType, value, { isRequired: false }),
+            { isRequired, validate },
+            ['old']
+          )
+          sibling = new Field(StringType)
+        }
+        const form = new CollectionForm()
+        form.values.error = 'stale error'
+        isRequired.mockClear()
+        validate.mockClear()
+
+        form.setFields({ values, sibling: 'ready' }, false)
+
+        expect(form.values.itemsValue).toEqual(values)
+        expect(form.values.errors).toEqual([])
+        expect(form.values.isValid).toBe(false)
+        expect(form.isValid).toBe(false)
+        expect(isRequired).not.toHaveBeenCalled()
+        expect(validate).not.toHaveBeenCalled()
+        expect(form.checkValid()).toBe(true)
+        expect(isRequired).toHaveBeenCalledExactlyOnceWith(form)
+        expect(validate).toHaveBeenCalledExactlyOnceWith(values, form)
+      }
+    )
+
+    it.each([false, true])('should apply all collections and siblings before validation (reversed=%s)', (reversed) => {
+      const observations: unknown[] = []
+      const validate = vi.fn((_values: unknown[], form?: Form) => {
+        observations.push(form?.fieldsValue)
+        return true
+      })
+      const isRequired = vi.fn(() => false)
+      class CollectionForm extends Form {
+        first = new ArrayField(
+          (value?: string) => new Field(StringType, value), { isRequired, validate }
+        )
+        sibling = new Field(StringType)
+        second = new ArrayField(
+          (value?: string) => new Field(StringType, value), { isRequired: false, validate }
+        )
+      }
+      const form = new CollectionForm()
+      validate.mockClear()
+      isRequired.mockClear()
+      observations.length = 0
+      const data = { first: ['one'], sibling: 'ready', second: ['two'] }
+
+      form.setFields(reversed ? { second: data.second, sibling: data.sibling, first: data.first } : data, true)
+
+      expect(validate).toHaveBeenCalledTimes(2)
+      expect(validate).toHaveBeenNthCalledWith(1, ['one'], form)
+      expect(validate).toHaveBeenNthCalledWith(2, ['two'], form)
+      expect(isRequired).toHaveBeenCalledExactlyOnceWith(form)
+      expect(observations).toEqual([data, data])
+      expect(form.isValid).toBe(true)
+    })
+
     it('should check all fields', () => {
       const form = new TestForm()
       form.fields = { name: 'John', age: 25 }

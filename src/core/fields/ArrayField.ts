@@ -28,13 +28,18 @@ export class ArrayField<T = any> {
   // ===== value =====
 
   set itemsValue(items: (T | null)[]) {
-    this.clear()
+    this.setItemsValue(items)
+  }
+
+  setItemsValue(items: (T | null)[], validate: boolean = true): void {
+    this._items = []
+    this.error = null
 
     for (const item of items) {
       this.add(item as T, false)
     }
 
-    this.checkValid()
+    if (validate) this.checkValid()
   }
 
   get itemsValue(): (T | null)[] {

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { ArrayField } from '@core/fields/ArrayField'
 import { Field } from '@core/fields/Field'
 import { StringType } from '@core/types/StringType'
@@ -26,6 +26,24 @@ describe('ArrayField', () => {
   })
 
   describe('itemsValue setter', () => {
+    it.each([{ value: [] }, { value: ['new'] }, { value: [null] }])('should check only the final replacement $value', ({ value }) => {
+      const validate = vi.fn(() => true)
+      const isRequired = vi.fn(() => false)
+      const arrayField = new ArrayField(
+        (value?: string) => new Field(StringType, value, { isRequired: false }),
+        { isRequired, validate },
+        ['old']
+      )
+      validate.mockClear()
+      isRequired.mockClear()
+
+      arrayField.itemsValue = value
+
+      expect(isRequired).toHaveBeenCalledExactlyOnceWith(null)
+      expect(validate).toHaveBeenCalledExactlyOnceWith(value, undefined)
+      expect(arrayField.isValid).toBe(true)
+    })
+
     it('should replace all items', () => {
       const factory = (value?: string) => new Field(StringType, value)
       const arrayField = new ArrayField(factory, {}, ['a'])
