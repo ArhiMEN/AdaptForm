@@ -4,7 +4,7 @@
 
 ## HF-003 — Incomplete decimal validation — 2026-10-17
 
-**Implementation verified; independent review and PR acceptance pending.** HF-003 is not complete until both occur.
+**Accepted and merged:** independent review, all GitHub Actions checks and GitGuardian passed. [PR #12](https://github.com/ArhiMEN/AdaptForm/pull/12) was squash-merged into `master` as `80f4ee63993b30dfa0a22c1a9e92f1302ede8266`. HF-003 is complete; no npm release or version change.
 
 Base: `origin/master` at `0e69f07`, containing accepted HF-001 and HF-002. Branch: `fix/hf-003-decimal-validation`; target: `master`.
 
@@ -29,4 +29,4 @@ Base: `origin/master` at `0e69f07`, containing accepted HF-001 and HF-002. Branc
 
 ### Limits and next action
 
-Review and accept only the HF-003 PR. Error visibility and onChange/onBlur/onSubmit policies, richer parsing states, collection reset membership, touched aggregation and existing test typing diagnostics remain outside scope. Demo-specific builds/typechecks and coverage were not run. No later task has been started; do not merge, release or publish automatically.
+HF-003 PR #12 was reviewed and accepted. Next proposed task is HF-004 (collection reset), pending a separate product contract decision. Error visibility and onChange/onBlur/onSubmit policies, richer parsing states, collection reset membership, touched aggregation and existing test typing diagnostics remain outside scope. Demo-specific builds/typechecks and coverage were not run. No later task has been started; do not merge, release or publish automatically.
