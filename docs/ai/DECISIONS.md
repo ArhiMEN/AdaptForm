@@ -34,3 +34,9 @@ For later decisions, append a short dated outcome, rationale, approved scope, an
 - **Approved preparation scope:** release candidate `adaptform@2.1.1` includes accepted HF-002 and HF-003 fixes and HF-001 characterization tests, plus aligned package metadata, changelog, README and release checks. HF-004 onward and headless engine API work remain excluded.
 - This approval authorizes **preparation only**, not npm publication, enabling automated npm publishing, GitHub releases/tags or deleting branches. The publish workflow may run after a successful `master` push if `NPM_PUBLISH_ENABLED=true`; do not merge a version bump until that switch is verified disabled or publication is independently authorized.
 - Release checklist and known compatibility change (trailing-dot decimals now fail explicit validation) are tracked in [2.1.1 release preparation](../roadmap/v2.1.1/RELEASE.md).
+
+## 2.2.0 planning direction — 2026-10-17
+
+- The proposed **2.2.0** feature milestone is a class-based, framework-independent headless state foundation: HF-005–HF-010 (state contract, dirty/baseline, aggregate Form state, subscriptions/snapshots, batch, nested propagation).
+- This is **planning**, not advance approval to modify code, change public state semantics, create a tag or publish. [Scope and gates](../roadmap/v2.2.0/PLAN.md) define the next specification-only HF-005 task and explicit decision boundaries.
+- HF-004 (resetting collection membership) is an unresolved compatibility decision and is not automatically included in 2.2.0. The 2.1.1 source was merged in PR #14; automatic npm publication skipped, and registry `latest` remained 2.1.0 at the latest check.
