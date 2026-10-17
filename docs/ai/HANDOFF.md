@@ -1,12 +1,19 @@
 # Handoff
+
+[English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
+
+## Transition to 2.2.0 — 2026-10-17
+
+- **2.1.1 source prepared in `master`:** [PR #14](https://github.com/ArhiMEN/AdaptForm/pull/14), squash `a048dfef779ebc62669d4ed38ab36f81cf7d6d25`. [Master CI #39022290980](https://github.com/ArhiMEN/AdaptForm/actions/runs/39022290980) and demo deployment passed; [npm publish #39022327944](https://github.com/ArhiMEN/AdaptForm/actions/runs/39022327944) was **skipped**, and registry `latest` still reported 2.1.0 on recheck. Not released to npm.
+- **Next planned milestone — 2.2.0:** [PLAN.md](../roadmap/v2.2.0/PLAN.md), HF-005–HF-010 (state contract, dirty, subscriptions, atomic batches, nested propagation). Keep package version `2.1.1` until a separate next release-candidate task.
+- **Next candidate work:** HF-005 specification-only. HF-004 collection-reset semantics need separate owner approval. No HF-005+ production tasks are started or implicitly authorized. The existing 54 `tsconfig.test.json` diagnostics remain technical debt.
+
 ## Release candidate 2.1.1 — 2026-10-17
 
 - Workstream: `release/v2.1.1-preparation` based on the accepted HF-003 master. Package root manifest/lock version raised to 2.1.1, bilingual changelog and README updated; [release gates](../roadmap/v2.1.1/RELEASE.md) added. No library implementation, dependencies, tags or npm publication performed.
 - HF-001/HF-002/HF-003 are accepted; patch fixes only HF-002 and HF-003, preserving public API. Test type-check debt remains (54 pre-existing diagnostics).
 - The next action is independent release-candidate PR/CI review. **Do not merge the version bump to master until `NPM_PUBLISH_ENABLED` is confirmed disabled or npm publication is explicitly authorized.** No HF-004 code work is approved by this release task.
 
-
-[English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
 ## HF-003 — Incomplete decimal validation — 2026-10-17
 
