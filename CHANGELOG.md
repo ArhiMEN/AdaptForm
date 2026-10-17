@@ -6,6 +6,25 @@ All notable changes to AdaptForm are documented here. Version `2.1.0` was publis
 
 **[Interactive demo](https://arhimen.github.io/AdaptForm/)** · [Demo source](https://github.com/ArhiMEN/AdaptForm/tree/master/demo) · [Documentation](https://github.com/ArhiMEN/AdaptForm/blob/master/README.md)
 
+## [2.1.1] - Unreleased (prepared)
+
+### Fixed
+
+- **HF-002:** Defer `ArrayField` collection validation during `Form.setFields(data, false)`; with enabled validation, check the final collection once after all form values are assigned, using the parent form as context. Avoid validation against a transient empty array, while preserving the public `itemsValue` setter and its immediate validation of the completed replacement. ([PR #10](https://github.com/ArhiMEN/AdaptForm/pull/10))
+- **HF-003:** Reject incomplete decimal strings such as `"123."`, `"0."` and `"-123."` on explicit validation, including with `gt`/`ge`/`lt`/`le` bounds. Preserve the editable input, comma normalization, existing format-error messages and complete-number precision checks. ([PR #12](https://github.com/ArhiMEN/AdaptForm/pull/12))
+
+### Tests and verification
+
+- Add the HF-001 lifecycle characterization baseline and update its expectations after the two targeted fixes. ([PR #8](https://github.com/ArhiMEN/AdaptForm/pull/8))
+- The accepted HF-003 branch passed **477 tests in 21 files**, lint, source type-check, package build, package-content verification and npm audit (0 reported vulnerabilities). The 2.1.1 release candidate must pass its own CI before publication.
+
+### Compatibility and release status
+
+- **Intentional behavior change:** trailing-decimal values may still be entered and serialized, but no longer pass `Field.checkAndSetValid()` or `Form.checkValid()`. Applications must validate before submitting; `toJSON()` itself does not validate.
+- Public types, `rawValue`/`valueClear` representations, serialization shapes and the optional Luxon entry point are unchanged. No new runtime dependencies.
+- The separate test type-check `tsconfig.test.json` has **54 existing diagnostics** unchanged by HF-002/HF-003; it is not part of required CI. These are tracked as technical debt, not represented as passing.
+- **Release not yet published.** Version `2.1.1` is being prepared; do not infer npm publication, a GitHub release or a tag from this entry.
+
 ## [2.1.0] - 2026-10-14
 
 ### Added
