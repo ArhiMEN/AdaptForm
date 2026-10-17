@@ -89,7 +89,7 @@ describe('HF-001 form lifecycle baseline', () => {
   })
 
   describe('ArrayField assignment validation', () => {
-    it('validates an empty intermediate collection and validates new non-null items twice', () => {
+    it('validates only the replacement collection and validates new non-null items twice', () => {
       const itemValidate = vi.fn(() => true)
       const collectionValidate = vi.fn(() => true)
       const field = new ArrayField(
@@ -99,9 +99,7 @@ describe('HF-001 form lifecycle baseline', () => {
       collectionValidate.mockClear()
       field.itemsValue = ['new']
 
-      expect(collectionValidate).toHaveBeenCalledTimes(2)
-      expect(collectionValidate).toHaveBeenNthCalledWith(1, [], undefined)
-      expect(collectionValidate).toHaveBeenNthCalledWith(2, ['new'], undefined)
+      expect(collectionValidate).toHaveBeenCalledExactlyOnceWith(['new'], undefined)
       expect(itemValidate).toHaveBeenCalledTimes(2)
       expect(itemValidate).toHaveBeenNthCalledWith(1, 'new', undefined)
       expect(itemValidate).toHaveBeenNthCalledWith(2, 'new', undefined)
@@ -110,7 +108,7 @@ describe('HF-001 form lifecycle baseline', () => {
       expect(field.isValid).toBe(true)
     })
 
-    it.each([false, true])('still validates collections when setFields validate=%s', (validate) => {
+    it.each([false, true])('defers collection validation until the final check when setFields validate=%s', (validate) => {
       const itemValidate = vi.fn(() => true)
       const observations: { values: unknown; sibling: unknown; hasParent: boolean }[] = []
       class Example extends Form {
@@ -131,12 +129,12 @@ describe('HF-001 form lifecycle baseline', () => {
       form.setFields({ values: ['new'], sibling: 'ready' }, validate)
 
       expect(observations).toEqual([
-        { values: [], sibling: undefined, hasParent: false },
-        { values: ['new'], sibling: undefined, hasParent: false },
         ...(validate ? [{ values: ['new'], sibling: 'ready', hasParent: true }] : []),
       ])
-      expect(itemValidate).toHaveBeenCalledTimes(validate ? 3 : 2)
-      expect(form.values.isValid).toBe(true)
+      expect(itemValidate).toHaveBeenCalledTimes(validate ? 2 : 1)
+      expect(itemValidate).toHaveBeenNthCalledWith(1, 'new', undefined)
+      if (validate) expect(itemValidate).toHaveBeenNthCalledWith(2, 'new', form)
+      expect(form.values.isValid).toBe(validate)
       expect(form.sibling.isValid).toBe(validate ? true : null)
       expect(form.isValid).toBe(validate)
     })
