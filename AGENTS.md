@@ -16,6 +16,13 @@
 - Tests live in `tests/unit/`, `tests/integration/`, and `tests/demo/`. The interactive demo lives in `demo/` and imports library source.
 - Package checks live in `scripts/`; CI is in `.github/workflows/ci.yml`. Consult `docs/roadmap/v2.1.0/` only for release work or when a workstream status changes.
 
+## Selective AI context
+
+- Start with [project context](docs/ai/PROJECT_CONTEXT.md); load only task-relevant files and README sections. Do not read the whole repository, test suite, or commit history by default.
+- Load `.agents/skills/<name>/SKILL.md` only when its trigger matches: `adaptform-core-contract` for public API; `adaptform-validation-lifecycle` for state and validation flow; `adaptform-targeted-tests` for check selection; `adaptform-framework-adapter` for approved adapter work; `adaptform-release-guard` for packaging and release work. Skills supplement these instructions, without granting approval or requiring unrelated skills.
+- Follow [decisions](docs/ai/DECISIONS.md): the owner discusses architecture and improvements in ChatGPT; implement through Codex Cloud only after separate explicit scope approval. Backlog proposals do not authorize code changes.
+- At completion, keep [handoff](docs/ai/HANDOFF.md) concise with results, actual checks, limitations, and next action; update [decisions](docs/ai/DECISIONS.md) and [backlog](docs/ai/BACKLOG.md) only when needed. Align EN/RU; retain only public project facts, never personal data, private conversations, secrets, tokens, or internal closed information.
+
 ## Implementation
 
 - Find the existing owner of behavior before editing. Reuse or refactor it instead of duplicating business or validation logic.
