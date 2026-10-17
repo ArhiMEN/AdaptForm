@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
-**[Открыть интерактивное демо](https://arhimen.github.io/AdaptForm/?lang=ru)** · **[История изменений 2.1.0](https://github.com/ArhiMEN/AdaptForm/blob/master/CHANGELOG.ru.md)** · **[Исходный код демо](https://github.com/ArhiMEN/AdaptForm/tree/master/demo)**
+**[Открыть интерактивное демо](https://arhimen.github.io/AdaptForm/?lang=ru)** · **[История изменений](https://github.com/ArhiMEN/AdaptForm/blob/master/CHANGELOG.ru.md)** · **[Исходный код демо](https://github.com/ArhiMEN/AdaptForm/tree/master/demo)**
 
 Для сопровождающих: [настройка автоматической публикации в npm](docs/NPM_PUBLISH.ru.md).
 
@@ -40,7 +40,7 @@ npm install adaptform
 npm install luxon
 ```
 
-[Интерактивное демо](https://arhimen.github.io/AdaptForm/?lang=ru) использует исходный код репозитория и автоматически публикуется из `v2.1.0` и `master`. Версия `2.1.0` доступна в npm.
+[Интерактивное демо](https://arhimen.github.io/AdaptForm/?lang=ru) использует исходный код репозитория и автоматически публикуется из `v2.1.0` и `master`. Актуальную опубликованную версию проверяйте на [npm](https://www.npmjs.com/package/adaptform); изменения репозитория могут ещё не входить в релиз.
 
 Демо поддерживает английский и русский языки с сохранением выбора: [English](https://arhimen.github.io/AdaptForm/?lang=en) · [Русский](https://arhimen.github.io/AdaptForm/?lang=ru). Переключение языка сохраняет данные формы и состояние валидации.
 
@@ -127,7 +127,7 @@ const price = new Field(DecimalType, null, {
 })
 ```
 
-Поддерживаются `gt`, `ge`, `lt`, `le`, `decimalPlaces` и `maxDigits`. Числовые значения с избыточной точностью отклоняются без скрытого округления. В строковых значениях десятичным разделителем может быть запятая или точка.
+Поддерживаются `gt`, `ge`, `lt`, `le`, `decimalPlaces` и `maxDigits`. Числовые значения с избыточной точностью отклоняются без скрытого округления. В строковых значениях десятичным разделителем может быть запятая или точка. Незавершённые значения вроде `"123."` сохраняются при редактировании, но не проходят явную проверку; перед отправкой вызывайте `Form.checkValid()`. Метод `toJSON()` не выполняет валидацию автоматически.
 
 ### BooleanType
 

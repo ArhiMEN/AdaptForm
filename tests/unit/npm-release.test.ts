@@ -7,6 +7,11 @@ import { checkNpmRelease, main } from '../../scripts/check-npm-release.mjs'
 const manifest = { name: 'adaptform', version: '2.1.0' }
 const lockfile = { ...manifest, packages: { '': { ...manifest } } }
 
+async function currentPackageId(): Promise<string> {
+  const { name, version } = JSON.parse(await readFile('package.json', 'utf8')) as { name: string; version: string }
+  return `${name}@${version}`
+}
+
 describe('npm release preflight', () => {
   it('publishes a version that is absent from the registry', async () => {
     const lookup = vi.fn().mockResolvedValue({ status: 404 })
@@ -44,7 +49,7 @@ describe('npm release preflight', () => {
     try {
       await main({ fetchRegistry: async () => ({ status: 404 }), outputFile, log })
       expect(await readFile(outputFile, 'utf8')).toBe('publish=true\n')
-      expect(log).toHaveBeenCalledWith('adaptform@2.1.0 is unpublished; publishing is needed.')
+      expect(log).toHaveBeenCalledWith(`${await currentPackageId()} is unpublished; publishing is needed.`)
     } finally {
       await rm(directory, { recursive: true, force: true })
     }
@@ -53,6 +58,6 @@ describe('npm release preflight', () => {
   it('reports an already published version without writing output outside Actions', async () => {
     const log = vi.fn()
     await main({ fetchRegistry: async () => ({ status: 200 }), outputFile: '', log })
-    expect(log).toHaveBeenCalledWith('adaptform@2.1.0 is already published; skipping.')
+    expect(log).toHaveBeenCalledWith(`${await currentPackageId()} is already published; skipping.`)
   })
 })
