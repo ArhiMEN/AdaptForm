@@ -28,3 +28,9 @@ For later decisions, append a short dated outcome, rationale, approved scope, an
 - Completed values retain `gt`/`ge`/`lt`/`le`, precision and digit limits, negative-number support and numeric input behavior. Excess precision is rejected without rounding.
 - Deferred assignment remains available through `setRawValue(value, false)` and `setFields(data, false)`. Applications must run `checkAndSetValid()` or `Form.checkValid()` before relying on final validity; `toJSON()` serializes without validating.
 - Compatibility impact: incomplete decimals previously accepted by validation now fail intentionally. Public types and payload representations remain unchanged. Error display triggers, new parsing states, collection reset and touched semantics remain separate tasks. HF-003 completion requires successful checks, independent review and PR acceptance.
+
+## Patch release preparation 2.1.1 — 2026-10-17
+
+- **Approved preparation scope:** release candidate `adaptform@2.1.1` includes accepted HF-002 and HF-003 fixes and HF-001 characterization tests, plus aligned package metadata, changelog, README and release checks. HF-004 onward and headless engine API work remain excluded.
+- This approval authorizes **preparation only**, not npm publication, enabling automated npm publishing, GitHub releases/tags or deleting branches. The publish workflow may run after a successful `master` push if `NPM_PUBLISH_ENABLED=true`; do not merge a version bump until that switch is verified disabled or publication is independently authorized.
+- Release checklist and known compatibility change (trailing-dot decimals now fail explicit validation) are tracked in [2.1.1 release preparation](../roadmap/v2.1.1/RELEASE.md).
