@@ -11,3 +11,10 @@
 - Next action: owner reviews the foundation PR when available. Future architecture and improvements follow [DECISIONS](DECISIONS.md); no implementation follows automatically.
 
 At task completion, replace this short handoff with the current scope, changed areas, actual checks and limitations, remaining work, and next action. Update decisions or backlog only when their state changes; keep both languages aligned and retain no private discussion.
+
+## Headless engine planning — 2026-10-17
+
+- Product direction B chosen; [HF-001–HF-020 roadmap](HEADLESS_ROADMAP.md) drafted in bilingual documentation. No source code, tests, dependencies or package versions modified as part of planning.
+- Task status: **all proposed/not started**. First candidate HF-001 is an isolated characterization baseline; do not execute it before the owner starts the separate Codex Cloud task.
+- Architecture and backward-compatibility decisions remain gated in the roadmap; foundation PR #5 remains separately reviewable. The roadmap is a follow-on documentation branch, not a merged release plan.
+- Verification of plan: GitHub file writes and branch comparison; no local code tests were run for this documentation-only work. Review PR status and CI separately.
