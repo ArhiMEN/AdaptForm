@@ -20,3 +20,11 @@ For later decisions, append a short dated outcome, rationale, approved scope, an
 - **Approved product direction:** AdaptForm evolves toward a framework-agnostic, class-based **headless form engine** (direction B). The core remains independent of UI libraries; optional adapters may be considered later.
 - **Not approved by this direction alone:** code changes, specific new public APIs, versions, release dates, semantic migrations or framework dependencies. The 20 [roadmap tasks](HEADLESS_ROADMAP.md) are proposals with task-specific decision gates.
 - Architecture is discussed in ChatGPT; Codex Cloud executes only separately scoped and approved changes. Keep this decision record free of private chat transcripts.
+
+## HF-003 decimal input policy — 2026-10-17
+
+- Approved scope: repair incomplete-decimal validation while preserving the existing Field/Form lifecycle and serialization contracts.
+- Trailing-separator strings such as `123.`, `0.`, `-123.` and normalized `123,` remain editable: raw input is retained and casting still returns a normalized string. Every explicit validation rejects them as a format error, with or without numeric bounds, using `messages.invalid` or the existing default message for an empty decimal part.
+- Completed values retain `gt`/`ge`/`lt`/`le`, precision and digit limits, negative-number support and numeric input behavior. Excess precision is rejected without rounding.
+- Deferred assignment remains available through `setRawValue(value, false)` and `setFields(data, false)`. Applications must run `checkAndSetValid()` or `Form.checkValid()` before relying on final validity; `toJSON()` serializes without validating.
+- Compatibility impact: incomplete decimals previously accepted by validation now fail intentionally. Public types and payload representations remain unchanged. Error display triggers, new parsing states, collection reset and touched semantics remain separate tasks. HF-003 completion requires successful checks, independent review and PR acceptance.
