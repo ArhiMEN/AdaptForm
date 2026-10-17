@@ -1,4 +1,10 @@
 # Handoff
+## Release candidate 2.1.1 — 2026-10-17
+
+- Workstream: `release/v2.1.1-preparation` based on the accepted HF-003 master. Package root manifest/lock version raised to 2.1.1, bilingual changelog and README updated; [release gates](../roadmap/v2.1.1/RELEASE.md) added. No library implementation, dependencies, tags or npm publication performed.
+- HF-001/HF-002/HF-003 are accepted; patch fixes only HF-002 and HF-003, preserving public API. Test type-check debt remains (54 pre-existing diagnostics).
+- The next action is independent release-candidate PR/CI review. **Do not merge the version bump to master until `NPM_PUBLISH_ENABLED` is confirmed disabled or npm publication is explicitly authorized.** No HF-004 code work is approved by this release task.
+
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
