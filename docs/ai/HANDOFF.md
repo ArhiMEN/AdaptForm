@@ -2,6 +2,10 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## HF-005–HF-010 implementation — 2026-10-18
+
+HF-005 contract completed; HF-006–HF-010 pending. Approved combined scope uses one branch with sequential commits and one integration PR. Base: `33717f2`. Baseline checks: 477 tests pass; test typecheck has 54 pre-existing diagnostics. Version stays 2.1.1. Independent review and release preparation remain separate.
+
 ## Transition to 2.2.0 — 2026-10-17
 
 - **2.1.1 source prepared in `master`:** [PR #14](https://github.com/ArhiMEN/AdaptForm/pull/14), squash `a048dfef779ebc62669d4ed38ab36f81cf7d6d25`. [Master CI #39022290980](https://github.com/ArhiMEN/AdaptForm/actions/runs/39022290980) and demo deployment passed; [npm publish #39022327944](https://github.com/ArhiMEN/AdaptForm/actions/runs/39022327944) was **skipped**, and registry `latest` still reported 2.1.0 on recheck. Not released to npm.
