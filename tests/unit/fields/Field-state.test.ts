@@ -127,4 +127,18 @@ describe('HF-006 Field baseline', () => {
     expect(field.isDirty).toBe(true)
   })
 
+  it('compares structural values symmetrically regardless of shared-reference topology', () => {
+    const shared = {value: 1}
+    const linked = {a: shared, b: shared}
+    const independent = {a: {value: 1}, b: {value: 1}}
+    const first = new Field(StructuredType, linked)
+    first.rawValue = independent
+    expect(first.isDirty).toBe(false)
+    const second = new Field(StructuredType, independent)
+    second.rawValue = linked
+    expect(second.isDirty).toBe(false)
+    second.rawValue = {a: {value: 1}, b: {value: 2}}
+    expect(second.isDirty).toBe(true)
+  })
+
 })

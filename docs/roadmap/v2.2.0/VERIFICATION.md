@@ -7,7 +7,7 @@ Local verification on 2026-10-18. Base: master `33717f2a88f04a3ad9c454b0477e52b2
 | Check | Result |
 | --- | --- |
 | Base npm test | 477 passed, 21 files |
-| Final npm test | **527 passed, 26 files** (50 new regressions) |
+| Final npm test | **528 passed, 26 files** (51 new regressions) |
 | npm run lint | Passed |
 | npx tsc --noEmit -p tsconfig.json | Passed |
 | npm run build | Passed: ESM, CJS and declarations |
@@ -36,7 +36,9 @@ A broader declaration smoke additionally reads the legacy `form.fieldsValue.name
 | HF-010 | 29 combined reactive regressions; full suite then 524; deep propagation, removal/replacement, shared children, retention links and reentrant writes |
 | Final hardening | 3 further regressions; full suite **527**; shared built-in captures/sparse arrays, async callback rejection, competing callback/validation/listener errors |
 
-Every implementation stage ran lint and source typecheck successfully before its commit. Test typecheck stayed at the baseline's 54 diagnostics. No tests/checks were disabled. Five new test files contain 50 cases. Values in tests are synthetic.
+Final structural review adds one more regression: shared versus independent equal nested references compare symmetrically. All required local checks rerun; full suite **528**, same 54 baseline type diagnostics, built ESM/CJS equality smoke passed.
+
+Every implementation stage ran lint and source typecheck successfully before its commit. Test typecheck stayed at the baseline's 54 diagnostics. No tests/checks were disabled. Five new test files contain 51 cases. Values in tests are synthetic.
 
 ## Limits and next action
 

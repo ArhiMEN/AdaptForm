@@ -34,12 +34,14 @@ export function copyValue<T>(value: T, seen = new WeakMap<object, unknown>()): T
   return value
 }
 
-export function equalValue(a: unknown, b: unknown, seen = new WeakMap<object, object>()): boolean {
+export function equalValue(a: unknown, b: unknown, seen = new WeakMap<object, WeakSet<object>>()): boolean {
   if (Object.is(a, b)) return true
   if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') return false
   if (Object.getPrototypeOf(a) !== Object.getPrototypeOf(b)) return false
-  if (seen.has(a)) return seen.get(a) === b
-  seen.set(a, b)
+  if (seen.get(a)?.has(b)) return true
+  const matches = seen.get(a) ?? new WeakSet<object>()
+  matches.add(b)
+  seen.set(a, matches)
   if (a instanceof Date && b instanceof Date) return Object.is(a.getTime(), b.getTime())
   if (a instanceof RegExp && b instanceof RegExp) return a.source === b.source && a.flags === b.flags
   if (a instanceof ArrayBuffer && b instanceof ArrayBuffer) return equalValue(new Uint8Array(a), new Uint8Array(b), seen)
