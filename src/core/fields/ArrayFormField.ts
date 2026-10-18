@@ -14,6 +14,10 @@ export class ArrayFormField<T extends Form = Form> extends ObservableNode<ArrayF
 
   private _forms: T[] = []
   private _errors: string[] = []
+  protected stateChildren(): readonly ObservableNode<unknown>[] {
+    return this._forms
+  }
+
   private _baseline: unknown = []
   private _hasValidationResult = false
 
@@ -35,7 +39,7 @@ export class ArrayFormField<T extends Form = Form> extends ObservableNode<ArrayF
       form.setFields(data as Record<string, unknown>, false)
       return form
     })
-    this.checkValid()
+    this.validateAfterMutation(() => this.checkValid())
     this.commitBaseline()
   }
 
@@ -64,7 +68,7 @@ export class ArrayFormField<T extends Form = Form> extends ObservableNode<ArrayF
         this.add(formData, false)
       }
 
-      if (validate) this.checkValid()
+      if (validate) this.validateAfterMutation(() => this.checkValid())
       })
   }
 
@@ -90,7 +94,7 @@ export class ArrayFormField<T extends Form = Form> extends ObservableNode<ArrayF
       this.isTouched = true
       this._forms.push(form)
 
-      if (force_check) this.checkValid()
+      if (force_check) this.validateAfterMutation(() => this.checkValid())
 
       return form
       })

@@ -94,7 +94,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
       this.isTouched = true
 
       if (validate) {
-        this.checkAndSetValid()
+        this.validateAfterMutation(() => this.checkAndSetValid())
       } else {
         this.isValid = null
       }

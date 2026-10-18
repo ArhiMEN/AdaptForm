@@ -29,6 +29,14 @@ export abstract class Form extends ObservableNode<FormSnapshot> {
       isValid: this.isValid, isTouched: this.isTouched, isDirty: this.isDirty}
   }
 
+  protected stateChildren(): readonly ObservableNode<unknown>[] {
+    return Object.values(this._fields)
+  }
+
+  batch<TResult>(callback: () => TResult & (TResult extends PromiseLike<unknown> ? never : unknown)): TResult {
+    return this.batchUpdate(callback, () => this.checkValid())
+  }
+
   private _globalErrors: Record<string, string> = {}
   errorsShema: ErrorsSchema = DefaultErrorsSchema
 
@@ -97,7 +105,7 @@ export abstract class Form extends ObservableNode<FormSnapshot> {
       }
 
       // Validate after assignment so conditional rules see the complete form.
-      if (validate) this.checkValid()
+      if (validate) this.validateAfterMutation(() => this.checkValid())
       })
   }
 

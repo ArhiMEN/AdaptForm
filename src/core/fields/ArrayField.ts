@@ -16,6 +16,10 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
   protected options: ArrayFieldOptions
   protected _items: Field<T>[] = []
   protected _errors: string[] = []
+  protected stateChildren(): readonly ObservableNode<unknown>[] {
+    return this._items
+  }
+
   private _baseline: unknown = []
   private _hasValidationResult = false
 
@@ -38,7 +42,7 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
       ...options
     } as ArrayFieldOptions
     this._items = initial.map(value => this.factory(value as T))
-    this.checkValid()
+    this.validateAfterMutation(() => this.checkValid())
     this.commitBaseline()
   }
 
@@ -68,7 +72,7 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
         this.add(item as T, false)
       }
 
-      if (validate) this.checkValid()
+      if (validate) this.validateAfterMutation(() => this.checkValid())
       })
   }
 
@@ -88,7 +92,7 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
       this.isTouched = true
       this._items.push(field)
 
-      if (force_check) this.checkValid()
+      if (force_check) this.validateAfterMutation(() => this.checkValid())
 
       return field
       })
