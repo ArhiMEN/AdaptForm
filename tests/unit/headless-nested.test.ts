@@ -243,4 +243,23 @@ describe('HF-010 nested propagation and ownership', () => {
     expect(snapshot.allErrors.name).toEqual(['local', 'global'])
   })
 
+  it('notifies an empty nested form when parent error assignment clears its global errors', () => {
+    class Empty extends Form {}
+    class Parent extends Form { children = new ArrayFormField(Empty, {}, [{}]) }
+    const form = new Parent()
+    const child = form.children.forms[0]
+    const parentListener = vi.fn()
+    const childListener = vi.fn()
+    form.subscribe(parentListener)
+    child.subscribe(childListener)
+    child.setGlobalError('server', 'error')
+    expect(parentListener).toHaveBeenCalledTimes(1)
+    expect(childListener).toHaveBeenCalledTimes(1)
+    form.errors = {}
+    expect(parentListener).toHaveBeenCalledTimes(2)
+    expect(childListener).toHaveBeenCalledTimes(2)
+    expect(child.getSnapshot().globalErrors).toEqual({})
+    expect(child.getSnapshot().isValid).toBe(true)
+  })
+
 })

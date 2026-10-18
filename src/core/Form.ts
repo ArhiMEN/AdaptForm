@@ -186,19 +186,21 @@ export abstract class Form extends ObservableNode<FormSnapshot> {
   }
 
   private clearErrorsRecursively(): void {
-    this._globalErrors = {}
+    this.update(() => {
+      this._globalErrors = {}
 
-    for (const field of Object.values(this._fields)) {
-      if (field instanceof Field) {
-        field.error = null
-      } else if (field instanceof ArrayField) {
-        field.error = null
-        for (const item of field.items) item.error = null
-      } else if (field instanceof ArrayFormField) {
-        field.error = null
-        for (const nestedForm of field.forms) nestedForm.clearErrorsRecursively()
+      for (const field of Object.values(this._fields)) {
+        if (field instanceof Field) {
+          field.error = null
+        } else if (field instanceof ArrayField) {
+          field.error = null
+          for (const item of field.items) item.error = null
+        } else if (field instanceof ArrayFormField) {
+          field.error = null
+          for (const nestedForm of field.forms) nestedForm.clearErrorsRecursively()
+        }
       }
-    }
+      })
   }
 
   /**

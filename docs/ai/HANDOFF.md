@@ -22,7 +22,7 @@ Integration [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16) is open again
 | HF-010 | `7883269` | Child propagation, detach/last-unsubscribe cleanup, reentrant delivery |
 | Hardening | `c81575b` | Shared built-in/sparse captures and additional exception/async regressions |
 
-Final equality review also verifies symmetric structural comparison when shared-reference topology changes. Each implementation stage passed focused tests, lint and source typecheck before commit. Final checks: **528 tests passed (26 files, 51 added cases)**; lint, source typecheck, library build, package check (21 files), demo typecheck/build, audit (0 vulnerabilities), ESM/CJS runtime smoke and new API declaration consumers passed. `git diff --check` passed.
+Final review also verifies symmetric structural comparison across shared-reference topologies and server-error clearing notifications for empty nested forms. Each implementation stage passed focused tests, lint and source typecheck before commit. Final checks: **529 tests passed (26 files, 52 added cases)**; lint, source typecheck, library build, package check (21 files), demo typecheck/build, audit (0 vulnerabilities), ESM/CJS runtime smoke and new API declaration consumers passed. `git diff --check` passed.
 
 `tsconfig.test.json` **still fails with 54 baseline diagnostics**. File/position/code/multiplicity sequence matches untouched master; three old structural diagnostics list more missing Form members due to additive methods. A separate consumer of the legacy `fieldsValue` mapped type also triggers TS2589 on both this branch and a separately built untouched master archive. New snapshot/subscription/batch declaration consumers pass in strict NodeNext ESM/CJS. No type checks or tests disabled.
 
