@@ -1,3 +1,4 @@
+import {copyValue, equalValue} from "@core/state/value"
 import {ArrayFieldOptions} from "@core/options"
 import {Field} from "@core/fields/Field"
 import {Form} from "@core/Form"
@@ -7,6 +8,7 @@ export class ArrayField<T = any> {
   protected options: ArrayFieldOptions
   protected _items: Field<T>[] = []
   protected _errors: string[] = []
+  private _baseline: unknown = []
   private _hasValidationResult = false
 
   isTouched: boolean = false
@@ -23,6 +25,16 @@ export class ArrayField<T = any> {
     } as ArrayFieldOptions
     this._items = initial.map(value => this.factory(value as T))
     this.checkValid()
+    this.commitBaseline()
+  }
+
+  get isDirty(): boolean {
+    return !equalValue(this.itemsValue, this._baseline) || this._items.some(child => child.isDirty)
+  }
+
+  commitBaseline(): void {
+    for (const child of this._items) child.commitBaseline()
+    this._baseline = copyValue(this.itemsValue)
   }
 
   // ===== value =====

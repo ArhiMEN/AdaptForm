@@ -275,6 +275,14 @@ export abstract class Form {
     this._globalErrors = {}
   }
 
+  get isDirty(): boolean {
+    return Object.values(this._fields).some(field => field.isDirty)
+  }
+
+  commitBaseline(): void {
+    for (const field of Object.values(this._fields)) field.commitBaseline()
+  }
+
   get isTouched(): boolean {
     const fields = this._fields
     for (const key of Object.keys(fields)) {

@@ -1,3 +1,4 @@
+import {copyValue, equalValue} from "@core/state/value"
 import {Form, type FormFieldsValue} from "@core/Form"
 import {ArrayFormFieldOptions} from "@core/options"
 import {isValidArrayIndex} from "@core/fields/arrayUtils"
@@ -5,6 +6,7 @@ import {isValidArrayIndex} from "@core/fields/arrayUtils"
 export class ArrayFormField<T extends Form = Form> {
   private _forms: T[] = []
   private _errors: string[] = []
+  private _baseline: unknown = []
   private _hasValidationResult = false
 
   isTouched: boolean = false
@@ -20,6 +22,16 @@ export class ArrayFormField<T extends Form = Form> {
       return form
     })
     this.checkValid()
+    this.commitBaseline()
+  }
+
+  get isDirty(): boolean {
+    return !equalValue(this.formsFieldsValue, this._baseline) || this._forms.some(child => child.isDirty)
+  }
+
+  commitBaseline(): void {
+    for (const child of this._forms) child.commitBaseline()
+    this._baseline = copyValue(this.formsFieldsValue)
   }
 
   // ===== value =====
@@ -55,6 +67,7 @@ export class ArrayFormField<T extends Form = Form> {
       form.setFields(data as Record<string, unknown>, false)
     }
 
+    form.commitBaseline()
     this.isTouched = true
     this._forms.push(form)
 
