@@ -4,9 +4,11 @@
 
 Интеграционный [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16) открыт в master; ветка отправлена. Результаты финального head — в [проверках PR](https://github.com/ArhiMEN/AdaptForm/pull/16/checks). Merge/публикация не выполнялись.
 
+CI реализации на `e067a34` пройден: [запуск #39153919017](https://github.com/ArhiMEN/AdaptForm/actions/runs/39153919017); GitGuardian пройден. Проверки последующего head только с документацией доступны в PR.
+
 ## Фундамент HF-005–HF-010 — 2026-10-18
 
-**Все шесть задач реализованы; независимое ревью и интеграционный CI впереди.** Одна разрешённая ветка: `feature/v2.2.0-headless-state-foundation`, база master `33717f2a88f04a3ad9c454b0477e52b299147432`. Версия пакета остаётся **2.1.1**, manifests/зависимости не изменены. Merge, удаление веток, теги, релиз и npm-публикация не выполнялись.
+**Все шесть задач реализованы; независимое ревью впереди.** Одна разрешённая ветка: `feature/v2.2.0-headless-state-foundation`, база master `33717f2a88f04a3ad9c454b0477e52b299147432`. Версия пакета остаётся **2.1.1**, manifests/зависимости не изменены. Merge, удаление веток, теги, релиз и npm-публикация не выполнялись.
 
 - [Контракт EN/RU](HEADLESS_STATE_CONTRACT.ru.md): жизненный цикл, baseline/reset, touched/dirty, совместимость и отложенное предложение reinitialize.
 - [Примеры EN/RU](HEADLESS_STATE_USAGE.ru.md): подписки, представления snapshot, проверки/исключения batch, ограничения.

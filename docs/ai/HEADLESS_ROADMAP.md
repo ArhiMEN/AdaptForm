@@ -6,7 +6,7 @@
 
 ## HF-005–HF-010 implementation — 2026-10-18
 
-The explicitly approved combined task implements HF-005–HF-010 in one branch with sequential commits and one integration PR. These six cards are **implemented, pending independent review and CI**; this scoped approval supersedes their earlier planning-only gates and the one-PR-per-task execution policy below. See [state contract](HEADLESS_STATE_CONTRACT.md), [usage](HEADLESS_STATE_USAGE.md) and [handoff](HANDOFF.md). HF-004 and HF-011 onward remain excluded. No version bump or release is authorized.
+The explicitly approved combined task implements HF-005–HF-010 in one branch with sequential commits and one integration PR. These six cards are **implemented, pending independent review**; this scoped approval supersedes their earlier planning-only gates and the one-PR-per-task execution policy below. See [state contract](HEADLESS_STATE_CONTRACT.md), [usage](HEADLESS_STATE_USAGE.md) and [handoff](HANDOFF.md). HF-004 and HF-011 onward remain excluded. No version bump or release is authorized.
 
 ## Target boundaries
 
@@ -67,7 +67,7 @@ Every task is independent in scope but must obey its prerequisites. No task may 
 
 ### HF-005 — Freeze Field/Form state semantics
 
-**Status: implemented; independent review/CI pending.**
+**Status: implemented; independent review pending.**
 
 - Depends on: HF-001; phase/size: P1 / S; model/effort: Sol / High; API decision gate: yes.
 - Scope: Document raw/clean/initial, dirty/touched/focused/visited, validity tri-state, validation status and state transition table; no code changes.
@@ -75,7 +75,7 @@ Every task is independent in scope but must obey its prerequisites. No task may 
 
 ### HF-006 — Add Field baseline and dirty tracking
 
-**Status: implemented; independent review/CI pending.**
+**Status: implemented; independent review pending.**
 
 - Depends on: HF-005; phase/size: P1 / S; model/effort: Sol / Medium; API decision gate: yes.
 - Scope: Implement baseline comparison and explicit reinitialize/commit semantics if approved; retain reset and existing isTouched behavior unless migrated.
@@ -83,7 +83,7 @@ Every task is independent in scope but must obey its prerequisites. No task may 
 
 ### HF-007 — Aggregate Form state safely
 
-**Status: implemented; independent review/CI pending.**
+**Status: implemented; independent review pending.**
 
 - Depends on: HF-006; phase/size: P1 / S; model/effort: Sol / Medium; API decision gate: no.
 - Scope: Derive isDirty, isTouched and validation metadata from children and global errors; avoid independent duplicated mutable truth.
@@ -91,7 +91,7 @@ Every task is independent in scope but must obey its prerequisites. No task may 
 
 ### HF-008 — Implement subscription snapshots
 
-**Status: implemented; independent review/CI pending.**
+**Status: implemented; independent review pending.**
 
 - Depends on: HF-005, HF-007; phase/size: P1 / M; model/effort: Sol / High; API decision gate: yes.
 - Scope: Introduce a tiny framework-free subscribe/unsubscribe/getSnapshot mechanism with referentially stable unchanged snapshots.
@@ -99,7 +99,7 @@ Every task is independent in scope but must obey its prerequisites. No task may 
 
 ### HF-009 — Implement atomic batches
 
-**Status: implemented; independent review/CI pending.**
+**Status: implemented; independent review pending.**
 
 - Depends on: HF-008; phase/size: P1 / M; model/effort: Sol / High; API decision gate: yes.
 - Scope: Implement nested-safe synchronous batch semantics for multi-field writes and failure handling; publish only consistent final snapshots.
@@ -107,7 +107,7 @@ Every task is independent in scope but must obey its prerequisites. No task may 
 
 ### HF-010 — Propagate nested state updates
 
-**Status: implemented; independent review/CI pending.**
+**Status: implemented; independent review pending.**
 
 - Depends on: HF-008, HF-009; phase/size: P1 / M; model/effort: Sol / High; API decision gate: no.
 - Scope: Wire child Field/Form changes to parents without circular notifications, duplicate owners or memory leaks.

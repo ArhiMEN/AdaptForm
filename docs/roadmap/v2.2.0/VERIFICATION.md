@@ -24,6 +24,8 @@ Exploratory test diagnostics have the same file/line/column/code sequence as bas
 
 A broader declaration smoke additionally reads the legacy `form.fieldsValue.name`; it fails with TS2589. The same minimal consumer was built and checked against a detached archive of untouched master and fails with the same TS2589. This pre-existing mapped-type recursion is not fixed here. Source typecheck, new API declaration checks and runtime serialization pass.
 
+Integration CI and GitGuardian passed on implementation commit `e067a34`: [CI run](https://github.com/ArhiMEN/AdaptForm/actions/runs/39153919017). The final documentation-only head is checked separately in the PR.
+
 ## Regression coverage and stage journal
 
 | Stage | Evidence |
