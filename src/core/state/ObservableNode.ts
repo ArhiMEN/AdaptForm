@@ -3,6 +3,7 @@ import {freezeSnapshot} from './snapshot'
 
 let mutationDepth = 0
 let flushing = false
+let publishing = false
 let batchDepth = 0
 const validations = new Map<ObservableNode<unknown>, () => unknown>()
 const batchRoots = new Map<ObservableNode<unknown>, () => unknown>()
@@ -21,10 +22,15 @@ function flush(): void {
       // Parent captures can refresh children: compare against all pre-flush snapshots.
       for (const store of stores) store.refresh()
       const changed = stores.filter((store, index) => !equalValue(before[index], store.committed()))
-      for (const store of changed) {
-        try { store.notify() } catch (error) {
-          if (!failed) { failure = error; failed = true }
+      publishing = true
+      try {
+        for (const store of changed) {
+          try { store.notify() } catch (error) {
+            if (!failed) { failure = error; failed = true }
+          }
         }
+      } finally {
+        publishing = false
       }
     }
   } finally {
@@ -37,11 +43,33 @@ class SnapshotStore {
   private snapshot: unknown
   private initialized = false
   private listeners = new Set<() => void>()
+  private parents = new Set<SnapshotStore>()
+  private children = new Set<SnapshotStore>()
 
-  constructor(private capture: () => unknown) {}
+  constructor(private capture: () => unknown, private getChildren: () => readonly SnapshotStore[]) {}
+
+  private reconcile(seen = new Set<SnapshotStore>()): void {
+    if (seen.has(this)) return
+    seen.add(this)
+    const next = new Set(this.listeners.size || this.parents.size ? this.getChildren() : [])
+    for (const child of this.children) {
+      if (!next.has(child)) {
+        child.parents.delete(this)
+        child.reconcile(seen)
+      }
+    }
+    const previous = this.children
+    this.children = next
+    for (const child of next) {
+      if (!previous.has(child)) {
+        child.parents.add(this)
+        child.reconcile(seen)
+      }
+    }
+  }
 
   read(): unknown {
-    if (!mutationDepth) this.refresh()
+    if (!mutationDepth && !publishing) this.refresh()
     else if (!this.initialized) this.refresh()
     return this.snapshot
   }
@@ -49,6 +77,7 @@ class SnapshotStore {
   committed(): unknown { return this.snapshot }
 
   refresh(): boolean {
+    this.reconcile()
     const next = freezeSnapshot(this.capture())
     if (this.initialized && equalValue(this.snapshot, next)) return false
     this.snapshot = next
@@ -61,11 +90,19 @@ class SnapshotStore {
     // Each registration has its own lifetime, including repeated callbacks.
     const registration = () => listener()
     this.listeners.add(registration)
-    return () => { this.listeners.delete(registration) }
+    this.reconcile()
+    return () => {
+      this.listeners.delete(registration)
+      this.reconcile()
+    }
   }
 
-  changed(): void {
-    if (this.listeners.size || this.initialized) pending.add(this)
+  changed(seen = new Set<SnapshotStore>()): void {
+    if (seen.has(this)) return
+    seen.add(this)
+    this.reconcile()
+    if (this.listeners.size || this.parents.size || this.initialized) pending.add(this)
+    for (const parent of this.parents) parent.changed(seen)
   }
 
   notify(): void {
@@ -83,7 +120,10 @@ class SnapshotStore {
 
 /** Shared mutation boundary; subclasses only describe state and their mutations. */
 export abstract class ObservableNode<TSnapshot> {
-  private readonly _stateStore = new SnapshotStore(() => this.captureState())
+  private readonly _stateStore: SnapshotStore = new SnapshotStore(
+    () => this.captureState(),
+    () => this.stateChildren().map(child => child._stateStore),
+  )
 
   protected abstract captureState(): TSnapshot
 

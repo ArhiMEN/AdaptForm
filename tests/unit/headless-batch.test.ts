@@ -65,10 +65,10 @@ describe('HF-009 synchronous batch', () => {
     expect(form.isValid).toBe(true)
     expect(listener).toHaveBeenCalledTimes(1)
     form.name.rawValue = 'after'
-    // Until HF-010, direct child propagation is tested through the field subscription.
     expect(form.name.getSnapshot().valueClear).toBe('after')
-    form.batch(() => { form.age.rawValue = 26 })
     expect(listener).toHaveBeenCalledTimes(2)
+    form.batch(() => { form.age.rawValue = 26 })
+    expect(listener).toHaveBeenCalledTimes(3)
   })
 
   it('defers conditional validation until sibling values and collections are complete', () => {

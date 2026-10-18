@@ -126,7 +126,7 @@ export abstract class Form extends ObservableNode<FormSnapshot> {
         // Use the field's own errors for Field and ArrayField.
         const fieldErrors = field.errors
         if (fieldErrors.length > 0) {
-          errors[key] = fieldErrors
+          errors[key] = [...fieldErrors]
         }
       }
     }

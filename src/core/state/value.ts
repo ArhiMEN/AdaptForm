@@ -25,7 +25,9 @@ export function copyValue<T>(value: T, seen = new WeakMap<object, unknown>()): T
   if (Array.isArray(value) || Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null) {
     const result = Array.isArray(value) ? [] : Object.create(Object.getPrototypeOf(value))
     seen.set(value, result)
-    for (const key of Object.keys(value)) result[key] = copyValue((value as Record<string, unknown>)[key], seen)
+    for (const key of Object.keys(value)) Object.defineProperty(result, key, {
+      value: copyValue((value as Record<string, unknown>)[key], seen), enumerable: true, writable: true, configurable: true,
+    })
     return result as T
   }
   return value
