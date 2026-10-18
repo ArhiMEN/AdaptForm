@@ -4,7 +4,7 @@
 
 ## HF-005–HF-010 implementation — 2026-10-18
 
-HF-005 contract completed; HF-006–HF-010 pending. Approved combined scope uses one branch with sequential commits and one integration PR. Base: `33717f2`. Baseline checks: 477 tests pass; test typecheck has 54 pre-existing diagnostics. Version stays 2.1.1. Independent review and release preparation remain separate.
+HF-005 and HF-006 completed; HF-007–HF-010 pending. HF-006: 41 focused tests passed, lint and source typecheck passed; test typecheck unchanged (54 baseline diagnostics). Field adds isDirty/commitBaseline; reset and touched retained. Approved combined scope uses one branch with sequential commits and one integration PR. Base: `33717f2`. Baseline checks: 477 tests pass; test typecheck has 54 pre-existing diagnostics. Version stays 2.1.1. Independent review and release preparation remain separate.
 
 ## Transition to 2.2.0 — 2026-10-17
 

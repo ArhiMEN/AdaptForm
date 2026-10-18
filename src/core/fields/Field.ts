@@ -1,6 +1,8 @@
 import {FieldOptions} from "@core/options"
 import {FieldType} from "@core/types/FieldType"
 import {Form} from "@core/Form"
+import {copyValue, equalValue} from "@core/state/value"
+
 type FieldTypeConstructor<T, O extends FieldOptions = FieldOptions> = new (options: O) => FieldType<T, O>
 
 export class Field<T = any, O extends FieldOptions = FieldOptions> {
@@ -8,6 +10,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
   protected _valueClear: T | null = null
   protected fieldType: FieldType<T, O>
   protected defaultValue: T | null
+  private _baseline: T | null = null
   protected _errors: string[] = []
 
   isValid: boolean | null = null
@@ -36,6 +39,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
 
     // Constructor defaults are pristine values, not user edits.
     this.isTouched = false
+    this.commitBaseline()
   }
 
   // ========== Getters and setters ==========
@@ -115,6 +119,14 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> {
 
   get valueClear(): T | null {
     return this._valueClear
+  }
+
+  get isDirty(): boolean {
+    return !equalValue(this._valueClear, this._baseline)
+  }
+
+  commitBaseline(): void {
+    this._baseline = copyValue(this._valueClear)
   }
 
   // ========== Validation ==========
