@@ -161,4 +161,27 @@ describe('HF-009 synchronous batch', () => {
     form.batch(() => { form.name.rawValue = 'other'; form.name.rawValue = 'Alex' })
     expect(listener).not.toHaveBeenCalled()
   })
+  it('rejects asynchronous callbacks and recovers for the next synchronous batch', () => {
+    const form = new Example()
+    expect(() => {
+      // @ts-expect-error Async callbacks are excluded from the public contract.
+      form.batch(() => Promise.resolve())
+    }).toThrow('batch callbacks must be synchronous')
+    form.batch(() => { form.name.rawValue = 'Alex'; form.age.rawValue = 25 })
+    expect(form.isValid).toBe(true)
+  })
+
+  it('preserves the callback error when validation and a listener also fail', () => {
+    const form = new Example()
+    const original = new Error('original')
+    form.name.options = {validate: () => { throw new Error('validation') }}
+    const off = form.subscribe(() => { throw new Error('listener') })
+    expect(() => form.batch(() => { form.name.rawValue = 'Alex'; throw original })).toThrow(original)
+    expect(form.name.valueClear).toBe('Alex')
+    off()
+    form.name.options = {validate: () => true}
+    form.batch(() => { form.age.rawValue = 25 })
+    expect(form.isValid).toBe(true)
+  })
+
 })

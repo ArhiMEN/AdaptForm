@@ -112,4 +112,19 @@ describe('HF-006 Field baseline', () => {
     field.rawValue = {self: null}
     expect(field.isDirty).toBe(true)
   })
+  it('preserves shared built-ins, sparse arrays and special record keys in baseline captures', () => {
+    const date = new Date(0)
+    const bytes = new Uint8Array([1, 2])
+    const value = {dates: [date, date], bytes: [bytes, bytes], sparse: new Array(3),
+      record: Object.fromEntries([['__proto__', {safe: true}]])}
+    const field = new Field(StructuredType, value)
+    expect(field.isDirty).toBe(false)
+    value.dates[0].setTime(1000)
+    expect(field.isDirty).toBe(true)
+    value.dates[0].setTime(0)
+    expect(field.isDirty).toBe(false)
+    value.bytes[0][0] = 2
+    expect(field.isDirty).toBe(true)
+  })
+
 })

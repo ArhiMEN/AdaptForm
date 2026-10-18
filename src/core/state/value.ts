@@ -2,13 +2,14 @@
 export function copyValue<T>(value: T, seen = new WeakMap<object, unknown>()): T {
   if (value === null || typeof value !== 'object') return value
   if (seen.has(value)) return seen.get(value) as T
-  if (value instanceof Date) return new Date(value.getTime()) as T
-  if (value instanceof RegExp) return new RegExp(value.source, value.flags) as T
-  if (value instanceof ArrayBuffer) return value.slice(0) as T
+  const remember = (copy: unknown): T => { seen.set(value, copy); return copy as T }
+  if (value instanceof Date) return remember(new Date(value.getTime()))
+  if (value instanceof RegExp) return remember(new RegExp(value.source, value.flags))
+  if (value instanceof ArrayBuffer) return remember(value.slice(0))
   if (ArrayBuffer.isView(value)) {
     const bytes = value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength)
-    return (value instanceof DataView ? new DataView(bytes) :
-      new (value.constructor as new (buffer: ArrayBuffer) => object)(bytes as ArrayBuffer)) as T
+    return remember(value instanceof DataView ? new DataView(bytes) :
+      new (value.constructor as new (buffer: ArrayBuffer) => object)(bytes as ArrayBuffer))
   }
   if (value instanceof Map) {
     const result = new Map()
@@ -23,7 +24,7 @@ export function copyValue<T>(value: T, seen = new WeakMap<object, unknown>()): T
     return result as T
   }
   if (Array.isArray(value) || Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null) {
-    const result = Array.isArray(value) ? [] : Object.create(Object.getPrototypeOf(value))
+    const result = Array.isArray(value) ? new Array(value.length) : Object.create(Object.getPrototypeOf(value))
     seen.set(value, result)
     for (const key of Object.keys(value)) Object.defineProperty(result, key, {
       value: copyValue((value as Record<string, unknown>)[key], seen), enumerable: true, writable: true, configurable: true,
