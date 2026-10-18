@@ -42,4 +42,4 @@ Every implementation stage ran lint and source typecheck successfully before its
 
 No measured performance benchmark or universal GC leak proof: nested snapshots recapture and compare, batch validation checks participating roots, and cost grows with values/nesting. Tests deterministically verify parent-link cleanup and removed-child isolation. Snapshots deliberately use a data union and opaque descriptions for unsupported classes. Existing legacy in-place mutations are not automatically intercepted. See [usage](../../ai/HEADLESS_STATE_USAGE.md).
 
-Next: push the integration branch, create the PR if permitted, inspect its CI/GitGuardian, then independent review by commit. No merge, version bump, release, tag or npm publication is authorized. HF-004 and HF-011+ remain excluded.
+Delivery: branch pushed and [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16) opened against master. Inspect [live CI/GitGuardian checks](https://github.com/ArhiMEN/AdaptForm/pull/16/checks) on the final head, then independently review by commit. No merge, version bump, release, tag or npm publication is authorized. HF-004 and HF-011+ remain excluded.

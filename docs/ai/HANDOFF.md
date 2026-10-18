@@ -2,6 +2,8 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+Integration [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16) is open against master; branch pushed. [Live checks](https://github.com/ArhiMEN/AdaptForm/pull/16/checks) are authoritative for the final head. No merge or publication performed.
+
 ## HF-005–HF-010 foundation — 2026-10-18
 
 **All six tasks implemented, pending independent review and integration CI.** One approved integration branch: `feature/v2.2.0-headless-state-foundation`, based on master `33717f2a88f04a3ad9c454b0477e52b299147432`. Package version stays **2.1.1**; manifests/dependencies unchanged. No merge, branch removal, tag, release or npm publication.
