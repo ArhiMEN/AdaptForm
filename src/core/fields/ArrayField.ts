@@ -1,23 +1,37 @@
+import {ObservableNode} from "@core/state/ObservableNode"
+import {snapshotValue, type ArrayFieldSnapshot} from "@core/state/snapshot"
 import {copyValue, equalValue} from "@core/state/value"
 import {ArrayFieldOptions} from "@core/options"
 import {Field} from "@core/fields/Field"
 import {Form} from "@core/Form"
 import {isValidArrayIndex} from "@core/fields/arrayUtils"
 
-export class ArrayField<T = any> {
+export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
+  protected captureState(): ArrayFieldSnapshot {
+    return {itemsValue: snapshotValue(this.itemsValue) as ArrayFieldSnapshot['itemsValue'],
+      items: this._items.map(item => item.getSnapshot()), errors: [...this._errors],
+      isValid: this.isValid, isTouched: this.isTouched, isDirty: this.isDirty}
+  }
+
   protected options: ArrayFieldOptions
   protected _items: Field<T>[] = []
   protected _errors: string[] = []
   private _baseline: unknown = []
   private _hasValidationResult = false
 
-  isTouched: boolean = false
+  private _isTouched: boolean = false
+
+  get isTouched(): boolean { return this._isTouched }
+  set isTouched(value: boolean) {
+    this.update(() => { this._isTouched = value })
+  }
 
   constructor(
     protected factory: (value?: T) => Field<T>,
     options: ArrayFieldOptions = {},
     initial: (T | null)[] = []
   ) {
+    super()
     this.options = {
       isRequired: true,
       messages: {},
@@ -33,8 +47,10 @@ export class ArrayField<T = any> {
   }
 
   commitBaseline(): void {
-    for (const child of this._items) child.commitBaseline()
-    this._baseline = copyValue(this.itemsValue)
+    return this.update(() => {
+      for (const child of this._items) child.commitBaseline()
+      this._baseline = copyValue(this.itemsValue)
+      })
   }
 
   // ===== value =====
@@ -44,14 +60,16 @@ export class ArrayField<T = any> {
   }
 
   setItemsValue(items: (T | null)[], validate: boolean = true): void {
-    this._items = []
-    this.error = null
+    return this.update(() => {
+      this._items = []
+      this.error = null
 
-    for (const item of items) {
-      this.add(item as T, false)
-    }
+      for (const item of items) {
+        this.add(item as T, false)
+      }
 
-    if (validate) this.checkValid()
+      if (validate) this.checkValid()
+      })
   }
 
   get itemsValue(): (T | null)[] {
@@ -65,25 +83,31 @@ export class ArrayField<T = any> {
   // ===== actions =====
 
   add(value?: T, force_check: boolean = true): Field<T> {
-    const field = this.factory(value)
-    this.isTouched = true
-    this._items.push(field)
+    return this.update(() => {
+      const field = this.factory(value)
+      this.isTouched = true
+      this._items.push(field)
 
-    if (force_check) this.checkValid()
+      if (force_check) this.checkValid()
 
-    return field
+      return field
+      })
   }
 
   remove(index: number): void {
-    if (!isValidArrayIndex(index, this._items.length)) return
+    return this.update(() => {
+      if (!isValidArrayIndex(index, this._items.length)) return
 
-    this._items.splice(index, 1)
-    this.checkValid()
+      this._items.splice(index, 1)
+      this.checkValid()
+      })
   }
 
   clear(): void {
-    this._items = []
-    this.checkValid()
+    return this.update(() => {
+      this._items = []
+      this.checkValid()
+      })
   }
 
   // ===== validation =====
@@ -100,58 +124,60 @@ export class ArrayField<T = any> {
   }
 
   checkValid(form?: Form): boolean {
-    this._hasValidationResult = true
-    this._errors = []
+    return this.update(() => {
+      this._hasValidationResult = true
+      this._errors = []
 
-    if (this.isRequired(form) && this._items.length === 0) {
-      this._errors.push(
-        this.options.messages?.isRequired ??
-        "Добавьте хотя бы один элемент"
-      )
-      return false
-    }
-
-    if (this.options.minItems != null && this._items.length < this.options.minItems) {
-      this._errors.push(
-        this.options.messages?.minItems ??
-        `Значений должно быть не меньше ${this.options.minItems}`
-      )
-      return false
-    }
-
-    if (this.options.maxItems != null && this._items.length > this.options.maxItems) {
-      this._errors.push(
-        this.options.messages?.maxItems ??
-        `Значений должно быть не больше ${this.options.maxItems}`
-      )
-      return false
-    }
-
-    let valid = true
-
-    for (const field of this._items) {
-      const ok = field.checkAndSetValid(form)
-      if (!ok) valid = false
-    }
-
-    if (this.options.validate) {
-      const values = this._items.map(item => item.valueClear)
-      const result = this.options.validate(values, form)
-
-      if (result === false) {
+      if (this.isRequired(form) && this._items.length === 0) {
         this._errors.push(
-          this.options.messages?.validate ?? "Ошибка валидации"
+          this.options.messages?.isRequired ??
+          "Добавьте хотя бы один элемент"
         )
         return false
       }
 
-      if (typeof result === "string") {
-        this._errors.push(result)
+      if (this.options.minItems != null && this._items.length < this.options.minItems) {
+        this._errors.push(
+          this.options.messages?.minItems ??
+          `Значений должно быть не меньше ${this.options.minItems}`
+        )
         return false
       }
-    }
 
-    return valid && this._errors.length === 0
+      if (this.options.maxItems != null && this._items.length > this.options.maxItems) {
+        this._errors.push(
+          this.options.messages?.maxItems ??
+          `Значений должно быть не больше ${this.options.maxItems}`
+        )
+        return false
+      }
+
+      let valid = true
+
+      for (const field of this._items) {
+        const ok = field.checkAndSetValid(form)
+        if (!ok) valid = false
+      }
+
+      if (this.options.validate) {
+        const values = this._items.map(item => item.valueClear)
+        const result = this.options.validate(values, form)
+
+        if (result === false) {
+          this._errors.push(
+            this.options.messages?.validate ?? "Ошибка валидации"
+          )
+          return false
+        }
+
+        if (typeof result === "string") {
+          this._errors.push(result)
+          return false
+        }
+      }
+
+      return valid && this._errors.length === 0
+      })
   }
 
   checkAndSetValid(form?: Form): boolean {
@@ -170,13 +196,15 @@ export class ArrayField<T = any> {
   }
 
   set error(message: string | null) {
-    if (message) {
-      this._errors = [message]
-      this._hasValidationResult = true
-    } else {
-      this._errors = []
-      this._hasValidationResult = false
-    }
+    this.update(() => {
+      if (message) {
+        this._errors = [message]
+        this._hasValidationResult = true
+      } else {
+        this._errors = []
+        this._hasValidationResult = false
+      }
+      })
   }
 
   get errors(): string[] {
@@ -184,9 +212,11 @@ export class ArrayField<T = any> {
   }
 
   reset(): void {
-    this._items.forEach(item => item.reset())
-    this._errors = []
-    this._hasValidationResult = false
-    this.isTouched = false
+    return this.update(() => {
+      this._items.forEach(item => item.reset())
+      this._errors = []
+      this._hasValidationResult = false
+      this.isTouched = false
+      })
   }
 }
