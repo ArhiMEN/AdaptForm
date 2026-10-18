@@ -386,3 +386,7 @@ npm run dev -- --config demo/vite.config.ts
 ## Лицензия
 
 MIT © Stanislav Orlov
+
+## Фундамент headless-состояний (предварительная реализация)
+
+Реализация HF-005–HF-010 добавляет `isDirty`, `commitBaseline()`, `subscribe()` и `getSnapshot()` узлам формы и синхронный `Form.batch()`. Версия пакета остаётся 2.1.1 до независимого ревью и подготовки релиза. См. [примеры и ограничения](docs/ai/HEADLESS_STATE_USAGE.ru.md) и [таблицу совместимости с 2.1.1](docs/ai/HEADLESS_STATE_CONTRACT.ru.md#совместимость-с-211).

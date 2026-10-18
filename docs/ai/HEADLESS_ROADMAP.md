@@ -4,6 +4,10 @@
 
 **Status: direction B (headless engine) selected; tasks below are a proposed decomposition, not blanket implementation approval.** Each code task needs separately approved scope via ChatGPT and runs only in Codex Cloud. No release version or date is committed.
 
+## HF-005–HF-010 implementation — 2026-10-18
+
+The explicitly approved combined task implements HF-005–HF-010 in one branch with sequential commits and one integration PR. These six cards are **implemented, pending independent review and CI**; this scoped approval supersedes their earlier planning-only gates and the one-PR-per-task execution policy below. See [state contract](HEADLESS_STATE_CONTRACT.md), [usage](HEADLESS_STATE_USAGE.md) and [handoff](HANDOFF.md). HF-004 and HF-011 onward remain excluded. No version bump or release is authorized.
+
 ## Target boundaries
 
 - Preserve the class-based `Form` / `Field` façade; optional UI adapters for Vue/React/Electron only.
@@ -14,9 +18,9 @@
 
 ## Decisions still required
 
-- Meaning of `isTouched` for programmatic assignment, `isDirty`, baseline/reinitialize and reset migration from 2.1.0.
+- Touched/dirty/baseline and reset compatibility are specified by HF-005. Collection reset membership and reinitialize remain deferred.
 - Handling incomplete numeric edit strings such as `123.`, typed `valueClear` and final submit validity.
-- Public subscribe/snapshot API shape, batch exception policy, dependency cycles, error lifetime and trigger defaults.
+- Subscribe/snapshot API and batch exceptions are specified by HF-005–HF-010. Dependency cycles, error lifetime and trigger defaults remain future decisions.
 - Async cancellation semantics, duplicate submits and adapter distribution approach.
 
 ## Phases
@@ -63,11 +67,15 @@ Every task is independent in scope but must obey its prerequisites. No task may 
 
 ### HF-005 — Freeze Field/Form state semantics
 
+**Status: implemented; independent review/CI pending.**
+
 - Depends on: HF-001; phase/size: P1 / S; model/effort: Sol / High; API decision gate: yes.
 - Scope: Document raw/clean/initial, dirty/touched/focused/visited, validity tri-state, validation status and state transition table; no code changes.
 - Acceptance: Document explicitly distinguishes programmatic assignment from user interaction and records compatibility/migration decisions.
 
 ### HF-006 — Add Field baseline and dirty tracking
+
+**Status: implemented; independent review/CI pending.**
 
 - Depends on: HF-005; phase/size: P1 / S; model/effort: Sol / Medium; API decision gate: yes.
 - Scope: Implement baseline comparison and explicit reinitialize/commit semantics if approved; retain reset and existing isTouched behavior unless migrated.
@@ -75,11 +83,15 @@ Every task is independent in scope but must obey its prerequisites. No task may 
 
 ### HF-007 — Aggregate Form state safely
 
+**Status: implemented; independent review/CI pending.**
+
 - Depends on: HF-006; phase/size: P1 / S; model/effort: Sol / Medium; API decision gate: no.
 - Scope: Derive isDirty, isTouched and validation metadata from children and global errors; avoid independent duplicated mutable truth.
 - Acceptance: Nested forms/collections propagate aggregate state correctly; existing isValid contract remains stable.
 
 ### HF-008 — Implement subscription snapshots
+
+**Status: implemented; independent review/CI pending.**
 
 - Depends on: HF-005, HF-007; phase/size: P1 / M; model/effort: Sol / High; API decision gate: yes.
 - Scope: Introduce a tiny framework-free subscribe/unsubscribe/getSnapshot mechanism with referentially stable unchanged snapshots.
@@ -87,11 +99,15 @@ Every task is independent in scope but must obey its prerequisites. No task may 
 
 ### HF-009 — Implement atomic batches
 
+**Status: implemented; independent review/CI pending.**
+
 - Depends on: HF-008; phase/size: P1 / M; model/effort: Sol / High; API decision gate: yes.
 - Scope: Implement nested-safe synchronous batch semantics for multi-field writes and failure handling; publish only consistent final snapshots.
 - Acceptance: Cross-field validators see complete new values; subscribers see no intermediate state; exception policy tested.
 
 ### HF-010 — Propagate nested state updates
+
+**Status: implemented; independent review/CI pending.**
 
 - Depends on: HF-008, HF-009; phase/size: P1 / M; model/effort: Sol / High; API decision gate: no.
 - Scope: Wire child Field/Form changes to parents without circular notifications, duplicate owners or memory leaks.
@@ -165,4 +181,4 @@ Every task is independent in scope but must obey its prerequisites. No task may 
 4. Summarize ID, files, actual checks, limitations, risk, next task in `docs/ai/HANDOFF.md` and Russian companion. Update `DECISIONS` only after approval; do not include private discussion in public git.
 5. Do not automatically start the next task. ChatGPT Library is not synced with GitHub: this roadmap is the public plan and Library holds a separate copy.
 
-**Suggested first task: HF-001.** Characterization tests and evidence only, no production fixes. Discuss HF-002 and HF-003/HF-005 contract decisions separately after baseline.
+**Next action:** independent review of HF-005–HF-010 integration commits and CI. HF-004 and HF-011+ require separate scope approval; do not start them automatically.
