@@ -2,7 +2,7 @@
 
 [English](PLAN.md) · [Русский](PLAN.ru.md)
 
-**HF-005–HF-010 приняты через [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16), а кандидат исходников 2.2.0 — через [PR #18](https://github.com/ArhiMEN/AdaptForm/pull/18).** В master manifest и lockfile имеют версию 2.2.0; публикации npm, тега и GitHub Release не было. См. [проверочный список](RELEASE.ru.md).
+**HF-005–HF-010 приняты через [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16), а кандидат исходников 2.2.0 — через [PR #18](https://github.com/ArhiMEN/AdaptForm/pull/18).** В master manifest и lockfile имеют версию 2.2.0; **[adaptform@2.2.0 опубликована в npm](https://www.npmjs.com/package/adaptform/v/2.2.0)** 2026-10-19 через OIDC Trusted Publisher. Git-тег и GitHub Release не создавались. См. [проверочный список](RELEASE.ru.md).
 
 | Задача | Фактический результат | Статус |
 | --- | --- | --- |
@@ -23,7 +23,7 @@ HF-004 и HF-011+ вне объёма. Не реализованы reinitialize,
 
 ## Оставшиеся условия релиза
 
-После слияния [CI master #39197203071](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197203071) и [демо #39197203110](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197203110) прошли; [npm publish #39197250143](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197250143) пропущен. Исходники **2.2.0** объединены; [CI master #39199058088](https://github.com/ArhiMEN/AdaptForm/actions/runs/39199058088) PASS, [публикация npm #39199123153](https://github.com/ArhiMEN/AdaptForm/actions/runs/39199123153) SKIPPED. Выпуск npm — отдельное действие.
+После слияния [CI master #39197203071](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197203071) и [демо #39197203110](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197203110) прошли; [npm publish #39197250143](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197250143) пропущен. Исходники **2.2.0** объединены; [CI master #39199058088](https://github.com/ArhiMEN/AdaptForm/actions/runs/39199058088) PASS, [публикация npm #39199123153](https://github.com/ArhiMEN/AdaptForm/actions/runs/39199123153) SKIPPED. Позже отдельно разрешённая npm-публикация прошла успешно ([workflow](https://github.com/ArhiMEN/AdaptForm/actions/runs/39209185356)).
 
 
 
@@ -32,4 +32,4 @@ HF-004 и HF-011+ вне объёма. Не реализованы reinitialize,
 - [x] Проверить CI/GitGuardian финального head PR `1db4ab5f1fe2ace394baf925bdab3d9b475796d3` (563 теста); CI master после merge учитывается отдельно.
 - [x] Независимо проверить [PR #18](https://github.com/ArhiMEN/AdaptForm/pull/18): версия, документы EN/RU, экспорты; CI/GitGuardian кандидата PASS, CI master PASS, npm publish пропущен.
 - [ ] Исправить либо явно учитывать 54 прежние диагностики exploratory test typecheck; новые позиции/коды здесь запрещены.
-- [ ] Отдельно разрешить повышение версии, теги/релизы и npm-публикацию. Автоматического merge нет.
+- [x] Повышение версии и выпуск npm 2.2.0 согласованы и выполнены через Trusted Publisher; Git-тег и GitHub Release не запрашивались и не создавались.
