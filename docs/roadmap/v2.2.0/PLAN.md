@@ -2,7 +2,7 @@
 
 [English](PLAN.md) · [Русский](PLAN.ru.md)
 
-**HF-005–HF-010 implemented; independent review, integration CI and release preparation remain required.** Target version is 2.2.0; package manifests remain 2.1.1. No release or npm publication performed.
+**HF-005–HF-010 accepted and merged in [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16); separate 2.2.0 release preparation remains required.** Target version is 2.2.0; package manifests remain 2.1.1. No release or npm publication performed.
 
 | Task | Actual deliverable | Status |
 | --- | --- | --- |
@@ -24,8 +24,8 @@ HF-004 reset membership and HF-011+ remain outside scope. No reinitialize method
 ## Remaining release gates
 
 - [x] Implement HF-005–HF-010 with bilingual documentation and focused regressions.
-- [ ] Independent review by commit and integration PR acceptance.
-- [ ] Verify CI/GitGuardian on the final integration commit.
+- [x] Independent review by commit and integration PR acceptance; PR #16 squash merge `e6b596de5eceecf2c235000f3d683d4a745cb44e`.
+- [x] Verify CI/GitGuardian on the final integration PR head `1db4ab5f1fe2ace394baf925bdab3d9b475796d3` (563 tests); post-merge master CI tracked separately.
 - [ ] Separate release-candidate review, packaging/documentation and version decision.
 - [ ] Address or explicitly track the existing 54 exploratory test typecheck diagnostics; no new diagnostic locations/codes permitted here.
 - [ ] Authorize version bump, tags/releases and npm publication separately. No automatic merge.
