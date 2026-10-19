@@ -4,7 +4,7 @@
 
 ## Status and authority
 
-**2.2.0 source/package metadata prepared; npm NOT published.** This is a release candidate, not a published npm version, Git tag or GitHub Release. Packaging metadata is staged in `release/v2.2.0-preparation`; do not infer that the changes reached `master` until the release PR is accepted.
+**2.2.0 source/package metadata merged into `master`; npm NOT published.** [Release PR #18](https://github.com/ArhiMEN/AdaptForm/pull/18) was accepted as squash commit `f717b8d590d1b753d5958b2ba19aa1b3e3aeef0a`. This is a prepared source version, not a published npm version, Git tag or GitHub Release.
 
 The last independently verified public npm `latest` is **2.1.0** (checked 2026-10-19). The repository previously prepared **2.1.1** in `master` but the publish job was skipped. There is no requirement to publish 2.1.1 before 2.2.0; npm version publication, if ever authorized, still requires checking registry state and npm ownership.
 
@@ -45,9 +45,9 @@ No HF-004 reset membership redesign, `reinitialize()`, HF-011+, async validators
 
 - [x] HF-005–HF-010 independently reviewed and merged: [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16), `e6b596de5eceecf2c235000f3d683d4a745cb44e`.
 - [x] Accepted implementation CI: **563/563 tests across 27 files**, lint, source/demo types, ESM/CJS/TS builds, package check and audit 0. [CI after merge](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197203071) PASS. [Documentation PR #17](https://github.com/ArhiMEN/AdaptForm/pull/17) accepted; [master CI](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197519427) PASS, npm publish skipped.
-- [ ] Review the **2.2.0 release candidate** diff and approve documentation and package metadata.
-- [ ] Release candidate CI `verify` and GitGuardian pass with the updated manifest/lockfile, README and changelog.
-- [ ] If merged into master, post-merge CI and npm publish workflow outcome recorded.
+- [x] Review the **2.2.0 release candidate** diff and approve documentation and package metadata ([PR #18](https://github.com/ArhiMEN/AdaptForm/pull/18)).
+- [x] Release candidate [CI #39198931542](https://github.com/ArhiMEN/AdaptForm/actions/runs/39198931542) `verify` and GitGuardian passed with updated manifest/lockfile, README and changelog (563/563 tests).
+- [x] Post-merge [master CI #39199058088](https://github.com/ArhiMEN/AdaptForm/actions/runs/39199058088) PASS, [demo deploy #39199058150](https://github.com/ArhiMEN/AdaptForm/actions/runs/39199058150) PASS, [npm publish workflow #39199123153](https://github.com/ArhiMEN/AdaptForm/actions/runs/39199123153) SKIPPED.
 - [ ] If publishing to npm becomes an explicit request, recheck registry versions and configured publishing permissions before starting; decide whether to create a tag/GitHub Release.
 
 ## Known limits and debt
