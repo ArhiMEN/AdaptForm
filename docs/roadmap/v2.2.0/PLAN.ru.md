@@ -23,6 +23,10 @@ HF-004 и HF-011+ вне объёма. Не реализованы reinitialize,
 
 ## Оставшиеся условия релиза
 
+После слияния [CI master #39197203071](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197203071) и [демо #39197203110](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197203110) прошли; [npm publish #39197250143](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197250143) пропущен. Текущая версия в package.json — **2.1.1**. Для публикации 2.2.0 нужен отдельный release candidate.
+
+
+
 - [x] Реализовать HF-005–HF-010 с двуязычной документацией и регрессиями.
 - [x] Независимое ревью по коммитам и принятие PR #16; squash-коммит `e6b596de5eceecf2c235000f3d683d4a745cb44e`.
 - [x] Проверить CI/GitGuardian финального head PR `1db4ab5f1fe2ace394baf925bdab3d9b475796d3` (563 теста); CI master после merge учитывается отдельно.
