@@ -2,6 +2,12 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## Published 2.2.0 demo refresh — 2026-10-19
+
+- The live GitHub Pages playground was previously built from 2.2.0 source but still displayed 2.1.0 branding. The dedicated demo PR updates the brand, metadata and footer to **published 2.2.0** and adds an interactive Form state lab for dirty/baseline, subscriptions, immutable snapshots and synchronous batch notifications.
+- The EN/RU demo guide and translations are updated. `.github/workflows/deploy-demo.yml` now deploys automatically from **master only**, so the preserved historical `v2.1.0` branch cannot overwrite the live site. Demo still imports source `../src/index`, with no new runtime or API changes.
+- PR CI confirms 566 tests across 27 files, lint, TypeScript, package/demo builds and audit 0; actual GitHub Pages deployment must be confirmed after merge. Current npm `adaptform@2.2.0` remains published and is not re-released by the demo changes. Existing 54 separate test-tsconfig diagnostics are outside scope.
+
 ## Verified npm publication 2.2.0 — 2026-10-19
 
 - **Published**: `adaptform@2.2.0` in the npm registry via the OIDC Trusted Publisher connection `ArhiMEN/AdaptForm` / `publish-npm.yml`. Exact-version registry lookup confirmed it. [GitHub Actions #39209185356 (rerun)](https://github.com/ArhiMEN/AdaptForm/actions/runs/39209185356) completed successfully: build, package check and `npm publish` PASS; logs confirm `+ adaptform@2.2.0`, dist-tag `latest`, signed provenance ([Sigstore entry](https://search.sigstore.dev/?logIndex=3319507230)). Initial attempts failed on missing dist (fixed PR #21) and ENEEDAUTH before Trusted Publisher registration (PR #22 removed token placeholder). The successful rerun used the saved npm connection without tokens.
