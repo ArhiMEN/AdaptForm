@@ -14,7 +14,7 @@
 - AdaptForm is a TypeScript validation library. Public entry points are `src/index.ts` and `src/luxon.ts`; implementation lives in `src/core/`.
 - `luxon` is an optional peer dependency. Keep the main entry point independent of it. Builds emit ESM, CommonJS, and declarations to `dist/`.
 - Tests live in `tests/unit/`, `tests/integration/`, and `tests/demo/`. The interactive demo lives in `demo/` and imports library source.
-- Package checks live in `scripts/`; CI is in `.github/workflows/ci.yml`. Consult `docs/roadmap/v2.1.0/` only for release work or when a workstream status changes.
+- Package checks live in `scripts/`; CI is in `.github/workflows/ci.yml`. Consult `docs/roadmap/v2.2.0/` for the current published release, and historical `docs/roadmap/v2.1.0/` only when relevant.
 
 ## Selective AI context
 
@@ -39,5 +39,5 @@
 - Start with the smallest relevant Vitest file: `npx vitest run <test-file>`. Expand to `npm test` when a change crosses modules or public behavior.
 - For affected code, run the relevant checks: `npm run lint`, `npm run build`, `npx tsc --noEmit -p tsconfig.json`, `npm run check:package`; for demo changes, also `npm run check:demo` and `npm run build:demo`. Use `npm run test:coverage` when coverage matters. CI additionally runs `npm audit --audit-level=moderate`.
 - Do not report a check as passed unless you ran it and inspected the result. Mention unrun checks or known limitations.
-- For v2.1.0 release work, update both `docs/roadmap/v2.1.0/STATUS.md` and `STATUS.ru.md` when a workstream changes state, including completed checks and limitations.
+- For current release work, keep `docs/roadmap/v2.2.0/PLAN.md` and `PLAN.ru.md` plus `RELEASE.md` and `RELEASE.ru.md` consistent with actual checks, publication status and limitations.
 - Review the final diff for accidental changes, duplicated logic, missing tests, and language drift. Make small, reviewable commits with descriptive English messages when committing is part of the task; do not include unrelated staged changes.

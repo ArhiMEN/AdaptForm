@@ -2,13 +2,13 @@
 
 [English](DEMO.md) · [Русский](DEMO.ru.md)
 
-The live playground URL is **[https://arhimen.github.io/AdaptForm/](https://arhimen.github.io/AdaptForm/)**. GitHub Pages uses GitHub Actions for deployment, and the `github-pages` environment allows both `v2.1.0` and `master` to deploy.
+The live **2.2.0** playground is **[https://arhimen.github.io/AdaptForm/](https://arhimen.github.io/AdaptForm/)**. This version is [published to npm](https://www.npmjs.com/package/adaptform/v/2.2.0). GitHub Pages deploys the demo from **`master` only**.
 
-The page is built from the `demo/` application and the library source in `src/` on the deploying branch. The initial deployment uses `v2.1.0`, so the playground exercises the code being prepared for the 2.1.0 release candidate. After this branch is merged into `master`, changes on `master` also deploy automatically. Both branches publish to the same URL; the latest successful deployment becomes the live demo.
+The page is built from `demo/` and the library source in `src/` at the deploying `master` commit; it demonstrates the 2.2.0 public API. It is not a separate application or npm registry client. Deploying only `master` prevents older release branches from overwriting the live playground.
 
 ## What the playground covers
 
-- Live field validation, field state, and form-level validity.
+- Live field validation, field state, and form-level validity, plus a separate 2.2.0 headless state lab demonstrating `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()` reference stability and `Form.batch()` notifications.
 - Required fields, string patterns and lengths, numeric bounds, date limits, boolean constraints, and conditional-required fields.
 - `ArrayField` item addition/removal and collection constraints.
 - `ArrayFormField` nested form editing and validation.
@@ -42,15 +42,15 @@ The Vite development server uses the root path locally, while production builds 
 
 ## Automatic deployment
 
-The workflow at `.github/workflows/deploy-demo.yml` builds and deploys the site when files in `demo/`, `src/`, package metadata, or the workflow itself change on `v2.1.0` or `master`. It can also be started manually using GitHub Actions' **Deploy demo** workflow, selecting either branch once it contains the workflow.
+The workflow at `.github/workflows/deploy-demo.yml` builds and deploys the site when files in `demo/`, `src/`, package metadata, or the workflow itself change on `master`. Manual **Deploy demo** runs should also select **`master`**, because older branches are not release-current.
 
 The workflow type-checks the demo, creates the production build, and uploads the generated static site to GitHub Pages. The standard CI workflow independently type-checks and builds the demo.
 
 ### If Pages has not been enabled for this repository
 
-In the repository's GitHub settings, open **Settings → Pages** and set the build and deployment source to **GitHub Actions**. This one-time setting requires repository-owner/admin access and cannot be changed by a commit in this branch. After saving it, rerun **Deploy demo** from branch `v2.1.0`. The workflow will then build the site and deploy it to the URL above.
+In the repository's GitHub settings, open **Settings → Pages** and set the build and deployment source to **GitHub Actions**. This one-time setting requires repository-owner/admin access and cannot be changed by a commit in this branch. After saving it, rerun **Deploy demo** from branch `master`. The workflow will then build the site and deploy it to the URL above.
 
-Under **Settings → Environments → github-pages → Deployment branches and tags**, allow both `v2.1.0` and `master`. Enabling Pages alone may leave only `master` allowed, which blocks deployment from `v2.1.0` even when the build succeeds. These repository settings are already configured for this project.
+Under **Settings → Environments → github-pages → Deployment branches and tags**, permit **`master`**. Older release branches need not deploy to Pages; the historical `v2.1.0` branch is retained, but must not overwrite the current demo.
 
 ## Updating the demo
 

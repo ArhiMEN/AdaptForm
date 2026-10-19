@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#101827" />
-    <meta name="description" content="Try AdaptForm 2.1.0 in an interactive browser demo: fields, validation, arrays, nested forms, server errors, and serialization." />
+    <meta name="description" content="Try published AdaptForm 2.2.0: validation, reactive state, snapshots, batching, nested forms, server errors, and serialization." />
     <title>AdaptForm — Interactive Demo</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
   </head>
@@ -13,7 +13,7 @@
       <header class="topbar">
         <a class="brand" href="#top" aria-label="AdaptForm home">
           <span class="brand-mark">A</span>
-          <span>AdaptForm<span class="brand-version">2.1.0 demo</span></span>
+          <span>AdaptForm<span class="brand-version">2.2.0 · published</span></span>
         </a>
         <nav class="top-links" aria-label="Project links">
           <a href="https://github.com/ArhiMEN/AdaptForm" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
@@ -29,7 +29,7 @@
           <div class="hero-copy">
             <div class="eyebrow"><span class="status-dot"></span> INTERACTIVE PLAYGROUND</div>
             <h1>Forms you can <span>actually try.</span></h1>
-            <p>Explore validation, field state, nested collections, server errors, and serialization — powered by the source in this branch.</p>
+            <p>Explore published AdaptForm 2.2.0: reactive form state, validation, nested collections, server errors, and serialization.</p>
             <div class="hero-actions">
               <a class="button button-primary" href="#basic-form">Try the form <span aria-hidden="true">↓</span></a>
               <a class="button button-quiet" href="https://github.com/ArhiMEN/AdaptForm/tree/master" target="_blank" rel="noreferrer">Browse source <span aria-hidden="true">↗</span></a>
@@ -45,8 +45,9 @@
   })
 }
 
-form.checkValid()
-form.toJSON()</code></pre>
+const unsubscribe = form.subscribe(render)
+form.batch(() => updateFields())
+form.getSnapshot()</code></pre>
             </div>
             <div class="hero-stats">
               <div><strong>Live</strong><span>validation</span></div>
@@ -61,6 +62,7 @@ form.toJSON()</code></pre>
           <a href="#collections"><span class="feature-icon">02</span><span><strong>Collections</strong><small>Arrays and nested forms</small></span></a>
           <a href="#server-errors"><span class="feature-icon">03</span><span><strong>Server errors</strong><small>Map backend responses</small></span></a>
           <a href="#serialization"><span class="feature-icon">04</span><span><strong>Serialization</strong><small>JSON and FormData</small></span></a>
+          <a href="#headless-state"><span class="feature-icon">05</span><span><strong>Headless state</strong><small>Dirty, snapshots and batching</small></span></a>
         </section>
 
         <section class="section-heading" id="basic-form">
@@ -181,9 +183,39 @@ form.toJSON()</code></pre>
           <div class="serialization-footer"><span class="status-dot"></span><span id="serialization-note">JSON-compatible values, including ISO date strings.</span></div>
         </section>
 
+        <section class="section-heading" id="headless-state">
+          <div><div class="eyebrow">05 / HEADLESS ENGINE</div><h2>Reactive state playground</h2><p>Experiment with the published 2.2.0 APIs: track isDirty against a baseline, subscribe to snapshots, and apply multiple changes in one batch.</p></div>
+          <div class="live-pill"><span class="status-dot"></span> PUBLISHED ON NPM</div>
+        </section>
+        <section class="two-column headless-playground">
+          <article class="panel">
+            <div class="panel-heading"><div><h3>State and baseline</h3><p>Edit either field to see a new immutable snapshot.</p></div><span class="panel-icon">⌁</span></div>
+            <div class="field-grid">
+              <div class="form-field"><label for="state-first-name">Display name</label><input id="state-first-name" value="Alex" autocomplete="off" /></div>
+              <div class="form-field"><label for="state-city">City</label><input id="state-city" value="Berlin" autocomplete="off" /></div>
+            </div>
+            <div class="form-actions">
+              <button class="button button-primary" type="button" id="state-batch">Apply batch preset</button>
+              <button class="button button-secondary" type="button" id="state-baseline">Commit baseline</button>
+              <button class="button button-quiet" type="button" id="state-reset">Reset values</button>
+            </div>
+            <p class="inspector-note">Batch updates both fields in one notification. Commit baseline marks current values clean without changing the reset defaults.</p>
+          </article>
+          <article class="panel">
+            <div class="panel-heading"><div><h3>Live state observer</h3><p>Updates arrive through subscribe() and getSnapshot().</p></div><span class="panel-icon">◎</span></div>
+            <div class="state-metrics">
+              <div><span>Dirty state</span><strong id="state-dirty">Clean</strong></div>
+              <div><span>Notifications</span><strong id="state-notifications">0</strong></div>
+            </div>
+            <div class="inspector-block"><div class="inspector-label">IMMUTABLE SNAPSHOT</div><pre class="output-code" id="state-snapshot">{ }</pre></div>
+            <button class="button button-secondary button-small state-compare" type="button" id="state-compare">Compare snapshot reference</button>
+            <p class="inspector-note" id="state-reference" role="status" aria-live="polite">Compare to the previously inspected snapshot.</p>
+          </article>
+        </section>
+
         <footer class="footer">
           <a class="brand footer-brand" href="#top"><span class="brand-mark">A</span><span>AdaptForm</span></a>
-          <p>Interactive playground for AdaptForm <code>2.1.0</code>. Form values stay in your browser; nothing is submitted.</p>
+          <p>Interactive playground for published AdaptForm <code>2.2.0</code>. Form values stay in your browser; nothing is submitted.</p>
           <div class="footer-links"><a href="https://github.com/ArhiMEN/AdaptForm/tree/master" target="_blank" rel="noreferrer">Source</a><a data-document="CHANGELOG" href="https://github.com/ArhiMEN/AdaptForm/blob/master/CHANGELOG.md" target="_blank" rel="noreferrer">Changelog</a><a href="https://www.npmjs.com/package/adaptform" target="_blank" rel="noreferrer">npm</a></div>
         </footer>
       </main>

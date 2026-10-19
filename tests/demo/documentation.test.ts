@@ -26,6 +26,25 @@ describe('Bilingual documentation', () => {
     }
   })
 
+  it('matches the published package version and exercises the v2.2.0 headless state APIs', () => {
+    const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as {version: string}
+    const html = readFileSync('demo/index.html', 'utf8')
+    const main = readFileSync('demo/main.ts', 'utf8')
+    const workflow = readFileSync('.github/workflows/deploy-demo.yml', 'utf8')
+
+    expect(html).toContain(`${pkg.version} · published`)
+    expect(html).toContain(`published AdaptForm <code>${pkg.version}</code>`)
+    expect(html).toContain('id="headless-state"')
+    expect(html).toContain('id="state-snapshot"')
+    expect(html).toContain('id="state-notifications"')
+    expect(main).toContain('headlessLab.subscribe(')
+    expect(main).toContain('headlessLab.getSnapshot()')
+    expect(main).toContain('headlessLab.commitBaseline()')
+    expect(main).toContain('headlessLab.batch(')
+    expect(workflow).toContain('      - master')
+    expect(workflow).not.toContain('      - v2.1.0')
+  })
+
   it('covers all translatable initial page text with the shared catalog', () => {
     document.body.innerHTML = readFileSync('demo/index.html', 'utf8').split('<body>')[1].split('</body>')[0]
     const neutral = new Set(['A', 'AdaptForm', 'GitHub', 'English', 'ArrayField', 'ArrayFormField', 'toJSON()', 'toFormData()', 'Source', 'Changelog', 'profile-form.ts', 'npm'])

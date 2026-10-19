@@ -467,7 +467,69 @@ $('#masked-phone').addEventListener('input', event => {
   })
 })
 
+// A separate Form instance demonstrates the headless APIs without disturbing profile validation.
+class HeadlessLabForm extends Form {
+  displayName = new Field(StringType, 'Alex')
+  city = new Field(StringType, 'Berlin')
+}
+
+const headlessLab = new HeadlessLabForm()
+let headlessNotifications = 0
+let inspectedSnapshot = headlessLab.getSnapshot()
+
+function renderHeadlessLab(): void {
+  const snapshot = headlessLab.getSnapshot()
+  $('#state-dirty').textContent = t(snapshot.isDirty ? 'Dirty' : 'Clean')
+  $('#state-notifications').textContent = String(headlessNotifications)
+  $('#state-snapshot').textContent = pretty({
+    fieldsValue: snapshot.fieldsValue,
+    isDirty: snapshot.isDirty,
+    isTouched: snapshot.isTouched,
+    isValid: snapshot.isValid,
+  })
+}
+
+function syncHeadlessInputs(): void {
+  $<HTMLInputElement>('#state-first-name').value = String(headlessLab.displayName.rawValue ?? '')
+  $<HTMLInputElement>('#state-city').value = String(headlessLab.city.rawValue ?? '')
+}
+
+headlessLab.subscribe(() => {
+  headlessNotifications += 1
+  renderHeadlessLab()
+})
+
+$('#state-first-name').addEventListener('input', event => {
+  headlessLab.displayName.setRawValue((event.currentTarget as HTMLInputElement).value, false)
+})
+$('#state-city').addEventListener('input', event => {
+  headlessLab.city.setRawValue((event.currentTarget as HTMLInputElement).value, false)
+})
+$('#state-batch').addEventListener('click', () => {
+  headlessLab.batch(() => {
+    headlessLab.displayName.rawValue = 'Jordan'
+    headlessLab.city.rawValue = 'Oslo'
+  })
+  syncHeadlessInputs()
+})
+$('#state-baseline').addEventListener('click', () => {
+  headlessLab.commitBaseline()
+  renderHeadlessLab()
+})
+$('#state-reset').addEventListener('click', () => {
+  headlessLab.reset()
+  syncHeadlessInputs()
+  renderHeadlessLab()
+})
+$('#state-compare').addEventListener('click', () => {
+  const current = headlessLab.getSnapshot()
+  $('#state-reference').textContent = t(current === inspectedSnapshot
+    ? 'Same snapshot reference' : 'Snapshot reference changed')
+  inspectedSnapshot = current
+})
+
 function renderDemo(): void {
+  renderHeadlessLab()
   renderProfile()
   renderTags()
   renderAddresses()
