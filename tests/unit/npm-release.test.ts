@@ -27,6 +27,15 @@ describe('npm release preflight', () => {
     expect(workflow.slice(verify, publish)).toContain('run: npm run check:package')
   })
 
+  it('uses tokenless OIDC for trusted publishing', async () => {
+    const workflow = await readFile('.github/workflows/publish-npm.yml', 'utf8')
+    expect(workflow).toContain('id-token: write')
+    expect(workflow).toContain('node-version: 24')
+    expect(workflow).toContain('run: npm publish --registry=https://registry.npmjs.org --access public --provenance')
+    expect(workflow).not.toContain('NODE_AUTH_TOKEN')
+    expect(workflow).not.toContain('registry-url:')
+  })
+
   it('publishes a version that is absent from the registry', async () => {
     const lookup = vi.fn().mockResolvedValue({ status: 404 })
     await expect(checkNpmRelease(manifest, lockfile, lookup)).resolves.toBe(true)
