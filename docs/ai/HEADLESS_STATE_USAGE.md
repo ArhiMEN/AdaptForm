@@ -2,7 +2,7 @@
 
 [English](HEADLESS_STATE_USAGE.md) · [Русский](HEADLESS_STATE_USAGE.ru.md)
 
-HF-005–HF-010 are implemented for review. The package version stays 2.1.1; this is not a 2.2.0 release announcement. Full semantics and compatibility: [state contract](HEADLESS_STATE_CONTRACT.md).
+HF-005–HF-010 were independently reviewed and merged in [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16). The **2.2.0 source candidate** is being prepared, but it is **not published to npm**; this document is not a release announcement. Full semantics and compatibility: [state contract](HEADLESS_STATE_CONTRACT.md).
 
 ```ts
 import {Form, Field, StringType, NumberType} from 'adaptform'
@@ -57,7 +57,7 @@ Direct calls to `checkValid()`/`checkAndSetValid()` still run immediately, so ex
 
 Field constructor captures the cleaned value after plugins/casting. New forms hydrated through a collection commit their hydrated values as their own baseline. Collections capture ordered cleaned content and include child dirty states. Call `form.commitBaseline()` after accepting server data when the whole form should become clean. Committing a single child does not rewrite its collection's content baseline.
 
-Baseline commits never clear errors, alter touched/validity, assign values or validate. Reset remains the 2.1.1 operation: surviving children reset to their constructor defaults; collection membership/order stays. It does not restore the committed baseline, so it can leave dirty=true. `reinitialize` is only a future proposal.
+Baseline commits never clear errors, alter touched/validity, assign values or validate. Reset retains the 2.1.1 operation: surviving children reset to their constructor defaults; collection membership/order stays. It does not restore the committed baseline, so it can leave dirty=true. `reinitialize` is only a future proposal.
 
 ## Costs and limits
 
