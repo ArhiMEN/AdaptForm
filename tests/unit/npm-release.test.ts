@@ -13,6 +13,20 @@ async function currentPackageId(): Promise<string> {
 }
 
 describe('npm release preflight', () => {
+  it('builds publish artifacts before checking dist contents', async () => {
+    const workflow = await readFile('.github/workflows/publish-npm.yml', 'utf8')
+    const install = workflow.indexOf('name: Install dependencies')
+    const build = workflow.indexOf('name: Build release artifacts')
+    const verify = workflow.indexOf('name: Verify package contents')
+    const publish = workflow.indexOf('name: Publish package')
+    expect(install).toBeGreaterThan(-1)
+    expect(build).toBeGreaterThan(install)
+    expect(verify).toBeGreaterThan(build)
+    expect(publish).toBeGreaterThan(verify)
+    expect(workflow.slice(build, verify)).toContain('run: npm run build')
+    expect(workflow.slice(verify, publish)).toContain('run: npm run check:package')
+  })
+
   it('publishes a version that is absent from the registry', async () => {
     const lookup = vi.fn().mockResolvedValue({ status: 404 })
     await expect(checkNpmRelease(manifest, lockfile, lookup)).resolves.toBe(true)
