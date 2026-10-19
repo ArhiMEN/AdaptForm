@@ -4,7 +4,7 @@
 
 ## Статус и полномочия
 
-**Метаданные исходников и пакета 2.2.0 подготовлены; в npm НЕ опубликована.** Это кандидат релиза, не версия в npm, не Git-тег и не GitHub Release. Подготовка в ветке `release/v2.2.0-preparation`; не считать изменения попавшими в `master` до принятия PR.
+**Метаданные исходников и пакета 2.2.0 объединены в `master`; в npm НЕ опубликована.** [PR #18](https://github.com/ArhiMEN/AdaptForm/pull/18) принят, squash-коммит `f717b8d590d1b753d5958b2ba19aa1b3e3aeef0a`. Это подготовленная версия исходников, не публикация npm, Git-тег или GitHub Release.
 
 Последняя отдельно проверенная версия `latest` в публичном npm — **2.1.0** (проверка 2026-10-19). Исходники **2.1.1** ранее подготовлены в `master`, но workflow публикации был пропущен. Для будущего выпуска 2.2.0 не обязательно сначала публиковать 2.1.1; перед отдельным разрешением публикации нужно повторно проверить реестр и доступы.
 
@@ -45,9 +45,9 @@ HF-004 с изменением состава коллекций при reset, `
 
 - [x] HF-005–HF-010 прошли ревью и объединены: [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16), `e6b596de5eceecf2c235000f3d683d4a745cb44e`.
 - [x] Реализация прошла **563/563 теста в 27 файлах**, lint, проверку типов исходников/демо, сборки ESM/CJS/TS, package check и аудит 0. [CI после merge](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197203071) PASS. [Документальный PR #17](https://github.com/ArhiMEN/AdaptForm/pull/17) принят; [CI master](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197519427) PASS, публикация npm пропущена.
-- [ ] Проверить diff **кандидата 2.2.0**, утвердить документацию и метаданные.
-- [ ] Пройти CI `verify` и GitGuardian кандидата с обновлёнными manifest/lockfile/README/changelog.
-- [ ] После merge в master зафиксировать CI и результат workflow публикации npm.
+- [x] Проверить diff **кандидата 2.2.0**, утвердить документацию и метаданные ([PR #18](https://github.com/ArhiMEN/AdaptForm/pull/18)).
+- [x] [CI кандидата #39198931542](https://github.com/ArhiMEN/AdaptForm/actions/runs/39198931542) `verify` и GitGuardian прошли с обновлёнными manifest/lockfile/README/changelog (563/563 теста).
+- [x] После merge [CI master #39199058088](https://github.com/ArhiMEN/AdaptForm/actions/runs/39199058088) PASS, [демо #39199058150](https://github.com/ArhiMEN/AdaptForm/actions/runs/39199058150) PASS, [npm publish #39199123153](https://github.com/ArhiMEN/AdaptForm/actions/runs/39199123153) SKIPPED.
 - [ ] При отдельном запросе на npm-публикацию повторно проверить версии в реестре и права, решить вопрос тега/GitHub Release.
 
 ## Ограничения и технический долг

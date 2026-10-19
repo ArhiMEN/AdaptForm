@@ -2,6 +2,12 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## 2.2.0 source accepted in master — 2026-10-19
+
+- [Release PR #18](https://github.com/ArhiMEN/AdaptForm/pull/18) was independently reviewed and **squash-merged** as `f717b8d590d1b753d5958b2ba19aa1b3e3aeef0a`. `package.json` and the lockfile root both declare **2.2.0**; CHANGELOG, README, context and release documents are aligned in English/Russian. No production code, dependency or publishing workflow changes were made in PR #18.
+- Candidate [CI #39198931542](https://github.com/ArhiMEN/AdaptForm/actions/runs/39198931542) and GitGuardian PASS: **563/563 tests**, 27 files, lint, source/demo type check, ESM/CJS/declarations builds, package check, demo build, npm audit 0. Post-merge [master CI #39199058088](https://github.com/ArhiMEN/AdaptForm/actions/runs/39199058088) PASS; [demo #39199058150](https://github.com/ArhiMEN/AdaptForm/actions/runs/39199058150) PASS; [npm publish #39199123153](https://github.com/ArhiMEN/AdaptForm/actions/runs/39199123153) **SKIPPED**.
+- [Release checklist](../roadmap/v2.2.0/RELEASE.md) records closed source checks, continued unpublished npm status and technical debt: 54 prior test-tsconfig diagnostics, no snapshot benchmark, HF-004/reinitialize/HF-011+ excluded. Next work requires a separate decision (npm publication or a subsequent HF track). Preserve branches; no tag or GitHub Release.
+
 ## AdaptForm 2.2.0 candidate preparation — 2026-10-19
 
 - **Release-preparation branch:** `release/v2.2.0-preparation`, based on accepted HF-005–HF-010 master. `package.json` and both root versions in `package-lock.json` are being set to **2.2.0**; no runtime/API changes or dependency upgrades. `2.2.0` remains **unpublished to npm**, and the latest independently verified npm `latest` was 2.1.0.
