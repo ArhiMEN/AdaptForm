@@ -2,6 +2,12 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## Verified npm publication 2.2.0 — 2026-10-19
+
+- **Published**: `adaptform@2.2.0` in the npm registry via the OIDC Trusted Publisher connection `ArhiMEN/AdaptForm` / `publish-npm.yml`. Exact-version registry lookup confirmed it. [GitHub Actions #39209185356 (rerun)](https://github.com/ArhiMEN/AdaptForm/actions/runs/39209185356) completed successfully: build, package check and `npm publish` PASS; logs confirm `+ adaptform@2.2.0`, dist-tag `latest`, signed provenance ([Sigstore entry](https://search.sigstore.dev/?logIndex=3319507230)). Initial attempts failed on missing dist (fixed PR #21) and ENEEDAUTH before Trusted Publisher registration (PR #22 removed token placeholder). The successful rerun used the saved npm connection without tokens.
+- **Current setup:** GitHub repository variable `NPM_PUBLISH_ENABLED=true` (confirmed operational by successful publish job), master push CI success gates publication; preflight skips versions already published. npm can take a few minutes to refresh its `latest` display. No GitHub Release, tag or branch deletion.
+- Docs and release notes updated in bilingual PR following the successful publication. Existing 54 test-tsconfig diagnostics and performance assessment remain separate debt.
+
 ## 2.2.0 source accepted in master — 2026-10-19
 
 - [Release PR #18](https://github.com/ArhiMEN/AdaptForm/pull/18) was independently reviewed and **squash-merged** as `f717b8d590d1b753d5958b2ba19aa1b3e3aeef0a`. `package.json` and the lockfile root both declare **2.2.0**; CHANGELOG, README, context and release documents are aligned in English/Russian. No production code, dependency or publishing workflow changes were made in PR #18.

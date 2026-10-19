@@ -43,7 +43,7 @@ npm install adaptform
 npm install luxon
 ```
 
-[Интерактивное демо](https://arhimen.github.io/AdaptForm/?lang=ru) использует исходный код репозитория и автоматически публикуется из `v2.1.0` и `master`. **Новые headless API в кандидатных исходниках 2.2.0 ещё не опубликованы в npm.** Доступные для установки версии проверяйте на [npm](https://www.npmjs.com/package/adaptform).
+[Интерактивное демо](https://arhimen.github.io/AdaptForm/?lang=ru) использует исходный код репозитория и автоматически публикуется из `v2.1.0` и `master`. **Новые headless API опубликованы в [adaptform@2.2.0](https://www.npmjs.com/package/adaptform/v/2.2.0)** через npm Trusted Publisher (OIDC).
 
 Демо поддерживает английский и русский языки с сохранением выбора: [English](https://arhimen.github.io/AdaptForm/?lang=en) · [Русский](https://arhimen.github.io/AdaptForm/?lang=ru). Переключение языка сохраняет данные формы и состояние валидации.
 
@@ -390,9 +390,9 @@ npm run dev -- --config demo/vite.config.ts
 
 MIT © Stanislav Orlov
 
-## Headless-состояния форм (кандидат исходников 2.2.0)
+## Headless-состояния форм (2.2.0)
 
-HF-005–HF-010 прошли независимое ревью и объединены. **Кандидат исходников — 2.2.0**, а публикация в npm — отдельный этап, поэтому новые API могут отсутствовать в пакете, установленном через `npm install adaptform`.
+HF-005–HF-010 прошли независимое ревью и **опубликованы в [adaptform@2.2.0](https://www.npmjs.com/package/adaptform/v/2.2.0)** через npm Trusted Publisher с подписанным provenance.
 
 ```typescript
 import {Field, Form, NumberType, StringType} from 'adaptform'

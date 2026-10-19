@@ -4,9 +4,9 @@
 
 ## Status and authority
 
-**2.2.0 source/package metadata merged into `master`; npm NOT published.** [Release PR #18](https://github.com/ArhiMEN/AdaptForm/pull/18) was accepted as squash commit `f717b8d590d1b753d5958b2ba19aa1b3e3aeef0a`. This is a prepared source version, not a published npm version, Git tag or GitHub Release.
+**2.2.0 source/package metadata merged into `master` and `adaptform@2.2.0` published to npm on 2026-10-19 using OIDC Trusted Publisher.** [Release PR #18](https://github.com/ArhiMEN/AdaptForm/pull/18) was accepted as squash commit `f717b8d590d1b753d5958b2ba19aa1b3e3aeef0a`. This is a prepared source version, not a published npm version, Git tag or GitHub Release.
 
-The last independently verified public npm `latest` is **2.1.0** (checked 2026-10-19). The repository previously prepared **2.1.1** in `master` but the publish job was skipped. There is no requirement to publish 2.1.1 before 2.2.0; npm version publication, if ever authorized, still requires checking registry state and npm ownership.
+The first successful OIDC [publish workflow rerun #39209185356](https://github.com/ArhiMEN/AdaptForm/actions/runs/39209185356) published `adaptform@2.2.0` with the `latest` dist-tag and signed provenance, confirmed in the workflow logs and by exact-version registry lookup. The npm web UI/dist-tag index may update asynchronously. Version 2.1.1 was prepared in GitHub but was not published; it was intentionally superseded by 2.2.0.
 
 ## Approved scope
 
@@ -38,7 +38,7 @@ No HF-004 reset membership redesign, `reinitialize()`, HF-011+, async validators
 
 - `package.json`, `package-lock.json.version`, and `package-lock.json.packages[""].version` must match **2.2.0**.
 - Preserve the `.` and `./luxon` exports (ESM, CJS and .d.ts), optional Luxon peer dependency, package allowlist and no required runtime dependencies.
-- Keep README, changelog, usage guides, decisions and release docs in English and Russian. Mark npm distribution **unpublished** until independently verified.
+- Keep README, changelog, usage guides, decisions and release docs in English and Russian. Mark npm distribution published **only after** successful publish run and exact-version registry verification (completed for 2.2.0).
 - Do not change the GitHub Actions npm publishing workflow, its credentials or `NPM_PUBLISH_ENABLED`.
 
 ## Release acceptance checks
@@ -48,7 +48,7 @@ No HF-004 reset membership redesign, `reinitialize()`, HF-011+, async validators
 - [x] Review the **2.2.0 release candidate** diff and approve documentation and package metadata ([PR #18](https://github.com/ArhiMEN/AdaptForm/pull/18)).
 - [x] Release candidate [CI #39198931542](https://github.com/ArhiMEN/AdaptForm/actions/runs/39198931542) `verify` and GitGuardian passed with updated manifest/lockfile, README and changelog (563/563 tests).
 - [x] Post-merge [master CI #39199058088](https://github.com/ArhiMEN/AdaptForm/actions/runs/39199058088) PASS, [demo deploy #39199058150](https://github.com/ArhiMEN/AdaptForm/actions/runs/39199058150) PASS, [npm publish workflow #39199123153](https://github.com/ArhiMEN/AdaptForm/actions/runs/39199123153) SKIPPED.
-- [ ] If publishing to npm becomes an explicit request, recheck registry versions and configured publishing permissions before starting; decide whether to create a tag/GitHub Release.
+- [x] Independently requested npm publication of 2.2.0 completed: [successful OIDC publish](https://github.com/ArhiMEN/AdaptForm/actions/runs/39209185356) and exact registry version verified. No Git tag or GitHub Release was created.
 
 ## Known limits and debt
 
@@ -59,9 +59,9 @@ No HF-004 reset membership redesign, `reinitialize()`, HF-011+, async validators
 ## Trusted Publisher activation — 2026-10-19
 
 - The maintainer confirmed configuring npm Trusted Publisher and enabling the repository variable `NPM_PUBLISH_ENABLED=true`. This is a **reported setting**, not a GitHub-variable/API read.
-- The maintainer explicitly requested the first automatic publication attempt for version **2.2.0**. This documentation-only merge is intended to trigger new CI on `master`, followed by the guarded `Publish npm package` workflow. Record success only after inspecting the publish run and public npm registry.
+- The maintainer requested the first automated publish of **2.2.0**. PR #20 triggered CI; first publish attempts failed on missing `dist/` and tokenless OIDC authentication and were repaired in [PR #21](https://github.com/ArhiMEN/AdaptForm/pull/21) and [PR #22](https://github.com/ArhiMEN/AdaptForm/pull/22). Following the saved npm Trusted Publisher connection, rerunning the failed publish job succeeded with signed provenance.
 - Do not create a GitHub Release or tag or remove any branch during this activation.
 
 ## Publication restriction
 
-**Version 2.2.0's first automatic npm publication was separately requested and is authorized for this trigger. This does not authorize tags, GitHub Releases or unreviewed future code changes.** The [publication workflow](../../NPM_PUBLISH.md) can auto-publish an unpublished version only if `NPM_PUBLISH_ENABLED=true` following master CI; historically it has been skipped. Verify the workflow outcome after merge, rather than inferring a permanent configuration state. Preserve every existing Git branch.
+**Version 2.2.0 was published successfully using the specifically approved automatic workflow. This does not authorize tags, GitHub Releases or unreviewed future code changes.** The [publication workflow](../../NPM_PUBLISH.md) can auto-publish an unpublished version only if `NPM_PUBLISH_ENABLED=true` following master CI; historically it has been skipped. Verify the workflow outcome after merge, rather than inferring a permanent configuration state. Preserve every existing Git branch.

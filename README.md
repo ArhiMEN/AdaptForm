@@ -43,7 +43,7 @@ Luxon integration is optional:
 npm install luxon
 ```
 
-The [interactive demo](https://arhimen.github.io/AdaptForm/) runs from repository source, with automatic deployment from `v2.1.0` and `master`. **Headless APIs in the 2.2.0 source candidate are not yet published to npm.** Check the [npm package](https://www.npmjs.com/package/adaptform) for available published versions.
+The [interactive demo](https://arhimen.github.io/AdaptForm/) runs from repository source, with automatic deployment from `v2.1.0` and `master`. **Headless APIs are published in [adaptform@2.2.0](https://www.npmjs.com/package/adaptform/v/2.2.0)** via npm Trusted Publisher (OIDC).
 
 The demo supports English and Russian with a persistent language selector: [English](https://arhimen.github.io/AdaptForm/?lang=en) · [Русский](https://arhimen.github.io/AdaptForm/?lang=ru). Switching languages preserves form data and validation state.
 
@@ -390,9 +390,9 @@ The demo is built by GitHub Actions from `v2.1.0` and `master`. GitHub Pages is 
 
 MIT © Stanislav Orlov
 
-## Headless form state (2.2.0 source candidate)
+## Headless form state (2.2.0)
 
-HF-005–HF-010 were merged after independent review. The **source candidate is 2.2.0**, but npm publication is separate, so these APIs may not yet be available from `npm install adaptform`.
+HF-005–HF-010 were merged after independent review and are **published in [adaptform@2.2.0](https://www.npmjs.com/package/adaptform/v/2.2.0)** with npm Trusted Publisher and signed provenance.
 
 ```typescript
 import {Field, Form, NumberType, StringType} from 'adaptform'

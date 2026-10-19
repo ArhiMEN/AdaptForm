@@ -6,7 +6,7 @@ All notable changes to AdaptForm are documented here. Version `2.1.0` was publis
 
 **[Interactive demo](https://arhimen.github.io/AdaptForm/)** · [Demo source](https://github.com/ArhiMEN/AdaptForm/tree/master/demo) · [Documentation](https://github.com/ArhiMEN/AdaptForm/blob/master/README.md)
 
-## [2.2.0] - Unreleased (source prepared)
+## [2.2.0] - 2026-10-19
 
 ### Added — headless form state foundation
 
@@ -33,7 +33,7 @@ All notable changes to AdaptForm are documented here. Version `2.1.0` was publis
 
 - Accepted integration PR [#16](https://github.com/ArhiMEN/AdaptForm/pull/16) passed **563 tests in 27 files**, lint, source/demo type-checks, package/demo builds and dependency audit (0 known vulnerabilities). Independent review and [documentation sync PR #17](https://github.com/ArhiMEN/AdaptForm/pull/17) were merged. The 2.2.0 release candidate requires its **own** successful CI.
 - The separate `tsconfig.test.json` check still has **54 existing diagnostics** and is not reported as passing; an older mapped-type `TS2589` reproduces on 2.1.1 as well. No new diagnostics were established in HF-005–HF-010.
-- **Not published.** The source/manifest is being prepared as `2.2.0`; do not interpret this entry or a GitHub merge as npm publication, a tag or a GitHub Release. The last independently verified npm `latest` was `2.1.0`.
+- **Published to npm:** `adaptform@2.2.0` on 2026-10-19 via OIDC Trusted Publisher, with signed provenance. [Publish workflow](https://github.com/ArhiMEN/AdaptForm/actions/runs/39209185356) (successful rerun); [npm version](https://www.npmjs.com/package/adaptform/v/2.2.0). No Git tag or GitHub Release was created.
 
 ## [2.1.1] - Unreleased (prepared)
 
