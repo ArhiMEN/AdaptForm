@@ -411,10 +411,10 @@ const unsubscribe = form.subscribe(() => {
 form.batch(() => {
   form.displayName.rawValue = 'Alexandra'
   form.notifications.rawValue = 2
-}) // Одно итоговое уведомление после автоматической проверки
+}) // One coherent notification after final automatic validation
 
-form.commitBaseline() // Принять значения; isDirty станет false
-unsubscribe()        // Отписаться
+form.commitBaseline() // Accept current cleaned values; isDirty becomes false
+unsubscribe()        // Release the listener
 ```
 
 `isTouched` сохраняет прежнюю семантику. `commitBaseline()` меняет точку сравнения dirty, **не** значения конструктора, возвращаемые `reset()`; после сброса `isDirty` иногда остаётся `true`. Snapshots — независимые неизменяемые представления, а не ссылки на изменяемые данные. `toJSON()` по-прежнему не выполняет валидацию.
