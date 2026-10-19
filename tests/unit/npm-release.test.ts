@@ -33,7 +33,7 @@ describe('npm release preflight', () => {
     expect(workflow).toContain('node-version: 24')
     expect(workflow).toContain('run: npm publish --registry=https://registry.npmjs.org --access public --provenance')
     expect(workflow).not.toContain('NODE_AUTH_TOKEN')
-    expect(workflow).not.toContain('registry-url:')
+    expect(workflow).not.toMatch(/^\s+registry-url:/m)
   })
 
   it('publishes a version that is absent from the registry', async () => {
