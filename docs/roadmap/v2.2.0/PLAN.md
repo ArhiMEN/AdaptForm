@@ -23,6 +23,10 @@ HF-004 reset membership and HF-011+ remain outside scope. No reinitialize method
 
 ## Remaining release gates
 
+After merge, [master CI #39197203071](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197203071) and [demo #39197203110](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197203110) passed; [npm publish #39197250143](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197250143) was skipped. Current package manifest remains **2.1.1**. A separate 2.2.0 release candidate is required.
+
+
+
 - [x] Implement HF-005–HF-010 with bilingual documentation and focused regressions.
 - [x] Independent review by commit and integration PR acceptance; PR #16 squash merge `e6b596de5eceecf2c235000f3d683d4a745cb44e`.
 - [x] Verify CI/GitGuardian on the final integration PR head `1db4ab5f1fe2ace394baf925bdab3d9b475796d3` (563 tests); post-merge master CI tracked separately.
