@@ -42,6 +42,9 @@ jobs:
       - name: Install dependencies
         if: steps.release.outputs.publish == 'true'
         run: npm ci
+      - name: Build release artifacts
+        if: steps.release.outputs.publish == 'true'
+        run: npm run build
       - name: Verify package contents
         if: steps.release.outputs.publish == 'true'
         run: npm run check:package
