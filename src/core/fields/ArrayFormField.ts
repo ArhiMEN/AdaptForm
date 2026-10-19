@@ -105,14 +105,14 @@ export class ArrayFormField<T extends Form = Form> extends ObservableNode<ArrayF
       if (!isValidArrayIndex(index, this._forms.length)) return
 
       this._forms.splice(index, 1)
-      this.checkValid()
+      this.validateAfterMutation(() => this.checkValid())
       })
   }
 
   clear(): void {
     return this.update(() => {
       this._forms = []
-      this.checkValid()
+      this.validateAfterMutation(() => this.checkValid())
       })
   }
 

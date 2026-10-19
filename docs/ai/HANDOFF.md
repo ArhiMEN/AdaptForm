@@ -4,11 +4,19 @@
 
 Integration [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16) is open against master; branch pushed. [Live checks](https://github.com/ArhiMEN/AdaptForm/pull/16/checks) are authoritative for the final head. No merge or publication performed.
 
-Implementation CI passed on `e067a34`: [run #39153919017](https://github.com/ArhiMEN/AdaptForm/actions/runs/39153919017); GitGuardian passed. Later documentation-only head checks remain visible in the PR.
+Implementation CI passed on `e067a34`: [run #39153919017](https://github.com/ArhiMEN/AdaptForm/actions/runs/39153919017); GitGuardian passed. These are historical checks; current head results remain visible in the PR.
+
+## PR #16 review repair — 2026-10-19
+
+- `ArrayField` and `ArrayFormField` now route automatic `remove()`/`clear()` checks through `validateAfterMutation()`. Batch finalization uses the owning Form context once; synchronous validation outside batch and explicit `checkValid()` are preserved.
+- Added `tests/unit/headless-collection-batch.test.ts`: **34 passing cases**, including collection-only/sibling writes, nested ownership/batches, callback exceptions/recovery, explicit checks, deduplication and atomic notifications.
+- Latest local checks: **563 tests passed in 27 files**; lint, source/demo typecheck, library/demo build, package check (21 files), audit (0 vulnerabilities), demo output and diff checks passed.
+- `tsconfig.test.json` still exits 2 with **54 existing diagnostics**. Compared against an untouched archive of `33717f2` with the same dependencies: normalized file/position/code sequence and multiplicities match; no new diagnostics. The three known structural-message differences remain. No tests or checks disabled.
+- Required next action: inspect CI/GitGuardian for the pushed repair head and re-review the HF-009 fix in the existing PR. The other HF-005–HF-010 contracts, package 2.1.1, dependencies and reset behavior are unchanged. HF-011 was not started; no new PR or merge.
 
 ## HF-005–HF-010 foundation — 2026-10-18
 
-**All six tasks implemented, pending independent review.** One approved integration branch: `feature/v2.2.0-headless-state-foundation`, based on master `33717f2a88f04a3ad9c454b0477e52b299147432`. Package version stays **2.1.1**; manifests/dependencies unchanged. No merge, branch removal, tag, release or npm publication.
+**All six tasks implemented; independent review found an HF-009 blocker, now fixed locally pending re-review.** One approved integration branch: `feature/v2.2.0-headless-state-foundation`, based on master `33717f2a88f04a3ad9c454b0477e52b299147432`. Package version stays **2.1.1**; manifests/dependencies unchanged. No merge, branch removal, tag, release or npm publication.
 
 - [Contract EN/RU](HEADLESS_STATE_CONTRACT.md): lifecycle, baseline/reset, touched/dirty, compatibility and deferred reinitialize proposal.
 - [Usage EN/RU](HEADLESS_STATE_USAGE.md): subscriptions, snapshot data representations, batch validation/exception policy and limits.
@@ -24,7 +32,7 @@ Implementation CI passed on `e067a34`: [run #39153919017](https://github.com/Arh
 | HF-010 | `7883269` | Child propagation, detach/last-unsubscribe cleanup, reentrant delivery |
 | Hardening | `c81575b` | Shared built-in/sparse captures and additional exception/async regressions |
 
-Final review also verifies symmetric structural comparison across shared-reference topologies and server-error clearing notifications for empty nested forms. Each implementation stage passed focused tests, lint and source typecheck before commit. Final checks: **529 tests passed (26 files, 52 added cases)**; lint, source typecheck, library build, package check (21 files), demo typecheck/build, audit (0 vulnerabilities), ESM/CJS runtime smoke and new API declaration consumers passed. `git diff --check` passed.
+Final review also verifies symmetric structural comparison across shared-reference topologies and server-error clearing notifications for empty nested forms. Each implementation stage passed focused tests, lint and source typecheck before commit. Foundation checks on 2026-10-18: **529 tests passed (26 files, 52 added cases)**; lint, source typecheck, library build, package check (21 files), demo typecheck/build, audit (0 vulnerabilities), ESM/CJS runtime smoke and new API declaration consumers passed. `git diff --check` passed.
 
 `tsconfig.test.json` **still fails with 54 baseline diagnostics**. File/position/code/multiplicity sequence matches untouched master; three old structural diagnostics list more missing Form members due to additive methods. A separate consumer of the legacy `fieldsValue` mapped type also triggers TS2589 on both this branch and a separately built untouched master archive. New snapshot/subscription/batch declaration consumers pass in strict NodeNext ESM/CJS. No type checks or tests disabled.
 

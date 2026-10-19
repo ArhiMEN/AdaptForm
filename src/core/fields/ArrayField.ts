@@ -103,14 +103,14 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
       if (!isValidArrayIndex(index, this._items.length)) return
 
       this._items.splice(index, 1)
-      this.checkValid()
+      this.validateAfterMutation(() => this.checkValid())
       })
   }
 
   clear(): void {
     return this.update(() => {
       this._items = []
-      this.checkValid()
+      this.validateAfterMutation(() => this.checkValid())
       })
   }
 
