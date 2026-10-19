@@ -2,7 +2,7 @@
 
 [English](PLAN.md) · [Русский](PLAN.ru.md)
 
-**HF-005–HF-010 accepted and merged in [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16). The 2.2.0 release candidate is being prepared in a dedicated branch.** Manifest and lockfile in that branch are 2.2.0. No npm publication, tag or GitHub Release is authorized or performed. See [release checklist](RELEASE.md).
+**HF-005–HF-010 accepted in [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16), and the 2.2.0 source release candidate accepted in [PR #18](https://github.com/ArhiMEN/AdaptForm/pull/18).** Master manifest and lockfile now declare 2.2.0; no npm publication, tag or GitHub Release occurred. See [release checklist](RELEASE.md).
 
 | Task | Actual deliverable | Status |
 | --- | --- | --- |
@@ -23,13 +23,13 @@ HF-004 reset membership and HF-011+ remain outside scope. No reinitialize method
 
 ## Remaining release gates
 
-After merge, [master CI #39197203071](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197203071) and [demo #39197203110](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197203110) passed; [npm publish #39197250143](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197250143) was skipped. The source candidate prepares version **2.2.0**; publication remains separate.
+After merge, [master CI #39197203071](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197203071) and [demo #39197203110](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197203110) passed; [npm publish #39197250143](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197250143) was skipped. The **2.2.0** source candidate was merged; [master CI #39199058088](https://github.com/ArhiMEN/AdaptForm/actions/runs/39199058088) PASS, [npm publication #39199123153](https://github.com/ArhiMEN/AdaptForm/actions/runs/39199123153) SKIPPED. Publication remains separate.
 
 
 
 - [x] Implement HF-005–HF-010 with bilingual documentation and focused regressions.
 - [x] Independent review by commit and integration PR acceptance; PR #16 squash merge `e6b596de5eceecf2c235000f3d683d4a745cb44e`.
 - [x] Verify CI/GitGuardian on the final integration PR head `1db4ab5f1fe2ace394baf925bdab3d9b475796d3` (563 tests); post-merge master CI tracked separately.
-- [ ] Independently review the prepared 2.2.0 release candidate (version metadata, bilingual documentation and packaging); check its own CI and GitGuardian.
+- [x] Independently review [PR #18](https://github.com/ArhiMEN/AdaptForm/pull/18): version metadata, bilingual docs and package exports; candidate CI/GitGuardian PASS; master CI PASS, npm publish skipped.
 - [ ] Address or explicitly track the existing 54 exploratory test typecheck diagnostics; no new diagnostic locations/codes permitted here.
 - [ ] Authorize version bump, tags/releases and npm publication separately. No automatic merge.
