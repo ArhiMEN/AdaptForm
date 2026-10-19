@@ -11,7 +11,7 @@
 
 Для сопровождающих: [настройка автоматической публикации в npm](docs/NPM_PUBLISH.ru.md).
 
-AdaptForm — библиотека моделирования форм с приоритетом TypeScript, вдохновлённая Django Forms и Pydantic. Формы описываются классами с типизированными полями. Каждое поле управляет своим значением, приведением типов, валидацией, плагинами преобразования, ошибками и состоянием.
+AdaptForm — независимый от UI-фреймворков headless-движок форм с class-based API и приоритетом TypeScript, вдохновлённый Django Forms и Pydantic. Формы и поля управляют значениями, приведением типов, валидацией, ошибками, baseline, подписками и наблюдаемым состоянием без зависимости от UI-компонентов.
 
 ## Возможности
 
@@ -25,6 +25,9 @@ AdaptForm — библиотека моделирования форм с при
 - Сериализация в JSON и `FormData`.
 - Необязательная интеграция с Luxon через точку входа `adaptform/luxon`.
 - Независимое от фреймворков ядро без обязательных зависимостей времени выполнения.
+- Исходные очищенные значения с `isDirty` и `commitBaseline()` у полей, форм и коллекций.
+- Стабильные неизменяемые снимки `getSnapshot()`, подписки и отписка через `subscribe()`.
+- Вложенный синхронный `Form.batch()` и распространение обновлений вложенных форм и коллекций.
 
 ## Установка
 
@@ -40,7 +43,7 @@ npm install adaptform
 npm install luxon
 ```
 
-[Интерактивное демо](https://arhimen.github.io/AdaptForm/?lang=ru) использует исходный код репозитория и автоматически публикуется из `v2.1.0` и `master`. Актуальную опубликованную версию проверяйте на [npm](https://www.npmjs.com/package/adaptform); изменения репозитория могут ещё не входить в релиз.
+[Интерактивное демо](https://arhimen.github.io/AdaptForm/?lang=ru) использует исходный код репозитория и автоматически публикуется из `v2.1.0` и `master`. **Новые headless API в кандидатных исходниках 2.2.0 ещё не опубликованы в npm.** Доступные для установки версии проверяйте на [npm](https://www.npmjs.com/package/adaptform).
 
 Демо поддерживает английский и русский языки с сохранением выбора: [English](https://arhimen.github.io/AdaptForm/?lang=en) · [Русский](https://arhimen.github.io/AdaptForm/?lang=ru). Переключение языка сохраняет данные формы и состояние валидации.
 
@@ -180,7 +183,7 @@ class PasswordForm extends Form {
 - Если зависимые поля меняются по отдельности, после изменений вызовите `form.checkValid()` для пересчёта зависимых правил.
 - `field.setRawValue(value, false)` и `form.setFields(data, false)` позволяют отложить валидацию. Прежде чем полагаться на корректность формы, вызовите `checkValid()`.
 - `reset()` восстанавливает значения по умолчанию, очищает ошибки и оставляет корректность неопределённой до следующей проверки. Корректность коллекции после сброса равна false до её повторной проверки.
-- Добавление, удаление и очистка элементов обновляют валидацию коллекции. Некорректные индексы удаления игнорируются.
+- Добавление, удаление и очистка элементов проверяют коллекции вне `Form.batch()`; внутри batch автоматическая валидация откладывается. Некорректные индексы удаления игнорируются.
 
 ## Динамические коллекции
 
@@ -346,10 +349,10 @@ const date = new Field(DateLuxonType, null, {
 
 | Класс | Основной API |
 | --- | --- |
-| `Form` | `fields`, `setFields()`, `fieldsValue`, `checkValid()`, `isValid`, `allErrors`, `globalErrors`, `errors`, `setGlobalError()`, `clearGlobalErrors()`, `reset()`, `toJSON()`, `toFormData()` |
-| `Field` | `rawValue`, `setRawValue()`, `valueClear`, `errors`, `error`, `isValid`, `isTouched`, `isEmpty`, `checkValid()`, `reset()` |
-| `ArrayField` | `items`, `itemsValue`, `add()`, `remove()`, `clear()`, `checkValid()`, `reset()` |
-| `ArrayFormField` | `forms`, `formsFieldsValue`, `add()`, `remove()`, `clear()`, `checkValid()`, `reset()` |
+| `Form` | `fields`, `setFields()`, `fieldsValue`, `checkValid()`, `isValid`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `batch()`, `allErrors`, `globalErrors`, `errors`, `setGlobalError()`, `clearGlobalErrors()`, `reset()`, `toJSON()`, `toFormData()` |
+| `Field` | `rawValue`, `setRawValue()`, `valueClear`, `errors`, `error`, `isValid`, `isTouched`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `isEmpty`, `checkValid()`, `reset()` |
+| `ArrayField` | `items`, `itemsValue`, `add()`, `remove()`, `clear()`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `checkValid()`, `reset()` |
+| `ArrayFormField` | `forms`, `formsFieldsValue`, `add()`, `remove()`, `clear()`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `checkValid()`, `reset()` |
 | `ErrorsSchema` | `staticKey()`, `dynamicKey()`, `fallback()`, `transformValue()`, `parseErrors()`, `parseErrorsDetailed()`, `nest()`, `clone()`, `merge()`, `forArray()`, `fromObject()` |
 
 ## Разработка
@@ -387,6 +390,33 @@ npm run dev -- --config demo/vite.config.ts
 
 MIT © Stanislav Orlov
 
-## Фундамент headless-состояний (предварительная реализация)
+## Headless-состояния форм (кандидат исходников 2.2.0)
 
-Реализация HF-005–HF-010 добавляет `isDirty`, `commitBaseline()`, `subscribe()` и `getSnapshot()` узлам формы и синхронный `Form.batch()`. Версия пакета остаётся 2.1.1 до независимого ревью и подготовки релиза. См. [примеры и ограничения](docs/ai/HEADLESS_STATE_USAGE.ru.md) и [таблицу совместимости с 2.1.1](docs/ai/HEADLESS_STATE_CONTRACT.ru.md#совместимость-с-211).
+HF-005–HF-010 прошли независимое ревью и объединены. **Кандидат исходников — 2.2.0**, а публикация в npm — отдельный этап, поэтому новые API могут отсутствовать в пакете, установленном через `npm install adaptform`.
+
+```typescript
+import {Field, Form, NumberType, StringType} from 'adaptform'
+
+class SettingsForm extends Form {
+  displayName = new Field(StringType, 'Alex')
+  notifications = new Field(NumberType, 1)
+}
+
+const form = new SettingsForm()
+const unsubscribe = form.subscribe(() => {
+  const snapshot = form.getSnapshot()
+  console.log(snapshot.isDirty, snapshot.isValid, snapshot.fieldsValue)
+})
+
+form.batch(() => {
+  form.displayName.rawValue = 'Alexandra'
+  form.notifications.rawValue = 2
+}) // Одно итоговое уведомление после автоматической проверки
+
+form.commitBaseline() // Принять значения; isDirty станет false
+unsubscribe()        // Отписаться
+```
+
+`isTouched` сохраняет прежнюю семантику. `commitBaseline()` меняет точку сравнения dirty, **не** значения конструктора, возвращаемые `reset()`; после сброса `isDirty` иногда остаётся `true`. Snapshots — независимые неизменяемые представления, а не ссылки на изменяемые данные. `toJSON()` по-прежнему не выполняет валидацию.
+
+Автоматическая проверка внутри `Form.batch()` откладывается, явные `checkValid()` выполняются сразу. Batch только синхронный; при исключении выполненные изменения не откатываются. Прямые мутации старых публичных массивов и произвольная замена свойств формы не создают автоматических уведомлений. Подробности: [использование и ограничения](docs/ai/HEADLESS_STATE_USAGE.ru.md), [совместимость с 2.1.1](docs/ai/HEADLESS_STATE_CONTRACT.ru.md#совместимость-с-211).
