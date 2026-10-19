@@ -2,6 +2,12 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## AdaptForm 2.2.0 candidate preparation — 2026-10-19
+
+- **Release-preparation branch:** `release/v2.2.0-preparation`, based on accepted HF-005–HF-010 master. `package.json` and both root versions in `package-lock.json` are being set to **2.2.0**; no runtime/API changes or dependency upgrades. `2.2.0` remains **unpublished to npm**, and the latest independently verified npm `latest` was 2.1.0.
+- **Release documents:** bilingual README, CHANGELOG, [release checklist](../roadmap/v2.2.0/RELEASE.md), state usage/contract and roadmap/planning are being synchronized. Existing accepted HF-005–HF-010 CI: **563 tests in 27 files**, lint, TypeScript, ESM/CJS/DTS and demo builds, audit 0. Candidate PR and CI require independent verification before merging.
+- **Limitations:** 54 older `tsconfig.test.json` diagnostics persist; baseline reset remains distinct from commitBaseline, snapshot capture performance was not benchmarked, no `reinitialize()`, HF-004 or HF-011+. Do not tag, create GitHub Release, publish npm or change publication settings; check publish workflow outcome after master merge.
+
 ## HF-005–HF-010 accepted — 2026-10-19
 
 - After independent review and the HF-009 repair, [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16) was **squash-merged to master** as `e6b596de5eceecf2c235000f3d683d4a745cb44e`. Branch preserved.

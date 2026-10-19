@@ -11,7 +11,7 @@
 
 Maintainers: [automatic npm publication setup](docs/NPM_PUBLISH.md).
 
-AdaptForm is a TypeScript-first form modeling library inspired by Django Forms and Pydantic. Define forms as classes with typed fields. Each field owns its value, casting, validation, transformation plugins, errors, and state.
+AdaptForm is a TypeScript-first, framework-independent, class-based headless form engine inspired by Django Forms and Pydantic. Forms and fields manage values, casting, validation, errors, baselines, subscriptions and observable state without requiring UI framework components.
 
 ## Features
 
@@ -25,6 +25,9 @@ AdaptForm is a TypeScript-first form modeling library inspired by Django Forms a
 - JSON and `FormData` serialization.
 - Optional Luxon integration through the `adaptform/luxon` entry point.
 - Framework-agnostic core with no required runtime dependencies.
+- Clean-value baselines with `isDirty` and `commitBaseline()` on fields, forms and collections.
+- Stable immutable `getSnapshot()` data, `subscribe()` and unsubscribe for reactive UIs.
+- Synchronous nested `Form.batch()` and propagation of nested form/collection updates.
 
 ## Installation
 
@@ -40,7 +43,7 @@ Luxon integration is optional:
 npm install luxon
 ```
 
-The [interactive demo](https://arhimen.github.io/AdaptForm/) runs from repository source, with automatic deployment from `v2.1.0` and `master`. Check the [npm package](https://www.npmjs.com/package/adaptform) for the latest published version; repository changes may not yet be released.
+The [interactive demo](https://arhimen.github.io/AdaptForm/) runs from repository source, with automatic deployment from `v2.1.0` and `master`. **Headless APIs in the 2.2.0 source candidate are not yet published to npm.** Check the [npm package](https://www.npmjs.com/package/adaptform) for available published versions.
 
 The demo supports English and Russian with a persistent language selector: [English](https://arhimen.github.io/AdaptForm/?lang=en) · [Русский](https://arhimen.github.io/AdaptForm/?lang=ru). Switching languages preserves form data and validation state.
 
@@ -180,7 +183,7 @@ Validators are synchronous; returning a Promise is not supported. For asynchrono
 - If you change dependent fields one at a time, call `form.checkValid()` after the changes to recompute cross-field rules.
 - `field.setRawValue(value, false)` and `form.setFields(data, false)` allow advanced callers to defer validation. Call `checkValid()` before relying on the validity state.
 - `reset()` restores defaults, clears errors, and leaves validity unset until the next validation. Collection validity is false after reset until the collection is checked again.
-- Adding, removing, or clearing collection items refreshes collection validation. Invalid removal indices are ignored.
+- Adding, removing, or clearing collection items refreshes collection validation outside `Form.batch()`; inside a batch automatic validation is deferred. Invalid removal indices are ignored.
 
 ## Dynamic collections
 
@@ -346,10 +349,10 @@ const date = new Field(DateLuxonType, null, {
 
 | Class | Main API |
 | --- | --- |
-| `Form` | `fields`, `setFields()`, `fieldsValue`, `checkValid()`, `isValid`, `allErrors`, `globalErrors`, `errors`, `setGlobalError()`, `clearGlobalErrors()`, `reset()`, `toJSON()`, `toFormData()` |
-| `Field` | `rawValue`, `setRawValue()`, `valueClear`, `errors`, `error`, `isValid`, `isTouched`, `isEmpty`, `checkValid()`, `reset()` |
-| `ArrayField` | `items`, `itemsValue`, `add()`, `remove()`, `clear()`, `checkValid()`, `reset()` |
-| `ArrayFormField` | `forms`, `formsFieldsValue`, `add()`, `remove()`, `clear()`, `checkValid()`, `reset()` |
+| `Form` | `fields`, `setFields()`, `fieldsValue`, `checkValid()`, `isValid`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `batch()`, `allErrors`, `globalErrors`, `errors`, `setGlobalError()`, `clearGlobalErrors()`, `reset()`, `toJSON()`, `toFormData()` |
+| `Field` | `rawValue`, `setRawValue()`, `valueClear`, `errors`, `error`, `isValid`, `isTouched`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `isEmpty`, `checkValid()`, `reset()` |
+| `ArrayField` | `items`, `itemsValue`, `add()`, `remove()`, `clear()`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `checkValid()`, `reset()` |
+| `ArrayFormField` | `forms`, `formsFieldsValue`, `add()`, `remove()`, `clear()`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `checkValid()`, `reset()` |
 | `ErrorsSchema` | `staticKey()`, `dynamicKey()`, `fallback()`, `transformValue()`, `parseErrors()`, `parseErrorsDetailed()`, `nest()`, `clone()`, `merge()`, `forArray()`, `fromObject()` |
 
 ## Development
@@ -387,6 +390,33 @@ The demo is built by GitHub Actions from `v2.1.0` and `master`. GitHub Pages is 
 
 MIT © Stanislav Orlov
 
-## Headless state foundation (implementation preview)
+## Headless form state (2.2.0 source candidate)
 
-The HF-005–HF-010 implementation adds `isDirty`, `commitBaseline()`, `subscribe()` and `getSnapshot()` to form nodes, plus synchronous `Form.batch()`. Package version remains 2.1.1 pending independent review and release preparation. See [usage and limitations](docs/ai/HEADLESS_STATE_USAGE.md) and the [2.1.1 compatibility table](docs/ai/HEADLESS_STATE_CONTRACT.md#compatibility-with-211).
+HF-005–HF-010 were merged after independent review. The **source candidate is 2.2.0**, but npm publication is separate, so these APIs may not yet be available from `npm install adaptform`.
+
+```typescript
+import {Field, Form, NumberType, StringType} from 'adaptform'
+
+class SettingsForm extends Form {
+  displayName = new Field(StringType, 'Alex')
+  notifications = new Field(NumberType, 1)
+}
+
+const form = new SettingsForm()
+const unsubscribe = form.subscribe(() => {
+  const snapshot = form.getSnapshot()
+  console.log(snapshot.isDirty, snapshot.isValid, snapshot.fieldsValue)
+})
+
+form.batch(() => {
+  form.displayName.rawValue = 'Alexandra'
+  form.notifications.rawValue = 2
+}) // One coherent notification after final automatic validation
+
+form.commitBaseline() // Accept current cleaned values; isDirty becomes false
+unsubscribe()        // Release the listener
+```
+
+`isTouched` keeps its former semantics. `commitBaseline()` changes the dirty-comparison baseline, **not** the constructor defaults restored by `reset()`; a reset may leave `isDirty=true`. Snapshots are detached read-only descriptions, not mutable source objects; `toJSON()` still does not validate.
+
+Automatic validation inside `Form.batch()` is deferred, whereas explicit `checkValid()` is immediate. Batch callbacks must be synchronous and do not roll back changes on errors. Direct in-place changes to legacy public arrays or arbitrary form properties are not automatically observed. See [usage and limitations](docs/ai/HEADLESS_STATE_USAGE.md) and the [2.1.1 compatibility table](docs/ai/HEADLESS_STATE_CONTRACT.md#compatibility-with-211).

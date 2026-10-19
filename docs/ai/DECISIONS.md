@@ -44,3 +44,9 @@ For later decisions, append a short dated outcome, rationale, approved scope, an
 ## HF-005–HF-010 combined implementation — 2026-10-18
 
 Approved scope: implement the headless state foundation sequentially in one feature branch with reviewable commits and one integration PR. Preserve 2.1.1 touched, reset membership/targets, validation outside explicit batch, serialization and optional Luxon. Add cleaned baselines/dirty, data-only immutable snapshots, shared subscriptions, synchronous batches with deferred automatic final validation and no rollback on exceptions, and nested ownership cleanup. [Contract](HEADLESS_STATE_CONTRACT.md) and [usage](HEADLESS_STATE_USAGE.md) define the minimal additive API. Reinitialize is a proposal only; HF-004/HF-011+ and release work are excluded. No version bump, merge, tag, npm publication or branch removal.
+
+## 2.2.0 source release preparation — 2026-10-19
+
+- **Source candidate scope:** HF-005–HF-010 were accepted in [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16); [PR #17](https://github.com/ArhiMEN/AdaptForm/pull/17) synchronized the EN/RU roadmap. No HF-004/reset-membership changes or HF-011+ features are part of the 2.2.0 release candidate.
+- The owner requested the completed version's documentation and remaining preparation. Package manifest and root lockfile move from 2.1.1 to **2.2.0** in the dedicated release-preparation branch; README, changelog, state usage and the bilingual [release checklist](../roadmap/v2.2.0/RELEASE.md) must match. Keep ESM/CJS/TS/Luxon and serialization contracts.
+- **Scope is source preparation and reviewed GitHub integration only:** no npm publish, GitHub Release, tag, publishing-credential change or automatic approval of HF-011. Last independently checked npm `latest` was 2.1.0; historically master publish jobs were skipped. Record actual PR/master CI and publishing workflow outcomes without claiming npm availability.

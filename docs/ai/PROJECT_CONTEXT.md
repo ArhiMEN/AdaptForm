@@ -2,7 +2,7 @@
 
 [English](PROJECT_CONTEXT.md) · [Русский](PROJECT_CONTEXT.ru.md)
 
-AdaptForm is a framework-agnostic TypeScript form and validation library. Version **2.1.0 was published on 2026-10-14**, as recorded in [CHANGELOG](../../CHANGELOG.md). Future improvements remain proposals until separately approved.
+AdaptForm is a framework-independent TypeScript-first, class-based headless form engine. Version **2.1.0 was published on 2026-10-14**; **2.1.1 source** was prepared in GitHub but not published, and a **2.2.0 source release candidate** is being prepared after accepted HF-005–HF-010. See [CHANGELOG](../../CHANGELOG.md) and [2.2.0 release checklist](../roadmap/v2.2.0/RELEASE.md). npm publication is a separate action; further tasks remain proposals until approved.
 
 - Public entry points: `src/index.ts`, `src/luxon.ts`; implementation: `src/core/`. Luxon is optional.
 - Tests: `tests/unit/`, `tests/integration/`, `tests/demo/`; interactive source demo: `demo/`.

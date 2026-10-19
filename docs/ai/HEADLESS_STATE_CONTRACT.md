@@ -2,7 +2,7 @@
 
 [English](HEADLESS_STATE_CONTRACT.md) · [Русский](HEADLESS_STATE_CONTRACT.ru.md)
 
-Approved scope: additive state foundation for target 2.2.0. Package version stays 2.1.1. Implementation and review status are recorded in [HANDOFF](HANDOFF.md).
+Approved scope: additive state foundation for 2.2.0. Source/package metadata are prepared as 2.2.0; npm publication remains separate. HF-005–HF-010 passed review and merged in [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16). Implementation and verification are recorded in [HANDOFF](HANDOFF.md).
 
 ## Sources and derived state
 
