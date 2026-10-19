@@ -386,3 +386,7 @@ The demo is built by GitHub Actions from `v2.1.0` and `master`. GitHub Pages is 
 ## License
 
 MIT © Stanislav Orlov
+
+## Headless state foundation (implementation preview)
+
+The HF-005–HF-010 implementation adds `isDirty`, `commitBaseline()`, `subscribe()` and `getSnapshot()` to form nodes, plus synchronous `Form.batch()`. Package version remains 2.1.1 pending independent review and release preparation. See [usage and limitations](docs/ai/HEADLESS_STATE_USAGE.md) and the [2.1.1 compatibility table](docs/ai/HEADLESS_STATE_CONTRACT.md#compatibility-with-211).

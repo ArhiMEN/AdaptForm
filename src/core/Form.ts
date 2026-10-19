@@ -1,3 +1,5 @@
+import {ObservableNode} from "@core/state/ObservableNode"
+import {snapshotValue, type FormSnapshot} from "@core/state/snapshot"
 import {Field} from "@core/fields/Field"
 import {ArrayField} from "@core/fields/ArrayField"
 import {ArrayFormField} from "@core/fields/ArrayFormField"
@@ -19,7 +21,22 @@ export type FormFieldsValue<TForm extends Form> = {
     : never]: FormFieldValue<TForm[K]>
 }
 
-export abstract class Form {
+export abstract class Form extends ObservableNode<FormSnapshot> {
+  protected captureState(): FormSnapshot {
+    return {fieldsValue: snapshotValue(this.fieldsValue) as FormSnapshot['fieldsValue'],
+      allErrors: this.allErrors, globalErrors: this.globalErrors,
+      fields: Object.fromEntries(Object.entries(this._fields).map(([key, field]) => [key, field.getSnapshot()])),
+      isValid: this.isValid, isTouched: this.isTouched, isDirty: this.isDirty}
+  }
+
+  protected stateChildren(): readonly ObservableNode<unknown>[] {
+    return Object.values(this._fields)
+  }
+
+  batch<TResult>(callback: () => TResult & (TResult extends PromiseLike<unknown> ? never : unknown)): TResult {
+    return this.batchUpdate(callback, () => this.checkValid())
+  }
+
   private _globalErrors: Record<string, string> = {}
   errorsShema: ErrorsSchema = DefaultErrorsSchema
 
@@ -37,17 +54,19 @@ export abstract class Form {
   }
 
   checkValid(form?: this): boolean {
-    let isFormValid = true
-    const fields = this._fields
+    return this.update(() => {
+      let isFormValid = true
+      const fields = this._fields
 
-    for (const key of Object.keys(fields)) {
-      const field = fields[key]
-      if (!field.checkAndSetValid(form ?? this)) {
-        isFormValid = false
+      for (const key of Object.keys(fields)) {
+        const field = fields[key]
+        if (!field.checkAndSetValid(form ?? this)) {
+          isFormValid = false
+        }
       }
-    }
 
-    return isFormValid && Object.keys(this._globalErrors).length === 0
+      return isFormValid && Object.keys(this._globalErrors).length === 0
+      })
   }
 
   get fieldsValue(): FormFieldsValue<this> {
@@ -72,20 +91,22 @@ export abstract class Form {
   }
 
   setFields(data: Record<string, unknown>, validate: boolean = true): void {
-    const fields = this._fields
+    return this.update(() => {
+      const fields = this._fields
 
-    for (const key of Object.keys(data)) {
-      const field = fields[key]
-      if (field) {
-        if (field instanceof Field) field.setRawValue(data[key], false)
-        else if (field instanceof ArrayField) field.setItemsValue(data[key] as unknown[], false)
-        else if (field instanceof ArrayFormField) field.setForms(data[key] as unknown[], false)
-        else console.error(`Invalid field "${key}" type`)
+      for (const key of Object.keys(data)) {
+        const field = fields[key]
+        if (field) {
+          if (field instanceof Field) field.setRawValue(data[key], false)
+          else if (field instanceof ArrayField) field.setItemsValue(data[key] as unknown[], false)
+          else if (field instanceof ArrayFormField) field.setForms(data[key] as unknown[], false)
+          else console.error(`Invalid field "${key}" type`)
+        }
       }
-    }
 
-    // Validate after assignment so conditional rules see the complete form.
-    if (validate) this.checkValid()
+      // Validate after assignment so conditional rules see the complete form.
+      if (validate) this.validateAfterMutation(() => this.checkValid())
+      })
   }
 
   get allErrors(): Record<string, string[]> {
@@ -105,7 +126,7 @@ export abstract class Form {
         // Use the field's own errors for Field and ArrayField.
         const fieldErrors = field.errors
         if (fieldErrors.length > 0) {
-          errors[key] = fieldErrors
+          errors[key] = [...fieldErrors]
         }
       }
     }
@@ -150,32 +171,36 @@ export abstract class Form {
   }
 
   set errors(errors: Record<string, unknown>) {
-    this.clearErrorsRecursively()
-    const fields = this._fields
+    this.update(() => {
+      this.clearErrorsRecursively()
+      const fields = this._fields
 
-    // Parse errors using the configured schema.
-    const parsedErrors = this.errorsShema.parseErrors(errors)
+      // Parse errors using the configured schema.
+      const parsedErrors = this.errorsShema.parseErrors(errors)
 
-    // Apply the parsed errors.
-    for (const [fieldName, errorMessage] of Object.entries(parsedErrors)) {
-      this.applyErrorToField(fieldName, errorMessage, fields, this)
-    }
+      // Apply the parsed errors.
+      for (const [fieldName, errorMessage] of Object.entries(parsedErrors)) {
+        this.applyErrorToField(fieldName, errorMessage, fields, this)
+      }
+      })
   }
 
   private clearErrorsRecursively(): void {
-    this._globalErrors = {}
+    this.update(() => {
+      this._globalErrors = {}
 
-    for (const field of Object.values(this._fields)) {
-      if (field instanceof Field) {
-        field.error = null
-      } else if (field instanceof ArrayField) {
-        field.error = null
-        for (const item of field.items) item.error = null
-      } else if (field instanceof ArrayFormField) {
-        field.error = null
-        for (const nestedForm of field.forms) nestedForm.clearErrorsRecursively()
+      for (const field of Object.values(this._fields)) {
+        if (field instanceof Field) {
+          field.error = null
+        } else if (field instanceof ArrayField) {
+          field.error = null
+          for (const item of field.items) item.error = null
+        } else if (field instanceof ArrayFormField) {
+          field.error = null
+          for (const nestedForm of field.forms) nestedForm.clearErrorsRecursively()
+        }
       }
-    }
+      })
   }
 
   /**
@@ -260,19 +285,35 @@ export abstract class Form {
   }
 
   setGlobalError(key: string, message: string): void {
-    this._globalErrors[key] = message
+    return this.update(() => {
+      this._globalErrors[key] = message
+      })
   }
 
   clearGlobalErrors(): void {
-    this._globalErrors = {}
+    return this.update(() => {
+      this._globalErrors = {}
+      })
   }
 
   reset(): void {
-    const fields = this._fields
-    for (const key of Object.keys(fields)) {
-      fields[key].reset()
-    }
-    this._globalErrors = {}
+    return this.update(() => {
+      const fields = this._fields
+      for (const key of Object.keys(fields)) {
+        fields[key].reset()
+      }
+      this._globalErrors = {}
+      })
+  }
+
+  get isDirty(): boolean {
+    return Object.values(this._fields).some(field => field.isDirty)
+  }
+
+  commitBaseline(): void {
+    return this.update(() => {
+      for (const field of Object.values(this._fields)) field.commitBaseline()
+      })
   }
 
   get isTouched(): boolean {
