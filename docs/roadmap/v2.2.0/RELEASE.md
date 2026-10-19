@@ -56,6 +56,12 @@ No HF-004 reset membership redesign, `reinitialize()`, HF-011+, async validators
 - No dedicated profiling/GC-proof, benchmark, real-world dependent-application integration or stress performance result is claimed. Snapshot traversal/recomparison costs increase with form size/depth.
 - HF-004 (collection reset membership), `reinitialize()`, stable IDs, trigger policies, dependency DAG and async/submission/UI adapters are not part of this release.
 
+## Trusted Publisher activation — 2026-10-19
+
+- The maintainer confirmed configuring npm Trusted Publisher and enabling the repository variable `NPM_PUBLISH_ENABLED=true`. This is a **reported setting**, not a GitHub-variable/API read.
+- The maintainer explicitly requested the first automatic publication attempt for version **2.2.0**. This documentation-only merge is intended to trigger new CI on `master`, followed by the guarded `Publish npm package` workflow. Record success only after inspecting the publish run and public npm registry.
+- Do not create a GitHub Release or tag or remove any branch during this activation.
+
 ## Publication restriction
 
-**Preparation and merge do not authorize npm publish, tags or GitHub Release.** The [publication workflow](../../NPM_PUBLISH.md) can auto-publish an unpublished version only if `NPM_PUBLISH_ENABLED=true` following master CI; historically it has been skipped. Verify the workflow outcome after merge, rather than inferring a permanent configuration state. Preserve every existing Git branch.
+**Version 2.2.0's first automatic npm publication was separately requested and is authorized for this trigger. This does not authorize tags, GitHub Releases or unreviewed future code changes.** The [publication workflow](../../NPM_PUBLISH.md) can auto-publish an unpublished version only if `NPM_PUBLISH_ENABLED=true` following master CI; historically it has been skipped. Verify the workflow outcome after merge, rather than inferring a permanent configuration state. Preserve every existing Git branch.
