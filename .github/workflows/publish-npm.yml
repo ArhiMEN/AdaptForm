@@ -31,11 +31,12 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
           persist-credentials: false
-      - name: Set up Node.js and npm registry
+      - name: Set up Node.js for npm Trusted Publisher
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          registry-url: https://registry.npmjs.org
+        # No registry-url: setup-node must not create an .npmrc token placeholder
+        # that prevents npm CLI from negotiating OIDC trusted publishing.
       - name: Check whether package version is unpublished
         id: release
         run: node scripts/check-npm-release.mjs
@@ -48,8 +49,6 @@ jobs:
       - name: Verify package contents
         if: steps.release.outputs.publish == 'true'
         run: npm run check:package
-      - name: Publish package
+      - name: Publish package with OIDC
         if: steps.release.outputs.publish == 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --access public --provenance
+        run: npm publish --registry=https://registry.npmjs.org --access public --provenance
