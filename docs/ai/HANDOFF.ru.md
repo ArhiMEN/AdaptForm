@@ -2,6 +2,14 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## Принятие HF-005–HF-010 — 2026-10-19
+
+- После независимого ревью и исправления HF-009 [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16) **объединён в master** squash-коммитом `e6b596de5eceecf2c235000f3d683d4a745cb44e`. Рабочая ветка сохранена.
+- Итоговый PR head `1db4ab5`: 563/563 теста, 27 файлов, lint, source/demo typechecks, ESM/CJS/TS build, package check, audit (0), GitGuardian — PASS. Повторно подтверждены [CI master #39197203071](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197203071) и [демо #39197203110](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197203110) — PASS. [Публикация npm #39197250143](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197250143) — SKIPPED.
+- HF-005–HF-010 приняты: baseline/dirty, подписки/snapshots, batch и вложенные уведомления. Версия исходного пакета в master остаётся **2.1.1**; 2.2.0 не выпущена в npm. Следующий этап — **отдельное решение о подготовке релиза 2.2.0**, а не HF-011 автоматически. HF-004/reset и reinitialize остаются вне данного объёма; 54 старые диагностики test-tsconfig сохраняются.
+
+**Исторический отчёт до приёмки / Historical pre-acceptance handoff:**
+
 Интеграционный [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16) открыт в master; ветка отправлена. Результаты финального head — в [проверках PR](https://github.com/ArhiMEN/AdaptForm/pull/16/checks). Merge/публикация не выполнялись.
 
 CI реализации на `e067a34` пройден: [запуск #39153919017](https://github.com/ArhiMEN/AdaptForm/actions/runs/39153919017); GitGuardian пройден. Это исторические проверки; результаты текущего head доступны в PR.
