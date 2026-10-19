@@ -6,6 +6,35 @@ All notable changes to AdaptForm are documented here. Version `2.1.0` was publis
 
 **[Interactive demo](https://arhimen.github.io/AdaptForm/)** · [Demo source](https://github.com/ArhiMEN/AdaptForm/tree/master/demo) · [Documentation](https://github.com/ArhiMEN/AdaptForm/blob/master/README.md)
 
+## [2.2.0] - Unreleased (source prepared)
+
+### Added — headless form state foundation
+
+- **HF-005:** Specify the field/form lifecycle, cleaned baselines, touched-vs-dirty semantics, snapshots, synchronous batches and compatibility rules in English and Russian. ([state contract](docs/ai/HEADLESS_STATE_CONTRACT.md))
+- **HF-006:** Track cleaned initial values with `Field.isDirty` and `commitBaseline()`, including semantic comparisons of Dates, optional Luxon values, plugin-cleaned values and supported nested structures.
+- **HF-007:** Expose derived `isDirty` and baseline commits on `Form`, `ArrayField` and `ArrayFormField`, including collection membership, order and nested values.
+- **HF-008:** Add `subscribe(listener)`, idempotent unsubscribe, stable immutable `getSnapshot()` and publicly exported `SnapshotValue`, `NodeSnapshot`, `FieldSnapshot`, `FormSnapshot`, `ArrayFieldSnapshot`, `ArrayFormSnapshot` types; no required UI framework or runtime dependencies.
+- **HF-009:** Add synchronous nested `Form.batch(callback)` with coalesced notifications, deferred automatic validation using final parent context and deterministic exception finalization. Completed writes are **not rolled back**.
+- **HF-010:** Propagate changes from children, nested forms and collections to parents; reconcile subscriptions when nodes are removed or replaced and release ownership links when observers leave. ([PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16))
+
+### Fixed
+
+- `ArrayField.remove()/clear()` and `ArrayFormField.remove()/clear()` now defer automatic validation inside `Form.batch()`, while retaining synchronous checks outside a batch and immediate explicit `checkValid()`. Added 34 specific regressions.
+- `Form.allErrors` copies child error arrays rather than mutating or freezing live arrays when global errors and immutable snapshots are combined.
+
+### Compatibility and constraints
+
+- Existing class-based APIs, synchronous validation outside batches, `isTouched`, `isValid`, `reset()` behavior (including existing collection membership), serialization and the optional `adaptform/luxon` entry point are preserved.
+- `commitBaseline()` changes the dirty-comparison reference, **not** the target of `reset()`; after committing a different baseline, reset can leave `isDirty=true`.
+- Snapshots are detached immutable data descriptions, not original mutable objects; custom instances may be opaque. Direct in-place changes to exposed legacy arrays/options and arbitrary Form-property replacement are not automatically observed.
+- No `reinitialize()`, HF-004 collection-reset redesign, HF-011+ dependency graph, async validation, submission lifecycle, UI adapter or performance benchmark is included.
+
+### Verification and release status
+
+- Accepted integration PR [#16](https://github.com/ArhiMEN/AdaptForm/pull/16) passed **563 tests in 27 files**, lint, source/demo type-checks, package/demo builds and dependency audit (0 known vulnerabilities). Independent review and [documentation sync PR #17](https://github.com/ArhiMEN/AdaptForm/pull/17) were merged. The 2.2.0 release candidate requires its **own** successful CI.
+- The separate `tsconfig.test.json` check still has **54 existing diagnostics** and is not reported as passing; an older mapped-type `TS2589` reproduces on 2.1.1 as well. No new diagnostics were established in HF-005–HF-010.
+- **Not published.** The source/manifest is being prepared as `2.2.0`; do not interpret this entry or a GitHub merge as npm publication, a tag or a GitHub Release. The last independently verified npm `latest` was `2.1.0`.
+
 ## [2.1.1] - Unreleased (prepared)
 
 ### Fixed
