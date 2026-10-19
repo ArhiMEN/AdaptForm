@@ -2,7 +2,7 @@
 
 [English](HEADLESS_STATE_USAGE.md) · [Русский](HEADLESS_STATE_USAGE.ru.md)
 
-HF-005–HF-010 прошли независимое ревью и объединены в [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16). Готовится **кандидат исходников 2.2.0**, но он **не опубликован в npm**; это не объявление релиза. Полная семантика и совместимость: [контракт](HEADLESS_STATE_CONTRACT.ru.md).
+HF-005–HF-010 прошли независимое ревью и объединены в [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16). **Кандидат исходников 2.2.0** объединён в master ([PR #18](https://github.com/ArhiMEN/AdaptForm/pull/18)), но он **не опубликован в npm**; это не объявление релиза. Полная семантика и совместимость: [контракт](HEADLESS_STATE_CONTRACT.ru.md).
 
 ```ts
 import {Form, Field, StringType, NumberType} from 'adaptform'
