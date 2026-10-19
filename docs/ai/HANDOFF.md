@@ -2,6 +2,14 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## HF-005–HF-010 accepted — 2026-10-19
+
+- After independent review and the HF-009 repair, [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16) was **squash-merged to master** as `e6b596de5eceecf2c235000f3d683d4a745cb44e`. Branch preserved.
+- Final PR head `1db4ab5`: 563/563 tests, 27 files, lint, source/demo type checks, ESM/CJS/TS build, package checks, audit (0), GitGuardian PASS. Post-merge [master CI #39197203071](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197203071) and [demo deployment #39197203110](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197203110) PASS. [npm publish workflow #39197250143](https://github.com/ArhiMEN/AdaptForm/actions/runs/39197250143) SKIPPED.
+- HF-005–HF-010 accepted: baseline/dirty, subscriptions/snapshots, batch, nested notifications. Manifest version remains **2.1.1**; 2.2.0 not released to npm. Next step is a **separate release 2.2.0 preparation decision**, not automatic HF-011. HF-004/reset and reinitialize remain excluded; 54 prior test-tsconfig diagnostics persist.
+
+**Исторический отчёт до приёмки / Historical pre-acceptance handoff:**
+
 Integration [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16) is open against master; branch pushed. [Live checks](https://github.com/ArhiMEN/AdaptForm/pull/16/checks) are authoritative for the final head. No merge or publication performed.
 
 Implementation CI passed on `e067a34`: [run #39153919017](https://github.com/ArhiMEN/AdaptForm/actions/runs/39153919017); GitGuardian passed. These are historical checks; current head results remain visible in the PR.
