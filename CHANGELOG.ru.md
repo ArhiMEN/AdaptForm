@@ -6,7 +6,7 @@
 
 **[Интерактивное демо](https://arhimen.github.io/AdaptForm/?lang=ru)** · [Исходный код демо](https://github.com/ArhiMEN/AdaptForm/tree/master/demo) · [Документация](https://github.com/ArhiMEN/AdaptForm/blob/master/README.ru.md)
 
-## [2.2.0] — Не опубликована (исходники подготовлены)
+## [2.2.0] — 2026-10-19
 
 ### Добавлено — фундамент headless-состояний
 
@@ -33,7 +33,7 @@
 
 - Принятый [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16) прошёл **563 теста в 27 файлах**, lint, проверку типов исходников/демо, сборки библиотеки/демо и аудит (0 известных уязвимостей). Независимое ревью выполнено, [PR #17 с документацией](https://github.com/ArhiMEN/AdaptForm/pull/17) объединён. Для кандидата 2.2.0 требуется **собственный** успешный CI.
 - Отдельная проверка `tsconfig.test.json` сохраняет **54 прежние диагностики** и не объявляется пройденной; старый `TS2589` mapped type воспроизводится также на 2.1.1. Новых диагностик в HF-005–HF-010 не установлено.
-- **Не опубликована.** В исходниках готовится `2.2.0`, но запись changelog или merge в GitHub не равны публикации npm, тегу или GitHub Release. Последняя отдельно проверенная npm-версия `latest` — `2.1.0`.
+- **Опубликована в npm:** `adaptform@2.2.0` 2026-10-19 через OIDC Trusted Publisher с подписанным provenance. [Успешный повторный запуск workflow](https://github.com/ArhiMEN/AdaptForm/actions/runs/39209185356); [версия в npm](https://www.npmjs.com/package/adaptform/v/2.2.0). Git-тег и GitHub Release не создавались.
 
 ## [2.1.1] — Не опубликована (подготовка)
 
