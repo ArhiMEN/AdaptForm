@@ -35,6 +35,8 @@ jobs:
         run: npm run check:package
       - name: Type-check source
         run: npx tsc --noEmit -p tsconfig.json
+      - name: Type-check tests
+        run: npx tsc --noEmit -p tsconfig.test.json
       - name: Type-check demo
         run: npm run check:demo
       - name: Build demo

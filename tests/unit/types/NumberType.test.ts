@@ -4,58 +4,58 @@ import { NumberType } from '@core/types/NumberType'
 describe('NumberType', () => {
   describe('cast', () => {
     it('should return number as is', () => {
-      const type = new NumberType()
+      const type = new NumberType({})
       expect(type.cast(123)).toBe(123)
     })
 
     it('should convert string to number', () => {
-      const type = new NumberType()
+      const type = new NumberType({})
       expect(type.cast('456')).toBe(456)
     })
 
     it('should return null for NaN string', () => {
-      const type = new NumberType()
+      const type = new NumberType({})
       expect(type.cast('abc')).toBeNull()
     })
 
     it('should return null for null', () => {
-      const type = new NumberType()
+      const type = new NumberType({})
       expect(type.cast(null)).toBeNull()
     })
 
     it('should return null for undefined', () => {
-      const type = new NumberType()
+      const type = new NumberType({})
       expect(type.cast(undefined)).toBeNull()
     })
 
     it('should return null for blank numeric strings', () => {
-      const type = new NumberType()
+      const type = new NumberType({})
       expect(type.cast('')).toBeNull()
       expect(type.cast('   ')).toBeNull()
     })
 
     it('should reject non-finite numbers', () => {
-      const type = new NumberType()
+      const type = new NumberType({})
       expect(type.cast(Infinity)).toBeNull()
       expect(type.cast(-Infinity)).toBeNull()
       expect(type.cast('Infinity')).toBeNull()
       expect(type.validate(Infinity)).not.toEqual([])
     })
     it('should return null for NaN', () => {
-      const type = new NumberType()
+      const type = new NumberType({})
       expect(type.cast(NaN)).toBeNull()
     })
   })
 
   describe('validate', () => {
     it('should return empty errors for valid integer', () => {
-      const type = new NumberType()
+      const type = new NumberType({})
       const errors = type.validate(10)
       expect(errors).toEqual([])
     })
 
     it('should return error for float', () => {
-      const type = new NumberType()
+      const type = new NumberType({})
       const errors = type.validate(10.5)
       expect(errors).toContain('Значение должно быть целым числом')
     })
@@ -109,7 +109,7 @@ describe('NumberType', () => {
 
   describe('getTypeName', () => {
     it('should return correct type name', () => {
-      const type = new NumberType()
+      const type = new NumberType({})
       expect(type.getTypeName()).toBe('число')
     })
   })

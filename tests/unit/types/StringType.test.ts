@@ -4,34 +4,34 @@ import { StringType } from '@core/types/StringType'
 describe('StringType', () => {
   describe('cast', () => {
     it('should return string as is', () => {
-      const type = new StringType()
+      const type = new StringType({})
       expect(type.cast('hello')).toBe('hello')
     })
 
     it('should convert number to string', () => {
-      const type = new StringType()
+      const type = new StringType({})
       expect(type.cast(123)).toBe('123')
     })
 
     it('should convert boolean to string', () => {
-      const type = new StringType()
+      const type = new StringType({})
       expect(type.cast(true)).toBe('true')
     })
 
     it('should return null for null', () => {
-      const type = new StringType()
+      const type = new StringType({})
       expect(type.cast(null)).toBeNull()
     })
 
     it('should return null for undefined', () => {
-      const type = new StringType()
+      const type = new StringType({})
       expect(type.cast(undefined)).toBeNull()
     })
   })
 
   describe('validate', () => {
     it('should return empty errors for valid string', () => {
-      const type = new StringType()
+      const type = new StringType({})
       const errors = type.validate('hello')
       expect(errors).toEqual([])
     })
@@ -104,7 +104,7 @@ describe('StringType', () => {
 
   describe('getTypeName', () => {
     it('should return correct type name', () => {
-      const type = new StringType()
+      const type = new StringType({})
       expect(type.getTypeName()).toBe('строка')
     })
   })
