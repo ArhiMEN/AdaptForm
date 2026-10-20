@@ -7,6 +7,7 @@ Baseline: STAB-01 `51dc501`, unchanged package 2.2.0. Full data (each median/min
 ```sh
 npm ci
 npm run build
+mkdir -p work
 node --expose-gc scripts/benchmark-headless.mjs work/benchmark.json
 ```
 
@@ -35,3 +36,7 @@ Subscription regressions verify independent registrations of the same callback, 
 With `--expose-gc`, after warmup and each 200-cycle create/subscribe/add/remove/detached-edit/unsubscribe workload (depth 2), two explicit GC calls yielded heapUsed **11,489,392 → 11,533,792 bytes** across six samples (range 11,489,392–11,544,704). This short result does not prove absence of leaks, retained listeners in consumer code, long-lived retained detached nodes, native allocations or different workloads. Deterministic ownership tests provide narrower evidence about link cleanup; no forced-GC finalization deadline is asserted.
 
 HF-011 adds identity metadata and structural operations after this baseline; final measurements are recorded separately when rerun. STAB-02 does not implement HF-020 or a performance acceptance SLA.
+
+## Foundation rerun after HF-011
+
+[Final raw data](benchmark-foundation.json), measured at `23b88bc` with the same harness/environment: 1000 fields create **1.3319 ms**, first snapshot **3.8017 ms**, unchanged snapshot **4.8409 ms**, batch10 **8.9550 ms**, 100 subscribers reading snapshots **5.7124 ms**. Observed 1000-item add/remove pair: fields **164.1700 ms**, forms **244.7660 ms**; depth-5 leaf change **1.4634 ms**. Heap samples **11,619,080 → 11,667,312 bytes**, range **11,619,080–11,677,872**. Timing spread/shared-host noise prevents attributing small differences to HF-011. This rerun confirms the large-collection/depth concerns remain; it is not a performance improvement or leak-proof claim.
