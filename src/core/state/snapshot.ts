@@ -19,11 +19,15 @@ export interface FormSnapshot extends NodeSnapshot {
   readonly fields: Readonly<Record<string, FieldSnapshot | ArrayFieldSnapshot | ArrayFormSnapshot>>
 }
 export interface ArrayFieldSnapshot extends NodeSnapshot {
+  /** Present on engine snapshots; optional for compatibility with 2.2.0 producers. */
+  readonly itemIds?: readonly string[]
   readonly itemsValue: readonly SnapshotValue[]
   readonly errors: readonly string[]
   readonly items: readonly FieldSnapshot[]
 }
 export interface ArrayFormSnapshot extends NodeSnapshot {
+  /** Ordered node identities, independent of current indexes and values. */
+  readonly itemIds?: readonly string[]
   readonly formsFieldsValue: readonly Readonly<Record<string, SnapshotValue>>[]
   readonly errors: readonly string[]
   readonly forms: readonly FormSnapshot[]

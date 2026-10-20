@@ -4,11 +4,13 @@ import {copyValue, equalValue} from "@core/state/value"
 import {ArrayFieldOptions} from "@core/options"
 import {Field} from "@core/fields/Field"
 import {Form} from "@core/Form"
+import {collectionItemId} from "@core/fields/collectionIdentity"
 import {isValidArrayIndex} from "@core/fields/arrayUtils"
 
 export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
   protected captureState(): ArrayFieldSnapshot {
     return {itemsValue: snapshotValue(this.itemsValue) as ArrayFieldSnapshot['itemsValue'],
+      itemIds: this._items.map(collectionItemId),
       items: this._items.map(item => item.getSnapshot()), errors: [...this._errors],
       isValid: this.isValid, isTouched: this.isTouched, isDirty: this.isDirty}
   }
@@ -87,15 +89,36 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
   // ===== actions =====
 
   add(value?: T, force_check: boolean = true): Field<T> {
+    return this.insertAt(this._items.length, value, force_check)
+  }
+
+  /** Insert before index (length appends). Invalid indexes do nothing. */
+  insert(index: number, value?: T, force_check: boolean = true): Field<T> | undefined {
+    if (!isValidArrayIndex(index, this._items.length + 1)) return undefined
+    return this.insertAt(index, value, force_check)
+  }
+
+  private insertAt(index: number, value: T | undefined, force_check: boolean): Field<T> {
     return this.update(() => {
       const field = this.factory(value)
       this.isTouched = true
-      this._items.push(field)
+      this._items.splice(index, 0, field)
 
       if (force_check) this.validateAfterMutation(() => this.checkValid())
 
       return field
       })
+  }
+
+  /** Move a retained node to its final index; invalid/equal indexes do nothing. */
+  move(from: number, to: number): void {
+    if (!isValidArrayIndex(from, this._items.length) ||
+      !isValidArrayIndex(to, this._items.length) || from === to) return
+    this.update(() => {
+      const [node] = this._items.splice(from, 1)
+      this._items.splice(to, 0, node)
+      this.validateAfterMutation(() => this.checkValid())
+    })
   }
 
   remove(index: number): void {
