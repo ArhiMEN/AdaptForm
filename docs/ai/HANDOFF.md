@@ -2,6 +2,14 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## STAB-01/02 + HF-011/012 foundation — 2026-10-20
+
+Branch `feature/v2.3.0-foundation`, based on master `9942aac`; package remains **2.2.0**. STAB-01: **54 → 0** test type diagnostics, regression type tests and CI gate. STAB-02: reproducible Node benchmarks and deterministic subscription lifetime tests; large observed 1000-item add/remove remains expensive (about 164/245 ms in the foundation rerun). HF-011: weak object-keyed identity, optional snapshot itemIds, insert/move, no value matching in replacement setters. HF-012: **specification only**, no dependency engine or Proxy; owner decisions remain before HF-013.
+
+Stage commits: STAB-01 `51dc501`, STAB-02 `b3974fe`, HF-011 `23b88bc`; HF-012 is the accompanying documentation commit. Local final gates: **591 tests / 30 files**, lint, source/test/demo types, library/demo builds, package contents (21 files), audit 0 and diff checks passed. Built ESM/CJS declaration consumers and isolated packed core without Luxon passed. Matching Luxon loaders pass; pre-existing cross-loader instanceof limitation is documented. Registry preflight with the cloud proxy confirms published 2.2.0 is skipped. See [milestone](../roadmap/v2.3.0/PLAN.md), [verification](../roadmap/v2.3.0/VERIFICATION.md), [benchmarks](../roadmap/v2.3.0/BENCHMARKS.md), [identity](HEADLESS_COLLECTION_IDENTITY.md), [dependency proposal](HEADLESS_DEPENDENCIES.md).
+
+Next: inspect final-head CI and independently review the single integration PR, then resolve HF-012 owner gates. Identity metadata makes equal-content reorder/replacement snapshot-visible; dirty remains content-based. Existing touched/reset/commitBaseline, setters, JSON/FormData and optional Luxon remain. No HF-004/HF-013+, version bump, npm publication, merge, tag, release or branch removal. CI/PR URL and final SHA are recorded in the delivery report; this local handoff does not pre-claim remote checks. Historical entries below describe earlier source states.
+
 ## Published 2.2.0 demo refresh — 2026-10-19
 
 - The live GitHub Pages playground was previously built from 2.2.0 source but still displayed 2.1.0 branding. The dedicated demo PR updates the brand, metadata and footer to **published 2.2.0** and adds an interactive Form state lab for dirty/baseline, subscriptions, immutable snapshots and synchronous batch notifications.

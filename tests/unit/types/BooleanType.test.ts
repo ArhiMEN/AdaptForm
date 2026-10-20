@@ -4,60 +4,60 @@ import { BooleanType } from '@core/types/BooleanType'
 describe('BooleanType', () => {
   describe('cast', () => {
     it('should return boolean as is', () => {
-      const type = new BooleanType()
+      const type = new BooleanType({})
       expect(type.cast(true)).toBe(true)
       expect(type.cast(false)).toBe(false)
     })
 
     it('should convert string "true" to true', () => {
-      const type = new BooleanType()
+      const type = new BooleanType({})
       expect(type.cast('true')).toBe(true)
     })
 
     it('should convert string "1" to true', () => {
-      const type = new BooleanType()
+      const type = new BooleanType({})
       expect(type.cast('1')).toBe(true)
     })
 
     it('should convert string "false" to false', () => {
-      const type = new BooleanType()
+      const type = new BooleanType({})
       expect(type.cast('false')).toBe(false)
     })
 
     it('should convert string "0" to false', () => {
-      const type = new BooleanType()
+      const type = new BooleanType({})
       expect(type.cast('0')).toBe(false)
     })
 
     it('should convert number 1 to true', () => {
-      const type = new BooleanType()
+      const type = new BooleanType({})
       expect(type.cast(1)).toBe(true)
     })
 
     it('should convert number 0 to false', () => {
-      const type = new BooleanType()
+      const type = new BooleanType({})
       expect(type.cast(0)).toBe(false)
     })
 
     it('should return null for null', () => {
-      const type = new BooleanType()
+      const type = new BooleanType({})
       expect(type.cast(null)).toBeNull()
     })
 
     it('should return null for undefined', () => {
-      const type = new BooleanType()
+      const type = new BooleanType({})
       expect(type.cast(undefined)).toBeNull()
     })
 
     it('should return null for invalid string', () => {
-      const type = new BooleanType()
+      const type = new BooleanType({})
       expect(type.cast('yes')).toBeNull()
     })
   })
 
   describe('validate', () => {
     it('should return empty errors for valid boolean', () => {
-      const type = new BooleanType()
+      const type = new BooleanType({})
       const errors = type.validate(true)
       expect(errors).toEqual([])
     })
@@ -96,7 +96,7 @@ describe('BooleanType', () => {
 
   describe('getTypeName', () => {
     it('should return correct type name', () => {
-      const type = new BooleanType()
+      const type = new BooleanType({})
       expect(type.getTypeName()).toBe('логическое значение')
     })
   })

@@ -2,6 +2,14 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## Foundation STAB-01/02 + HF-011/012 — 2026-10-20
+
+Ветка `feature/v2.3.0-foundation`, база master `9942aac`; пакет остаётся **2.2.0**. STAB-01: **54 → 0** диагностик тестовых типов, regression type tests и CI gate. STAB-02: воспроизводимые Node benchmarks и детерминированные тесты lifetime подписок; add/remove наблюдаемой коллекции из 1000 элементов остаётся дорогим (около 164/245 мс в повторе foundation). HF-011: weak identity по объекту, optional snapshot itemIds, insert/move без сопоставления значений в setters замены. HF-012: **только спецификация**, без dependency engine и Proxy; до HF-013 нужны решения владельца.
+
+Коммиты этапов: STAB-01 `51dc501`, STAB-02 `b3974fe`, HF-011 `23b88bc`; HF-012 — сопровождающий documentation commit. Финальные локальные проверки: **591 тест / 30 файлов**, lint, source/test/demo types, library/demo builds, содержимое пакета (21 файл), audit 0 и diff прошли. Consumers собранных ESM/CJS declarations и изолированное ядро packed-пакета без Luxon прошли. Согласованные Luxon loaders работают; прежнее ограничение cross-loader instanceof документировано. Registry preflight через cloud proxy подтверждает skip опубликованной 2.2.0. См. [milestone](../roadmap/v2.3.0/PLAN.ru.md), [проверки](../roadmap/v2.3.0/VERIFICATION.ru.md), [бенчмарки](../roadmap/v2.3.0/BENCHMARKS.ru.md), [идентичность](HEADLESS_COLLECTION_IDENTITY.ru.md), [предложение зависимостей](HEADLESS_DEPENDENCIES.ru.md).
+
+Далее: проверить CI финального head и независимо рассмотреть единственный интеграционный PR, затем утвердить вопросы HF-012. Identity metadata делает перестановку/замену равного содержимого видимой snapshot; dirty зависит от содержимого. Существующие touched/reset/commitBaseline, setters, JSON/FormData и optional Luxon сохранены. Нет HF-004/HF-013+, version bump, npm publication, merge, тегов, релиза и удаления веток. CI/PR URL и итоговый SHA фиксируются в отчёте доставки; локальный handoff не заявляет преждевременно remote checks. Исторические разделы ниже описывают прежние состояния source.
+
 ## Обновление демо опубликованной 2.2.0 — 2026-10-19
 
 - GitHub Pages уже собирался из исходников 2.2.0, но на странице оставалась маркировка 2.1.0. Отдельный PR обновляет версию в шапке, метаданных и подвале до **опубликованной 2.2.0** и добавляет интерактивный стенд состояния Form: dirty/baseline, подписки, неизменяемые snapshots и уведомления синхронного batch.

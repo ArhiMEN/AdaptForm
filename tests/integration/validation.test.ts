@@ -175,22 +175,14 @@ describe('Validation Tests', () => {
       expect(field.errors).toContain('Must be longer than 3 characters')
     })
 
-    it('should support async validation (mock)', () => {
-      // An application may add asynchronous validation here.
-      const field = new Field(StringType, null, {
-        validate: async (value) => {
-          // Simulate an asynchronous check, such as server-side uniqueness validation.
-          return new Promise<boolean>((resolve) => {
-            setTimeout(() => {
-              resolve(value !== 'taken')
-            }, 100)
-          })
-        }
-      })
-      
-      // Test the synchronous portion.
-      field.rawValue = 'available'
-      expect(field.isValid).toBe(true) // The validate callback returns true.
+    it('can apply an application-owned async result as a server error', async () => {
+      const field = new Field(StringType)
+      field.rawValue = 'taken'
+      const checkAvailable = async (value: string | null) => value !== 'taken'
+      const available = await checkAvailable(field.valueClear)
+      field.error = available ? null : 'Already taken'
+      expect(field.isValid).toBe(false)
+      expect(field.errors).toEqual(['Already taken'])
     })
 
     it('should pass form context to validator', () => {

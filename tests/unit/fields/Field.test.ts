@@ -1,3 +1,4 @@
+import { Form } from '@core/Form'
 import { describe, it, expect, vi } from 'vitest'
 import { Field } from '@core/fields/Field'
 import { StringType } from '@core/types/StringType'
@@ -133,12 +134,17 @@ describe('Field', () => {
         })
         
         // Not required
-        const form1 = { country: { valueClear: 'Canada' } }
+        class CountryForm extends Form {
+          country = new Field(StringType)
+        }
+        const form1 = new CountryForm()
+        form1.country.rawValue = 'Canada'
         field.checkAndSetValid(form1)
         expect(field.isValid).toBe(true)
         
         // Required
-        const form2 = { country: { valueClear: 'USA' } }
+        const form2 = new CountryForm()
+        form2.country.rawValue = 'USA'
         field.checkAndSetValid(form2)
         expect(field.isValid).toBe(false)
       })
@@ -173,7 +179,10 @@ describe('Field', () => {
           }
         })
         
-        const form = { otherField: { valueClear: 'test' } }
+        class ContextForm extends Form {
+          otherField = new Field(StringType, 'test')
+        }
+        const form = new ContextForm()
         field2.rawValue = 'test'
         field2.checkAndSetValid(form)
         expect(field2.isValid).toBe(true)

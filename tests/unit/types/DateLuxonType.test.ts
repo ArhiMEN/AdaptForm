@@ -5,19 +5,19 @@ import { DateTime } from 'luxon'
 describe('DateLuxonType', () => {
   describe('cast', () => {
     it('should return DateTime as is', () => {
-      const type = new DateLuxonType()
+      const type = new DateLuxonType({})
       const dt = DateTime.fromISO('2023-01-01')
       expect(type.cast(dt)).toEqual(dt)
     })
 
     it('should convert Date to DateTime', () => {
-      const type = new DateLuxonType()
+      const type = new DateLuxonType({})
       const result = type.cast(new Date('2023-01-01'))
       expect(result).toBeInstanceOf(DateTime)
     })
 
     it('should convert string to DateTime', () => {
-      const type = new DateLuxonType()
+      const type = new DateLuxonType({})
       const result = type.cast('2023-01-01')
       expect(result).toBeInstanceOf(DateTime)
     })
@@ -30,22 +30,22 @@ describe('DateLuxonType', () => {
     })
 
     it('should return null for invalid DateTime', () => {
-      const type = new DateLuxonType()
+      const type = new DateLuxonType({})
       expect(type.cast(DateTime.invalid('test'))).toBeNull()
     })
 
     it('should return null for null', () => {
-      const type = new DateLuxonType()
+      const type = new DateLuxonType({})
       expect(type.cast(null)).toBeNull()
     })
 
     it('should return null for undefined', () => {
-      const type = new DateLuxonType()
+      const type = new DateLuxonType({})
       expect(type.cast(undefined)).toBeNull()
     })
 
     it('should handle milliseconds', () => {
-      const type = new DateLuxonType()
+      const type = new DateLuxonType({})
       const result = type.cast(1672531200000)
       expect(result).toBeInstanceOf(DateTime)
     })
@@ -53,13 +53,13 @@ describe('DateLuxonType', () => {
 
   describe('validate', () => {
     it('should return empty errors for valid DateTime', () => {
-      const type = new DateLuxonType()
+      const type = new DateLuxonType({})
       const errors = type.validate(DateTime.fromISO('2023-01-01'))
       expect(errors).toEqual([])
     })
 
     it('should return error for invalid DateTime', () => {
-      const type = new DateLuxonType()
+      const type = new DateLuxonType({})
       const errors = type.validate(DateTime.invalid('test'))
       expect(errors).toBeDefined()
       expect(errors.length).toBeGreaterThan(0)
@@ -94,7 +94,7 @@ describe('DateLuxonType', () => {
     })
 
     it('should validate year range', () => {
-      const type = new DateLuxonType()
+      const type = new DateLuxonType({})
       expect(type.validate(DateTime.fromISO('1800-01-01')).length).toBeGreaterThan(0)
       expect(type.validate(DateTime.fromISO('2200-01-01')).length).toBeGreaterThan(0)
     })
@@ -102,7 +102,7 @@ describe('DateLuxonType', () => {
 
   describe('getTypeName', () => {
     it('should return "date" when isDatetime is false', () => {
-      const type = new DateLuxonType()
+      const type = new DateLuxonType({})
       expect(type.getTypeName()).toBe('дата')
     })
 

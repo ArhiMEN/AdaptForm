@@ -2,7 +2,9 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "types": ["vitest/globals", "node"],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "paths": {
+      "@core": ["./src/core/index.ts"],
       "@core/*": ["./src/core/*"]
     }
   },

@@ -4,6 +4,10 @@
 
 Approved scope: additive state foundation for 2.2.0. Source/package metadata are prepared as 2.2.0; npm publication remains separate. HF-005–HF-010 passed review and merged in [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16). Implementation and verification are recorded in [HANDOFF](HANDOFF.md).
 
+## Next-milestone extension
+
+The 2.3.0 foundation branch adds [HF-011 collection identity](HEADLESS_COLLECTION_IDENTITY.md), including insert/move and optional snapshot itemIds. The 2.2.0 lifecycle below remains unchanged; the earlier absence of identity is superseded only in that branch. Published 2.2.0 is unchanged.
+
 ## Sources and derived state
 
 Field owns raw input, the cached cast/plugin-cleaned value, errors, legacy writable `isTouched` and tri-state `isValid` (`null` unchecked, `true` accepted, `false` rejected). Baseline is a detached capture of the cleaned constructor value, after plugins and casting. `isDirty` compares the cached cleaned value with that capture; reads never cast or validate. Invalid raw inputs that both clean to null are equal for dirty tracking, but snapshots distinguish their raw input.

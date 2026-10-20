@@ -3,11 +3,13 @@ import {snapshotValue, type ArrayFormSnapshot} from "@core/state/snapshot"
 import {copyValue, equalValue} from "@core/state/value"
 import {Form, type FormFieldsValue} from "@core/Form"
 import {ArrayFormFieldOptions} from "@core/options"
+import {collectionItemId} from "@core/fields/collectionIdentity"
 import {isValidArrayIndex} from "@core/fields/arrayUtils"
 
 export class ArrayFormField<T extends Form = Form> extends ObservableNode<ArrayFormSnapshot> {
   protected captureState(): ArrayFormSnapshot {
     return {formsFieldsValue: snapshotValue(this.formsFieldsValue) as ArrayFormSnapshot['formsFieldsValue'],
+      itemIds: this._forms.map(collectionItemId),
       forms: this._forms.map(form => form.getSnapshot()), errors: [...this._errors],
       isValid: this.isValid, isTouched: this.isTouched, isDirty: this.isDirty}
   }
@@ -83,6 +85,16 @@ export class ArrayFormField<T extends Form = Form> extends ObservableNode<ArrayF
   // ===== actions =====
 
   add(data?: unknown, force_check: boolean = true): T {
+    return this.insertAt(this._forms.length, data, force_check)
+  }
+
+  /** Insert before index (length appends). Invalid indexes do nothing. */
+  insert(index: number, data?: unknown, force_check: boolean = true): T | undefined {
+    if (!isValidArrayIndex(index, this._forms.length + 1)) return undefined
+    return this.insertAt(index, data, force_check)
+  }
+
+  private insertAt(index: number, data: unknown, force_check: boolean): T {
     return this.update(() => {
       const form = new this.FormConstructor()
 
@@ -92,12 +104,23 @@ export class ArrayFormField<T extends Form = Form> extends ObservableNode<ArrayF
 
       form.commitBaseline()
       this.isTouched = true
-      this._forms.push(form)
+      this._forms.splice(index, 0, form)
 
       if (force_check) this.validateAfterMutation(() => this.checkValid())
 
       return form
       })
+  }
+
+  /** Move a retained node to its final index; invalid/equal indexes do nothing. */
+  move(from: number, to: number): void {
+    if (!isValidArrayIndex(from, this._forms.length) ||
+      !isValidArrayIndex(to, this._forms.length) || from === to) return
+    this.update(() => {
+      const [node] = this._forms.splice(from, 1)
+      this._forms.splice(to, 0, node)
+      this.validateAfterMutation(() => this.checkValid())
+    })
   }
 
   remove(index: number): void {

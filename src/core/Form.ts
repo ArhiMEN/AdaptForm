@@ -12,8 +12,10 @@ export type FormFieldValue<TField> =
     ? TForm extends Form ? FormFieldsValue<TForm>[] : unknown[]
     : never
 
+// Base members (including fieldsValue itself) cannot be fields. Filter them before
+// inspecting their types to avoid recursively expanding the polymorphic this type.
 export type FormFieldsValue<TForm extends Form> = {
-  [K in keyof TForm as TForm[K] extends
+  [K in keyof TForm as K extends keyof Form ? never : TForm[K] extends
     | Field<infer _Value, infer _Options>
     | ArrayField<infer _ArrayValue>
     | ArrayFormField<infer _NestedForm>

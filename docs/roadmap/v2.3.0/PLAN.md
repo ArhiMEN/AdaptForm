@@ -1,0 +1,18 @@
+# AdaptForm 2.3.0 — foundation milestone
+
+[English](PLAN.md) · [Русский](PLAN.ru.md)
+
+Approved source scope on `feature/v2.3.0-foundation`, based on master `9942aac`. **Not a release candidate or npm publication.** Manifests and published version remain 2.2.0. One integration PR, no auto-merge, tags, release or branch removal.
+
+| Stage | Source status | Evidence |
+| --- | --- | --- |
+| STAB-01 | Complete; 54 → 0 diagnostics | [Typing](TEST_TYPES.md), regression type tests and CI test typecheck |
+| STAB-02 | Complete measurement/lifecycle scope; performance concerns deferred | [Benchmarks](BENCHMARKS.md), raw baseline/foundation JSON and lifecycle tests |
+| HF-011 | Implemented, pending independent review | [Identity contract](../../ai/HEADLESS_COLLECTION_IDENTITY.md), insert/move/ordered snapshot IDs |
+| HF-012 | Specification complete, owner decisions pending | [Dependency proposal](../../ai/HEADLESS_DEPENDENCIES.md); no engine code |
+
+[Verification](VERIFICATION.md) records actual local checks and integration checks. Acceptance of this PR must not imply approval of the proposed HF-012 API. Owner gates include activation/disposal, missing/cyclic refs, opt-in purity and selective invalidation. Next safe work is independent review and those decisions; **do not start HF-013 automatically**.
+
+Compatibility: existing replacement setters never match values; touched/reset/commitBaseline and JSON/FormData remain. Snapshot metadata gains optional itemIds and now observes equal-content identity changes; exact-key consumers must allow the addition. IDs are module-local, not domain identifiers. Factories should return distinct instances for distinct elements. Large observed collection updates remain expensive; profile before scheduler/cache redesign. Short GC samples do not prove absence of leaks.
+
+HF-004 reset membership, reinitialize, HF-013+, UI/async/submission and release/version/publishing work are excluded. The unchanged automatic publication preflight reports published 2.2.0 and skips it; only an actual post-merge workflow can confirm its future outcome. Codex does not merge this PR.
