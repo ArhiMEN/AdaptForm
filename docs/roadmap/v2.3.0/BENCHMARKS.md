@@ -40,3 +40,7 @@ HF-011 adds identity metadata and structural operations after this baseline; fin
 ## Foundation rerun after HF-011
 
 [Final raw data](benchmark-foundation.json), measured at `23b88bc` with the same harness/environment: 1000 fields create **1.3319 ms**, first snapshot **3.8017 ms**, unchanged snapshot **4.8409 ms**, batch10 **8.9550 ms**, 100 subscribers reading snapshots **5.7124 ms**. Observed 1000-item add/remove pair: fields **164.1700 ms**, forms **244.7660 ms**; depth-5 leaf change **1.4634 ms**. Heap samples **11,619,080 → 11,667,312 bytes**, range **11,619,080–11,677,872**. Timing spread/shared-host noise prevents attributing small differences to HF-011. This rerun confirms the large-collection/depth concerns remain; it is not a performance improvement or leak-proof claim.
+
+## PERF-01 follow-up — 2026-10-21
+
+[Measured optimization results](PERFORMANCE.md) supersede the historical unchanged-read/collection performance concerns above: same-host before/after data, CPU profile findings, compatibility regressions and memory tradeoff. Historical STAB-02 numbers remain unchanged.

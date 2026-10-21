@@ -5,6 +5,9 @@ let mutationDepth = 0
 let flushing = false
 let publishing = false
 let batchDepth = 0
+let captureDepth = 0
+let pullEpoch = 0
+let pulling = false
 const validations = new Map<ObservableNode<unknown>, () => unknown>()
 const batchRoots = new Map<ObservableNode<unknown>, () => unknown>()
 const pending = new Set<SnapshotStore>()
@@ -20,8 +23,16 @@ function flush(): void {
       const before = stores.map(store => store.committed())
       pending.clear()
       // Parent captures can refresh children: compare against all pre-flush snapshots.
-      for (const store of stores) store.refresh()
-      const changed = stores.filter((store, index) => !equalValue(before[index], store.committed()))
+      // A library mutation also refreshes legacy externally edited values.
+      // Probe each reachable store once for this wave, including clean siblings.
+      pulling = true
+      pullEpoch++
+      try {
+        for (const store of stores) store.refresh()
+      } finally {
+        pulling = false
+      }
+      const changed = stores.filter((store, index) => before[index] !== store.committed())
       publishing = true
       try {
         for (const store of changed) {
@@ -42,6 +53,8 @@ function flush(): void {
 class SnapshotStore {
   private snapshot: unknown
   private initialized = false
+  private dirty = true
+  private checkedEpoch = -1
   private listeners = new Set<() => void>()
   private parents = new Set<SnapshotStore>()
   private children = new Set<SnapshotStore>()
@@ -51,6 +64,7 @@ class SnapshotStore {
   private reconcile(seen = new Set<SnapshotStore>()): void {
     if (seen.has(this)) return
     seen.add(this)
+    if (!this.listeners.size && !this.parents.size && !this.children.size) return
     const next = new Set(this.listeners.size || this.parents.size ? this.getChildren() : [])
     for (const child of this.children) {
       if (!next.has(child)) {
@@ -69,16 +83,28 @@ class SnapshotStore {
   }
 
   read(): unknown {
-    if (!mutationDepth && !publishing) this.refresh()
-    else if (!this.initialized) this.refresh()
+    if (!mutationDepth && !publishing) {
+      if (captureDepth) this.refresh()
+      else {
+        // Public reads still discover direct property/legacy-container edits.
+        pulling = true
+        pullEpoch++
+        try { this.refresh() } finally { pulling = false }
+      }
+    } else if (!this.initialized) this.refresh()
     return this.snapshot
   }
 
   committed(): unknown { return this.snapshot }
 
   refresh(): boolean {
-    this.reconcile()
-    const next = freezeSnapshot(this.capture())
+    if (this.initialized && !this.dirty && (!pulling || this.checkedEpoch === pullEpoch)) return false
+    if (pulling) this.reconcile()
+    let next: unknown
+    captureDepth++
+    try { next = freezeSnapshot(this.capture()) } finally { captureDepth-- }
+    this.dirty = false
+    this.checkedEpoch = pullEpoch
     if (this.initialized && equalValue(this.snapshot, next)) return false
     this.snapshot = next
     this.initialized = true
@@ -98,11 +124,18 @@ class SnapshotStore {
   }
 
   changed(seen = new Set<SnapshotStore>()): void {
+    this.reconcile()
+    this.invalidate(seen)
+  }
+
+  private invalidate(seen: Set<SnapshotStore>): void {
     if (seen.has(this)) return
     seen.add(this)
-    this.reconcile()
+    this.dirty = true
     if (this.listeners.size || this.parents.size || this.initialized) pending.add(this)
-    for (const parent of this.parents) parent.changed(seen)
+    // Descendant writes do not change an ancestor's membership. Reconcile only
+    // the mutated owner, so validating N children does not scan N siblings N times.
+    for (const parent of this.parents) parent.invalidate(seen)
   }
 
   notify(): void {

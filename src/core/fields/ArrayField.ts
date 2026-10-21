@@ -1,5 +1,5 @@
 import {ObservableNode} from "@core/state/ObservableNode"
-import {snapshotValue, type ArrayFieldSnapshot} from "@core/state/snapshot"
+import {hasStandardGetters, snapshotValue, type ArrayFieldSnapshot} from "@core/state/snapshot"
 import {copyValue, equalValue} from "@core/state/value"
 import {ArrayFieldOptions} from "@core/options"
 import {Field} from "@core/fields/Field"
@@ -8,11 +8,22 @@ import {collectionItemId} from "@core/fields/collectionIdentity"
 import {isValidArrayIndex} from "@core/fields/arrayUtils"
 
 export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
+  private _snapshot?: ArrayFieldSnapshot
+
   protected captureState(): ArrayFieldSnapshot {
-    return {itemsValue: snapshotValue(this.itemsValue) as ArrayFieldSnapshot['itemsValue'],
-      itemIds: this._items.map(collectionItemId),
-      items: this._items.map(item => item.getSnapshot()), errors: [...this._errors],
-      isValid: this.isValid, isTouched: this.isTouched, isDirty: this.isDirty}
+    const items = this._items.map(child => child.getSnapshot())
+    const itemIds = this._items.map(collectionItemId)
+    const isValid = this.isValid, isTouched = this.isTouched, isDirty = this.isDirty
+    const previous = this._snapshot
+    if (previous && this.captureState === ArrayField.prototype.captureState &&
+      hasStandardGetters(this, ArrayField.prototype, ['itemsValue']) &&
+      previous.isValid === isValid && previous.isTouched === isTouched && previous.isDirty === isDirty &&
+      previous.items.length === items.length && items.every((child, index) => previous.items[index] === child) &&
+      itemIds.every((id, index) => previous.itemIds?.[index] === id) &&
+      previous.errors.length === this._errors.length && previous.errors.every((error, index) => error === this._errors[index]) &&
+      this._items.every(child => hasStandardGetters(child, Field.prototype, ['valueClear']))) return previous
+    return this._snapshot = {itemsValue: snapshotValue(this.itemsValue) as ArrayFieldSnapshot['itemsValue'],
+      itemIds, items, errors: [...this._errors], isValid, isTouched, isDirty}
   }
 
   protected options: ArrayFieldOptions

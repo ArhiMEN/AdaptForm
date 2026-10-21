@@ -68,10 +68,27 @@ export function snapshotValue(value: unknown, seen = new WeakMap<object, Snapsho
   return Object.freeze({kind: 'Opaque', type: value.constructor?.name ?? 'object'})
 }
 
+const frozenSnapshots = new WeakSet<object>()
+
 /** Freeze node metadata without following or retaining model objects. */
 export function freezeSnapshot<T>(value: T, seen = new WeakSet<object>()): T {
-  if (value === null || typeof value !== 'object' || seen.has(value)) return value
+  if (value === null || typeof value !== 'object' || seen.has(value) || frozenSnapshots.has(value)) return value
   seen.add(value)
   for (const item of Object.values(value)) freezeSnapshot(item, seen)
+  frozenSnapshots.add(value)
   return Object.freeze(value)
+}
+
+/** Aggregate caches must not bypass custom derived-value/error getters. */
+export function hasStandardGetters(node: object, owner: object, names: readonly string[]): boolean {
+  if (Object.getPrototypeOf(node) === owner && names.every(name => !Object.prototype.hasOwnProperty.call(node, name))) return true
+  return names.every(name => {
+    let current: object | null = node
+    while (current) {
+      const descriptor = Object.getOwnPropertyDescriptor(current, name)
+      if (descriptor) return descriptor.get === Object.getOwnPropertyDescriptor(owner, name)?.get
+      current = Object.getPrototypeOf(current)
+    }
+    return false
+  })
 }

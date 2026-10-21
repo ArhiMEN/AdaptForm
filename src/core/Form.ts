@@ -1,5 +1,5 @@
 import {ObservableNode} from "@core/state/ObservableNode"
-import {snapshotValue, type FormSnapshot} from "@core/state/snapshot"
+import {hasStandardGetters, snapshotValue, type FormSnapshot} from "@core/state/snapshot"
 import {Field} from "@core/fields/Field"
 import {ArrayField} from "@core/fields/ArrayField"
 import {ArrayFormField} from "@core/fields/ArrayFormField"
@@ -24,11 +24,33 @@ export type FormFieldsValue<TForm extends Form> = {
 }
 
 export abstract class Form extends ObservableNode<FormSnapshot> {
+  private _snapshot?: FormSnapshot
+  private _snapshotFields?: Record<string, Field<any> | ArrayField<any> | ArrayFormField<any>>
+
   protected captureState(): FormSnapshot {
-    return {fieldsValue: snapshotValue(this.fieldsValue) as FormSnapshot['fieldsValue'],
-      allErrors: this.allErrors, globalErrors: this.globalErrors,
-      fields: Object.fromEntries(Object.entries(this._fields).map(([key, field]) => [key, field.getSnapshot()])),
-      isValid: this.isValid, isTouched: this.isTouched, isDirty: this.isDirty}
+    // Reuse field discovery only within this capture. Later reads must still
+    // discover arbitrary class-property replacement/addition/removal.
+    this._snapshotFields = this._fields
+    try {
+      const fields = Object.fromEntries(Object.entries(this._fields).map(([key, field]) => [key, field.getSnapshot()]))
+      const globalErrors = this.globalErrors
+      const isValid = this.isValid, isTouched = this.isTouched, isDirty = this.isDirty
+      const previous = this._snapshot
+      if (previous && this.captureState === Form.prototype.captureState &&
+        hasStandardGetters(this, Form.prototype, ['fieldsValue', 'allErrors']) &&
+        previous.isValid === isValid && previous.isTouched === isTouched && previous.isDirty === isDirty &&
+        Object.keys(fields).length === Object.keys(previous.fields).length &&
+        Object.entries(fields).every(([key, field]) => previous.fields[key] === field) &&
+        Object.keys(globalErrors).length === Object.keys(previous.globalErrors).length &&
+        Object.entries(globalErrors).every(([key, error]) => previous.globalErrors[key] === error) &&
+        Object.values(this._snapshotFields).every(field => hasStandardGetters(field,
+          field instanceof Field ? Field.prototype : field instanceof ArrayField ? ArrayField.prototype : ArrayFormField.prototype,
+          field instanceof Field ? ['valueClear', 'errors'] : ['errors']))) return previous
+      return this._snapshot = {fieldsValue: snapshotValue(this.fieldsValue) as FormSnapshot['fieldsValue'],
+        allErrors: this.allErrors, globalErrors, fields, isValid, isTouched, isDirty}
+    } finally {
+      this._snapshotFields = undefined
+    }
   }
 
   protected stateChildren(): readonly ObservableNode<unknown>[] {
@@ -43,6 +65,7 @@ export abstract class Form extends ObservableNode<FormSnapshot> {
   errorsShema: ErrorsSchema = DefaultErrorsSchema
 
   protected get _fields(): Record<string, Field<any> | ArrayField<any> | ArrayFormField<any>> {
+    if (this._snapshotFields) return this._snapshotFields
     const fields: Record<string, Field<any> | ArrayField<any> | ArrayFormField<any>> = {}
 
     for (const key of Object.keys(this)) {
