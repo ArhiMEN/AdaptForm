@@ -6,6 +6,12 @@ All notable changes to AdaptForm are documented here. Version `2.1.0` was publis
 
 **[Interactive demo](https://arhimen.github.io/AdaptForm/)** · [Demo source](https://github.com/ArhiMEN/AdaptForm/tree/master/demo) · [Documentation](https://github.com/ArhiMEN/AdaptForm/blob/master/README.md)
 
+## Unreleased — HF-013 source
+
+- Add optional `FieldOptions.dependsOn` with literal single-property paths and `Form.enableDependencies(): () => void`. Explicit activation enables selective synchronous validation for ordinary fields in one Form, with chains/diamonds, batch deduplication, suppression, atomic snapshots and idempotent disposal.
+- Export bounded readonly `DependencyPath` / `DependencyRef`, `DependencyConfigurationError` and `ValidationMutationError`. Reject missing/unsupported sources, cycles, shared/overlapping graph ownership and rule-driven library mutations.
+- Unactivated forms retain legacy scheduling; reset, dirty/baselines, validators, serialization and optional Luxon remain. Collection dependencies, direct node references and async validation are excluded. Package stays 2.2.0; no publication. [API and limits](docs/ai/HEADLESS_DEPENDENCIES_USAGE.md).
+
 ## [2.2.0] - 2026-10-19
 
 ### Added — headless form state foundation

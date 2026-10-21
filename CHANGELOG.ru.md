@@ -6,6 +6,12 @@
 
 **[Интерактивное демо](https://arhimen.github.io/AdaptForm/?lang=ru)** · [Исходный код демо](https://github.com/ArhiMEN/AdaptForm/tree/master/demo) · [Документация](https://github.com/ArhiMEN/AdaptForm/blob/master/README.ru.md)
 
+## Не выпущено — исходники HF-013
+
+- Добавлены необязательный `FieldOptions.dependsOn` с буквальными одноэлементными путями и `Form.enableDependencies(): () => void`. Явная активация включает выборочную синхронную валидацию обычных полей одной Form: цепочки/ромбы, дедупликацию batch, подавление запросов, атомарные snapshots и идемпотентное отключение.
+- Экспортированы ограниченные readonly-типы `DependencyPath` / `DependencyRef`, `DependencyConfigurationError` и `ValidationMutationError`. Отклоняются отсутствующие/неподдерживаемые источники, циклы, общие узлы/пересечение владения и библиотечные мутации из правил.
+- Неактивированные формы сохраняют legacy-планирование; reset, dirty/baselines, валидаторы, сериализация и optional Luxon сохранены. Зависимости коллекций, прямые ссылки и async validation исключены. Пакет остаётся 2.2.0; публикации нет. [API и ограничения](docs/ai/HEADLESS_DEPENDENCIES_USAGE.ru.md).
+
 ## [2.2.0] — 2026-10-19
 
 ### Добавлено — фундамент headless-состояний

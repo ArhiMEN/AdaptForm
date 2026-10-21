@@ -2,7 +2,7 @@
 
 [English](HEADLESS_DEPENDENCIES.md) · [Русский](HEADLESS_DEPENDENCIES.ru.md)
 
-**Specification only, pending owner approval before HF-013.** No dependency engine, dependsOn option, activation API, Proxy tracking or trigger policy is implemented in this branch. Package remains 2.2.0. Proposed behavior below is not a published API or an accepted decision in DECISIONS.
+**Status after HF-013:** the explicitly approved, narrower source implementation supports only ordinary Fields of one Form. See [implemented API, examples and limits](HEADLESS_DEPENDENCIES_USAGE.md). Package remains 2.2.0; no new publication. The broader proposal below (collections, positional paths and direct node references) remains unimplemented and requires separate approval. Proposed types below are not the current exported types.
 
 ## Primary API proposal
 
