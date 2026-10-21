@@ -39,3 +39,7 @@ The raw Node registry preflight initially failed because Node fetch did not use 
 [Benchmarks](BENCHMARKS.md) retain baseline and HF-011 rerun, environment, commands and limitations. Large observed collection operations and depth remain concerns, not release-blocking defects repaired here. Short GC measurements do not prove absence of leaks. [HF-011](../../ai/HEADLESS_COLLECTION_IDENTITY.md) lists the additive snapshot/event compatibility boundary. [HF-012](../../ai/HEADLESS_DEPENDENCIES.md) lists owner gates before HF-013; its APIs remain proposals. HF-004/reset redesign is excluded.
 
 Integration CI must be read for the final pushed head in the single integration PR; local checks above do not claim GitGuardian or GitHub CI success. Delivery report records the actual PR URL, final SHA and observed check conclusions after push. No merge, force push, branch deletion, version bump, npm publish, tag or GitHub Release.
+
+## PERF-01 — 2026-10-21
+
+[Performance report](PERFORMANCE.md): 606 tests / 31 files, including 15 new regressions; lint, source/test/demo typechecks, library/demo builds, package check (21 files), audit (0 vulnerabilities), diff checks and full before/after benchmarks passed locally. Package 2.2.0 and public behavior preserved; no merge or publication. PR CI must be checked on the final head.

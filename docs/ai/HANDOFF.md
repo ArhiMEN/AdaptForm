@@ -2,6 +2,10 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## PERF-01 — 2026-10-21
+
+Branch `feature/v2.3.0-performance`, base master `7d9a13b` (PR #25), package **2.2.0**. [EN/RU performance report](../roadmap/v2.3.0/PERFORMANCE.md) retains raw before/after data: unchanged 1000-field snapshot **6.4259 → 1.3986 ms**, observed field write **7.5920 → 2.7286 ms**, 1000-form add/remove **297.7387 → 13.4752 ms**. Local gates: **606 tests / 31 files**, lint, source/test/demo types, library/demo builds, package (21 files), audit 0 and diff checks pass. Public behavior and external-edit discovery remain; reads still probe descendants, validation remains full, warmed heap is higher. Next: final-head PR CI and review. No merge, publication, version bump, tag or branch removal.
+
 ## STAB-01/02 + HF-011/012 foundation — 2026-10-20
 
 Branch `feature/v2.3.0-foundation`, based on master `9942aac`; package remains **2.2.0**. STAB-01: **54 → 0** test type diagnostics, regression type tests and CI gate. STAB-02: reproducible Node benchmarks and deterministic subscription lifetime tests; large observed 1000-item add/remove remains expensive (about 164/245 ms in the foundation rerun). HF-011: weak object-keyed identity, optional snapshot itemIds, insert/move, no value matching in replacement setters. HF-012: **specification only**, no dependency engine or Proxy; owner decisions remain before HF-013.

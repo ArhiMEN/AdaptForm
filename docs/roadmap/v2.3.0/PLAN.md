@@ -16,3 +16,7 @@ Approved source scope on `feature/v2.3.0-foundation`, based on master `9942aac`.
 Compatibility: existing replacement setters never match values; touched/reset/commitBaseline and JSON/FormData remain. Snapshot metadata gains optional itemIds and now observes equal-content identity changes; exact-key consumers must allow the addition. IDs are module-local, not domain identifiers. Factories should return distinct instances for distinct elements. Large observed collection updates remain expensive; profile before scheduler/cache redesign. Short GC samples do not prove absence of leaks.
 
 HF-004 reset membership, reinitialize, HF-013+, UI/async/submission and release/version/publishing work are excluded. The unchanged automatic publication preflight reports published 2.2.0 and skips it; only an actual post-merge workflow can confirm its future outcome. Codex does not merge this PR.
+
+## PERF-01 follow-up
+
+The separately scoped performance task starts from accepted master `7d9a13b` (PR #25). [Results and limits](PERFORMANCE.md): unchanged snapshots 4.59×, observed single-field writes 2.78×, 1000-form add/remove 22.10× faster in same-host measurements; 606 tests pass. Version remains 2.2.0; HF-012 implementation and release work remain excluded.
