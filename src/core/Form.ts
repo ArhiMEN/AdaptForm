@@ -5,6 +5,9 @@ import {ArrayField} from "@core/fields/ArrayField"
 import {ArrayFormField} from "@core/fields/ArrayFormField"
 import {DefaultErrorsSchema, ErrorsSchema} from "@core/ErrorsShema"
 
+import {DependencyGraph} from "@core/state/DependencyGraph"
+import {assertValidationMutationAllowed} from "@core/state/dependencyScheduling"
+
 export type FormFieldValue<TField> =
   TField extends Field<infer TValue, infer _Options> ? TValue | null :
   TField extends ArrayField<infer TValue> ? (TValue | null)[] :
@@ -24,6 +27,22 @@ export type FormFieldsValue<TForm extends Form> = {
 }
 
 export abstract class Form extends ObservableNode<FormSnapshot> {
+  private _dependencies?: DependencyGraph
+
+  /** Compile explicit dependencies after subclass fields have initialized. */
+  enableDependencies(): () => void {
+    assertValidationMutationAllowed()
+    if (!this._dependencies?.isEnabled) {
+      this._dependencies = new DependencyGraph(this, () => this._fields, () => this.dependencyTree(), () => this.update(() => {}))
+    }
+    return this._dependencies.disable
+  }
+
+  protected checkBatchNode(node: ObservableNode<unknown>, check: () => unknown): unknown {
+    const field = Object.values(this._fields).find(field => field === node)
+    return field ? field.checkAndSetValid(this) : check()
+  }
+
   private _snapshot?: FormSnapshot
   private _snapshotFields?: Record<string, Field<any> | ArrayField<any> | ArrayFormField<any>>
 
@@ -79,7 +98,7 @@ export abstract class Form extends ObservableNode<FormSnapshot> {
   }
 
   checkValid(form?: this): boolean {
-    return this.update(() => {
+    const check = () => {
       let isFormValid = true
       const fields = this._fields
 
@@ -91,7 +110,8 @@ export abstract class Form extends ObservableNode<FormSnapshot> {
       }
 
       return isFormValid && Object.keys(this._globalErrors).length === 0
-      })
+    }
+    return this.update(() => this._dependencies?.isEnabled ? this._dependencies.check(check) : check())
   }
 
   get fieldsValue(): FormFieldsValue<this> {
@@ -130,7 +150,19 @@ export abstract class Form extends ObservableNode<FormSnapshot> {
       }
 
       // Validate after assignment so conditional rules see the complete form.
-      if (validate) this.validateAfterMutation(() => this.checkValid())
+      if (validate) {
+        if (this._dependencies?.isEnabled && this._dependencies.selective) {
+          for (const key of Object.keys(data)) {
+            const field = fields[key]
+            if (field instanceof Field) {
+              this._dependencies.request(field)
+            } else if (field) {
+              // Collection rules remain local and retain their owning Form context.
+              this.validateNodeAfterMutation(field, () => field.checkAndSetValid(this))
+            }
+          }
+        } else this.validateAfterMutation(() => this.checkValid())
+      }
       })
   }
 

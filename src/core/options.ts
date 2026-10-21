@@ -55,7 +55,14 @@ export interface messagesArrayFormFieldOptions extends messagesOptions {
 
 // Region: field types
 
+/** A literal, direct Field property of the enabled Form. No dot-path parsing. */
+export type DependencyPath = readonly [string]
+export interface DependencyRef {
+  readonly path: DependencyPath
+}
+
 export interface FieldOptions {
+  readonly dependsOn?: readonly DependencyRef[]
   isRequired?: boolean | ((form?: any) => boolean)
   messages?: messagesOptions
   validate?: (value: any, form?: any) => boolean | string

@@ -1,5 +1,6 @@
 import {equalValue} from './value'
 import {freezeSnapshot} from './snapshot'
+import {assertValidationMutationAllowed, commitDependencies, DependencyConfigurationError, dependencyOwner, noteDependencyMutation} from './dependencyScheduling'
 
 let mutationDepth = 0
 let flushing = false
@@ -162,6 +163,12 @@ export abstract class ObservableNode<TSnapshot> {
 
   protected stateChildren(): readonly ObservableNode<unknown>[] { return [] }
 
+  protected dependencyTree(seen = new Set<ObservableNode<unknown>>()): readonly ObservableNode<unknown>[] {
+    if (seen.has(this)) throw new DependencyConfigurationError('Dependency Forms require an unshared acyclic ownership tree')
+    seen.add(this)
+    return [this, ...this.stateChildren().flatMap(child => child.dependencyTree(seen))]
+  }
+
   private contains(node: ObservableNode<unknown>, seen = new Set<ObservableNode<unknown>>()): boolean {
     if (this === node) return true
     if (seen.has(this)) return false
@@ -169,7 +176,22 @@ export abstract class ObservableNode<TSnapshot> {
     return this.stateChildren().some(child => child.contains(node, seen))
   }
 
+  private hasSelectiveDependencies(seen = new Set<ObservableNode<unknown>>()): boolean {
+    if (seen.has(this)) return false
+    seen.add(this)
+    const owner = dependencyOwner(this)
+    return owner?.selective === true && owner.selects(this) ||
+      this.stateChildren().some(child => child.hasSelectiveDependencies(seen))
+  }
+
+  protected checkBatchNode(_node: ObservableNode<unknown>, check: () => unknown): unknown { return check() }
+
+  protected validateNodeAfterMutation(node: ObservableNode<unknown>, callback: () => unknown): void {
+    node.validateAfterMutation(callback)
+  }
+
   protected validateAfterMutation(callback: () => unknown): void {
+    if (dependencyOwner(this)?.request(this)) return
     if (batchDepth) validations.set(this, callback)
     else callback()
   }
@@ -196,15 +218,20 @@ export abstract class ObservableNode<TSnapshot> {
         batchDepth--
       }
       if (!batchDepth) {
-        const requested = [...validations]
+        const requested = [...validations].filter(([node]) => !dependencyOwner(node)?.request(node))
         const roots = [...batchRoots]
         validations.clear()
         batchRoots.clear()
-        const selected = roots.filter(([root]) => requested.some(([node]) => root.contains(node)))
+        const legacyRoots = roots.filter(([root]) => !root.hasSelectiveDependencies())
+        const selected = legacyRoots.filter(([root]) => requested.some(([node]) => root.contains(node)))
           .filter(([root], index, all) => !all.some(([other], otherIndex) =>
             other !== root && other.contains(root) && (!root.contains(other) || otherIndex < index)))
         const checks = [...selected.map(([, check]) => check),
-          ...requested.filter(([node]) => !selected.some(([root]) => root.contains(node))).map(([, check]) => check)]
+          ...requested.filter(([node]) => !selected.some(([root]) => root.contains(node))).map(([node, check]) =>
+            () => {
+              const owner = roots.find(([root]) => root.contains(node))
+              return owner ? owner[0].checkBatchNode(node, check) : check()
+            })]
         for (const check of checks) {
           try { check() } catch (error) {
             if (!failed) { failed = true; failure = error }
@@ -225,6 +252,8 @@ export abstract class ObservableNode<TSnapshot> {
   }
 
   protected update<TResult>(callback: () => TResult): TResult {
+    assertValidationMutationAllowed()
+    noteDependencyMutation(this)
     mutationDepth++
     let failed = false
     try {
@@ -236,8 +265,23 @@ export abstract class ObservableNode<TSnapshot> {
       this._stateStore.changed()
       mutationDepth--
       // Preserve the mutation's exception if finalization also throws.
-      if (failed) { try { flush() } catch { /* The original exception takes precedence. */ } }
-      else flush()
+      const finalize = () => {
+        if (mutationDepth) return
+        let graphFailed = false
+        try {
+          mutationDepth++
+          commitDependencies()
+        } catch (error) {
+          graphFailed = true
+          throw error
+        } finally {
+          mutationDepth--
+          if (graphFailed) { try { flush() } catch { /* Preserve the graph failure. */ } }
+          else flush()
+        }
+      }
+      if (failed) { try { finalize() } catch { /* The original exception takes precedence. */ } }
+      else finalize()
     }
   }
 }
