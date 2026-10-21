@@ -55,9 +55,21 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
     this.commitBaseline()
   }
 
+  private _snapshot?: FieldSnapshot
+
   protected captureState(): FieldSnapshot {
-    return {rawValue: snapshotValue(this._rawValue), valueClear: snapshotValue(this._valueClear),
-      errors: [...this._errors], isValid: this.isValid, isTouched: this.isTouched, isDirty: this.isDirty}
+    const previous = this._snapshot
+    const isValid = this.isValid, isTouched = this.isTouched, isDirty = this.isDirty
+    // Mutable inputs must still be described on public reads (Date, Map, etc.).
+    const scalar = (value: unknown) => value === null || typeof value !== 'object' && typeof value !== 'function'
+    if (previous && this.captureState === Field.prototype.captureState && scalar(this._rawValue) && scalar(this._valueClear) &&
+      Object.is(previous.rawValue, this._rawValue) && Object.is(previous.valueClear, this._valueClear) &&
+      previous.isValid === isValid && previous.isTouched === isTouched && previous.isDirty === isDirty &&
+      previous.errors.length === this._errors.length && previous.errors.every((error, index) => error === this._errors[index])) {
+      return previous
+    }
+    return this._snapshot = {rawValue: snapshotValue(this._rawValue), valueClear: snapshotValue(this._valueClear),
+      errors: [...this._errors], isValid, isTouched, isDirty}
   }
 
   // ========== Getters and setters ==========

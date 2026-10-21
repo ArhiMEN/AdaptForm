@@ -1,5 +1,5 @@
 import {ObservableNode} from "@core/state/ObservableNode"
-import {snapshotValue, type ArrayFormSnapshot} from "@core/state/snapshot"
+import {hasStandardGetters, snapshotValue, type ArrayFormSnapshot} from "@core/state/snapshot"
 import {copyValue, equalValue} from "@core/state/value"
 import {Form, type FormFieldsValue} from "@core/Form"
 import {ArrayFormFieldOptions} from "@core/options"
@@ -7,11 +7,21 @@ import {collectionItemId} from "@core/fields/collectionIdentity"
 import {isValidArrayIndex} from "@core/fields/arrayUtils"
 
 export class ArrayFormField<T extends Form = Form> extends ObservableNode<ArrayFormSnapshot> {
+  private _snapshot?: ArrayFormSnapshot
+
   protected captureState(): ArrayFormSnapshot {
-    return {formsFieldsValue: snapshotValue(this.formsFieldsValue) as ArrayFormSnapshot['formsFieldsValue'],
-      itemIds: this._forms.map(collectionItemId),
-      forms: this._forms.map(form => form.getSnapshot()), errors: [...this._errors],
-      isValid: this.isValid, isTouched: this.isTouched, isDirty: this.isDirty}
+    const forms = this._forms.map(child => child.getSnapshot())
+    const itemIds = this._forms.map(collectionItemId)
+    const isValid = this.isValid, isTouched = this.isTouched, isDirty = this.isDirty
+    const previous = this._snapshot
+    if (previous && this.captureState === ArrayFormField.prototype.captureState &&
+      hasStandardGetters(this, ArrayFormField.prototype, ['formsFieldsValue']) &&
+      previous.isValid === isValid && previous.isTouched === isTouched && previous.isDirty === isDirty &&
+      previous.forms.length === forms.length && forms.every((child, index) => previous.forms[index] === child) &&
+      itemIds.every((id, index) => previous.itemIds?.[index] === id) &&
+      previous.errors.length === this._errors.length && previous.errors.every((error, index) => error === this._errors[index])) return previous
+    return this._snapshot = {formsFieldsValue: snapshotValue(this.formsFieldsValue) as ArrayFormSnapshot['formsFieldsValue'],
+      itemIds, forms, errors: [...this._errors], isValid, isTouched, isDirty}
   }
 
   private _forms: T[] = []
