@@ -1,5 +1,5 @@
 import {describe, expect, expectTypeOf, it} from 'vitest'
-import {ArrayField, ArrayFormField, Field, Form, NumberType, StringType, type FormFieldsValue} from '../../src'
+import {ArrayField, ArrayFormField, Field, Form, NumberType, StringType, type DependencyPath, type DependencyRef, type FormFieldsValue} from '../../src'
 
 class Leaf extends Form {
   label = new Field(StringType)
@@ -34,6 +34,15 @@ describe('Form value type contracts', () => {
     expect(values).toEqual({branches: []})
   })
 
+  it('keeps dependency descriptors bounded and readonly without changing value inference', () => {
+    const path: DependencyPath = ['label']
+    const ref: DependencyRef = {path}
+    const form = new Leaf()
+    form.count.options = {dependsOn: [ref]}
+    expectTypeOf(form.enableDependencies()).toEqualTypeOf<() => void>()
+    expectTypeOf(form.fieldsValue).toEqualTypeOf<{label: string | null; count: number | null}>()
+  })
+
   it('supports finite access into a recursive collection model', () => {
     const form = new Recursive()
     const values = form.fieldsValue
@@ -52,6 +61,15 @@ function rejectedContracts(field: Field<string>, form: Leaf) {
   new Field(StringType, null, {validate: async () => true})
   // @ts-expect-error Non-field properties are not serialized field values.
   void form.fieldsValue.metadata
+  // @ts-expect-error Dependencies use literal single-segment tuple paths.
+  const dotString: DependencyRef = {path: 'label'}
+  // @ts-expect-error Positional and nested paths are outside HF-013.
+  const nested: DependencyRef = {path: ['children', 0, 'label']}
+  // @ts-expect-error Direct node references are outside HF-013.
+  const direct: DependencyRef = {node: field}
+  // @ts-expect-error Dependency declarations are readonly.
+  field.options.dependsOn = []
+  void [dotString, nested, direct]
   return invalid
 }
 void rejectedContracts

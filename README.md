@@ -420,3 +420,26 @@ unsubscribe()        // Release the listener
 `isTouched` keeps its former semantics. `commitBaseline()` changes the dirty-comparison baseline, **not** the constructor defaults restored by `reset()`; a reset may leave `isDirty=true`. Snapshots are detached read-only descriptions, not mutable source objects; `toJSON()` still does not validate.
 
 Automatic validation inside `Form.batch()` is deferred, whereas explicit `checkValid()` is immediate. Batch callbacks must be synchronous and do not roll back changes on errors. Direct in-place changes to legacy public arrays or arbitrary form properties are not automatically observed. See [usage and limitations](docs/ai/HEADLESS_STATE_USAGE.md) and the [2.1.1 compatibility table](docs/ai/HEADLESS_STATE_CONTRACT.md#compatibility-with-211).
+
+## Dependent validation (HF-013 source preview)
+
+The 2.3.0 milestone source adds optional `dependsOn` and explicit `enableDependencies()` for ordinary fields of one Form. This API is not in the published 2.2.0 package; the manifest version remains unchanged.
+
+```typescript
+class Registration extends Form {
+  password = new Field(StringType)
+  confirmation = new Field(StringType, null, {
+    dependsOn: [{path: ['password']}],
+    validate: (value: string, form?: Registration) =>
+      !form || value === form.password.valueClear || 'Passwords differ',
+  })
+}
+const form = new Registration()
+const disable = form.enableDependencies()
+form.setFields({password: 'secret', confirmation: 'secret'})
+form.password.rawValue = 'changed' // Also revalidates confirmation
+// On disposal:
+disable()
+```
+
+Activation does not validate or change flags. Automatic checks select changed sources and reachable targets, including chains/diamonds, once per completed batch. `setRawValue(value, false)` / `setFields(data, false)` suppress originating requests; explicit checks remain immediate. Missing fields, cycles and overlapping enabled trees throw `DependencyConfigurationError`; mutating graph validators throw `ValidationMutationError`. Validators must be synchronous and pure. Without activation, existing scheduling is preserved. Paths are single literal Field names; collections and direct node references are excluded. See [complete behavior, examples and limits](docs/ai/HEADLESS_DEPENDENCIES_USAGE.md).

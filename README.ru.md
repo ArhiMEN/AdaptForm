@@ -420,3 +420,26 @@ unsubscribe()        // Release the listener
 `isTouched` сохраняет прежнюю семантику. `commitBaseline()` меняет точку сравнения dirty, **не** значения конструктора, возвращаемые `reset()`; после сброса `isDirty` иногда остаётся `true`. Snapshots — независимые неизменяемые представления, а не ссылки на изменяемые данные. `toJSON()` по-прежнему не выполняет валидацию.
 
 Автоматическая проверка внутри `Form.batch()` откладывается, явные `checkValid()` выполняются сразу. Batch только синхронный; при исключении выполненные изменения не откатываются. Прямые мутации старых публичных массивов и произвольная замена свойств формы не создают автоматических уведомлений. Подробности: [использование и ограничения](docs/ai/HEADLESS_STATE_USAGE.ru.md), [совместимость с 2.1.1](docs/ai/HEADLESS_STATE_CONTRACT.ru.md#совместимость-с-211).
+
+## Зависимая валидация (исходный API HF-013)
+
+Исходники этапа 2.3.0 добавляют необязательный `dependsOn` и явный `enableDependencies()` для обычных полей одной Form. Этого API нет в опубликованном пакете 2.2.0; версия manifest не изменяется.
+
+```typescript
+class Registration extends Form {
+  password = new Field(StringType)
+  confirmation = new Field(StringType, null, {
+    dependsOn: [{path: ['password']}],
+    validate: (value: string, form?: Registration) =>
+      !form || value === form.password.valueClear || 'Passwords differ',
+  })
+}
+const form = new Registration()
+const disable = form.enableDependencies()
+form.setFields({password: 'secret', confirmation: 'secret'})
+form.password.rawValue = 'changed' // Also revalidates confirmation
+// On disposal:
+disable()
+```
+
+Активация не валидирует и не меняет флаги. Автоматическая проверка выбирает изменённые source и достижимые target, включая цепочки/ромбы, по разу за завершённый batch. `setRawValue(value, false)` / `setFields(data, false)` подавляют исходящие запросы; явные проверки остаются немедленными. Отсутствующие поля, циклы и пересекающиеся активные деревья вызывают `DependencyConfigurationError`; мутации из валидаторов графа — `ValidationMutationError`. Валидаторы должны быть синхронными и чистыми. Без активации существующее планирование сохраняется. Пути — одно буквальное имя Field; коллекции и прямые ссылки исключены. См. [полное поведение, примеры и ограничения](docs/ai/HEADLESS_DEPENDENCIES_USAGE.ru.md).

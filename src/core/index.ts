@@ -6,3 +6,5 @@ export * from './fields'
 export * from './plugins'
 export * from './types'
 export type {SnapshotValue, NodeSnapshot, FieldSnapshot, FormSnapshot, ArrayFieldSnapshot, ArrayFormSnapshot} from './state/snapshot'
+
+export {DependencyConfigurationError, ValidationMutationError} from './state/dependencyScheduling'

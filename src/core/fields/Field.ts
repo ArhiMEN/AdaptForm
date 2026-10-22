@@ -5,6 +5,8 @@ import {FieldType} from "@core/types/FieldType"
 import {Form} from "@core/Form"
 import {copyValue, equalValue} from "@core/state/value"
 
+import {validationCallback} from '@core/state/dependencyScheduling'
+
 type FieldTypeConstructor<T, O extends FieldOptions = FieldOptions> = new (options: O) => FieldType<T, O>
 
 export class Field<T = any, O extends FieldOptions = FieldOptions> extends ObservableNode<FieldSnapshot> {
@@ -171,10 +173,11 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
 
   private isRequired(form?: Form): boolean {
     let isRequired
-    if (typeof this.options.isRequired === 'function') {
-      isRequired = this.options.isRequired(form ?? null)
+    const rule = this.options.isRequired
+    if (typeof rule === 'function') {
+      isRequired = validationCallback(() => rule.call(this.options, form ?? null))
     } else {
-      isRequired = this.options.isRequired ?? false
+      isRequired = rule ?? false
     }
 
     return isRequired
@@ -203,7 +206,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
       }
 
       // 3. Run type-specific validation.
-      const typeErrors = this.fieldType.validate(this._valueClear, form)
+      const typeErrors = validationCallback(() => this.fieldType.validate(this._valueClear as T, form))
       if (typeErrors.length > 0) {
         this._errors.push(...typeErrors)
         return false
@@ -211,7 +214,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
 
       // 4. Run custom validation.
       if (this.options.validate) {
-        const result = this.options.validate(this._valueClear, form)
+        const result = validationCallback(() => this.options.validate!(this._valueClear, form))
         if (result === false) {
           this._errors.push(this.options.messages?.validate ?? 'Значение не прошло валидацию')
           return false

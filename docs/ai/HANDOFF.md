@@ -2,6 +2,14 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## HF-013 — 2026-10-21
+
+Branch `feature/v2.3.0-dependent-validation`, base master `30a45a2` (PR #26), implementation `654b162`. Package stays **2.2.0**. [Implemented EN/RU API and limits](HEADLESS_DEPENDENCIES_USAGE.md): optional `dependsOn: [{path: ['fieldName']}]`, explicit `enableDependencies()`/idempotent disposal, whole-pipeline selective checks, deterministic chains/diamonds, batch suppression/deduplication, atomic snapshots and configuration/purity errors. No subscription is required. Unactivated forms retain legacy behavior.
+
+Final local checks: **660 tests / 32 files** (606 baseline + 54 cases), including 53 dedicated dependency regressions and bounded declaration/value-inference coverage; `npm run lint`; source/test TypeScript (`npx tsc --noEmit -p tsconfig.json` and `tsconfig.test.json`); `npm run check:demo`; library/demo builds; `npm run check:package` (**21 files**); `npm audit --audit-level=moderate` (**0 vulnerabilities**); documentation links/EN-RU examples and `git diff --check`. Fresh packed ESM/CJS runtimes and strict NodeNext declaration consumers pass without installed Luxon. A local 1000-field batch probe selected **2 validators instead of 1000**; timings are host-specific, not a general speed guarantee.
+
+Limits: direct ordinary Fields of one Form only; no collection dependencies, direct references, positional/nested paths or async. Collection recursive/constructor checks and explicit checks remain outside automatic graph-pass deduplication. Opt-in callbacks must be pure; configuration errors retain writes and require successful recompilation. Supported option replacement is tracked; arbitrary property/in-place edits are not. Topology is reused for unchanged declarations; activation/recompilation can be quadratic, membership/value comparison still scans the tree. Shared nodes and overlapping enabled trees are rejected. Next: final-head PR CI and independent review. No merge, publication, version bump, tag or branch deletion.
+
 ## PERF-01 — 2026-10-21
 
 Branch `feature/v2.3.0-performance`, base master `7d9a13b` (PR #25), package **2.2.0**. [EN/RU performance report](../roadmap/v2.3.0/PERFORMANCE.md) retains raw before/after data: unchanged 1000-field snapshot **6.4259 → 1.3986 ms**, observed field write **7.5920 → 2.7286 ms**, 1000-form add/remove **297.7387 → 13.4752 ms**. Local gates: **606 tests / 31 files**, lint, source/test/demo types, library/demo builds, package (21 files), audit 0 and diff checks pass. Public behavior and external-edit discovery remain; reads still probe descendants, validation remains full, warmed heap is higher. Next: final-head PR CI and review. No merge, publication, version bump, tag or branch removal.

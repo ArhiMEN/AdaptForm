@@ -20,3 +20,7 @@ HF-004 reset membership, reinitialize, HF-013+, UI/async/submission and release/
 ## PERF-01 follow-up
 
 The separately scoped performance task starts from accepted master `7d9a13b` (PR #25). [Results and limits](PERFORMANCE.md): unchanged snapshots 4.59×, observed single-field writes 2.78×, 1000-form add/remove 22.10× faster in same-host measurements; 606 tests pass. Version remains 2.2.0; HF-012 implementation and release work remain excluded.
+
+## HF-013 follow-up
+
+A separate explicit task authorizes the limited dependent-validation source implementation in `feature/v2.3.0-dependent-validation`, based on accepted master `30a45a2` (PERF-01, PR #26). It supersedes the historical HF-013 exclusion above for ordinary fields of one Form only. [API, examples and boundaries](../../ai/HEADLESS_DEPENDENCIES_USAGE.md): activation/disposal, literal one-property paths, deterministic selective checks and opt-in purity. The expanded HF-012 collection/direct-ref proposal is still excluded. Package stays 2.2.0; no merge, publication or branch deletion.
