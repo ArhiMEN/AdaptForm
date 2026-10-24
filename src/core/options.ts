@@ -1,3 +1,4 @@
+import type {ValidationResult} from './ValidationError'
 import {FieldPlugin} from "@core/plugins"
 
 // Region: validation messages
@@ -65,7 +66,7 @@ export interface FieldOptions {
   readonly dependsOn?: readonly DependencyRef[]
   isRequired?: boolean | ((form?: any) => boolean)
   messages?: messagesOptions
-  validate?: (value: any, form?: any) => boolean | string
+  validate?: (value: any, form?: any) => ValidationResult
   plugins?: FieldPlugin[]
 }
 
@@ -114,7 +115,7 @@ export interface DecimalOptions extends FieldOptions {
 export interface ArrayFieldOptions {
   isRequired?: boolean | ((form?: any) => boolean)
   messages?: messagesArrayFieldOptions
-  validate?: (value: any[], form?: any) => boolean | string
+  validate?: (value: any[], form?: any) => ValidationResult
   minItems?: number
   maxItems?: number
 }
@@ -122,7 +123,7 @@ export interface ArrayFieldOptions {
 export interface ArrayFormFieldOptions {
   isRequired?: boolean | ((form?: any) => boolean)
   messages?: messagesArrayFormFieldOptions
-  validate?: (value: any[], form?: any) => boolean | string
+  validate?: (value: any[], form?: any) => ValidationResult
   minForms?: number
   maxForms?: number
 }

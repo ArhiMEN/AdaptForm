@@ -1,3 +1,4 @@
+import {ErrorState, customErrors, manualErrorSource, prefixErrors, type ValidationError, type ValidationErrorInput, type ValidationErrorSource} from '../ValidationError'
 import {ObservableNode} from "@core/state/ObservableNode"
 import {hasStandardGetters, snapshotValue, type ArrayFieldSnapshot} from "@core/state/snapshot"
 import {copyValue, equalValue} from "@core/state/value"
@@ -14,21 +15,41 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
     const items = this._items.map(child => child.getSnapshot())
     const itemIds = this._items.map(collectionItemId)
     const isValid = this.isValid, isTouched = this.isTouched, isDirty = this.isDirty
+    const validationErrors = this._errorState.getErrors(this._errors)
     const previous = this._snapshot
     if (previous && this.captureState === ArrayField.prototype.captureState &&
       hasStandardGetters(this, ArrayField.prototype, ['itemsValue']) &&
-      previous.isValid === isValid && previous.isTouched === isTouched && previous.isDirty === isDirty &&
+      previous.validationErrors === validationErrors && previous.isValid === isValid && previous.isTouched === isTouched && previous.isDirty === isDirty &&
       previous.items.length === items.length && items.every((child, index) => previous.items[index] === child) &&
       itemIds.every((id, index) => previous.itemIds?.[index] === id) &&
       previous.errors.length === this._errors.length && previous.errors.every((error, index) => error === this._errors[index]) &&
       this._items.every(child => hasStandardGetters(child, Field.prototype, ['valueClear']))) return previous
     return this._snapshot = {itemsValue: snapshotValue(this.itemsValue) as ArrayFieldSnapshot['itemsValue'],
-      itemIds, items, errors: [...this._errors], isValid, isTouched, isDirty}
+      itemIds, items, errors: [...this._errors], validationErrors, isValid, isTouched, isDirty}
   }
 
   protected options: ArrayFieldOptions
   protected _items: Field<T>[] = []
   protected _errors: string[] = []
+  private readonly _errorState = new ErrorState(this._errors)
+
+  /** Own structured errors, without collection descendants. */
+  getOwnErrors(): readonly ValidationError[] { return this._errorState.getErrors(this._errors) }
+
+  /** Structured errors relative to this node; collection indexes reflect current order. */
+  getErrors(): readonly ValidationError[] {
+    return Object.freeze([...this._errorState.getErrors(this._errors),
+      ...this._items.flatMap((child, index) => prefixErrors(child.getErrors(), [index]))])
+  }
+
+  /** Replace this node's own errors; children are unaffected. */
+  setErrors(errors: readonly ValidationErrorInput[], source: ValidationErrorSource = 'external'): void {
+    this.update(() => {
+      this._errors = this._errorState.set(errors, source)
+      this._hasValidationResult = errors.length > 0
+    })
+  }
+
   protected stateChildren(): readonly ObservableNode<unknown>[] {
     return this._items
   }
@@ -164,29 +185,23 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
   checkValid(form?: Form): boolean {
     return this.update(() => {
       this._hasValidationResult = true
-      this._errors = []
+      this._errors = this._errorState.set([], 'external')
 
       if (this.isRequired(form) && this._items.length === 0) {
-        this._errors.push(
-          this.options.messages?.isRequired ??
-          "Добавьте хотя бы один элемент"
-        )
+        this._errors = this._errorState.add({code: 'required', message: this.options.messages?.isRequired ??
+          "Добавьте хотя бы один элемент"}, 'client')
         return false
       }
 
       if (this.options.minItems != null && this._items.length < this.options.minItems) {
-        this._errors.push(
-          this.options.messages?.minItems ??
-          `Значений должно быть не меньше ${this.options.minItems}`
-        )
+        this._errors = this._errorState.add({code: 'min_items', message: this.options.messages?.minItems ??
+          `Значений должно быть не меньше ${this.options.minItems}`, params: {min: this.options.minItems}}, 'client')
         return false
       }
 
       if (this.options.maxItems != null && this._items.length > this.options.maxItems) {
-        this._errors.push(
-          this.options.messages?.maxItems ??
-          `Значений должно быть не больше ${this.options.maxItems}`
-        )
+        this._errors = this._errorState.add({code: 'max_items', message: this.options.messages?.maxItems ??
+          `Значений должно быть не больше ${this.options.maxItems}`, params: {max: this.options.maxItems}}, 'client')
         return false
       }
 
@@ -201,15 +216,9 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
         const values = this._items.map(item => item.valueClear)
         const result = this.options.validate(values, form)
 
-        if (result === false) {
-          this._errors.push(
-            this.options.messages?.validate ?? "Ошибка валидации"
-          )
-          return false
-        }
-
-        if (typeof result === "string") {
-          this._errors.push(result)
+        const errors = customErrors(result, this.options.messages?.validate ?? 'Ошибка валидации')
+        if (errors.length) {
+          this._errors = this._errorState.set(errors, 'custom')
           return false
         }
       }
@@ -224,7 +233,7 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
 
   get isValid(): boolean {
     if (!this._hasValidationResult) return false
-    if (this._errors.length > 0) return false
+    if (this._errorState.getErrors(this._errors).length > 0) return false
 
     return this._items.every(item => item.isValid === true)
   }
@@ -236,10 +245,10 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
   set error(message: string | null) {
     this.update(() => {
       if (message) {
-        this._errors = [message]
+        this._errors = this._errorState.set([{code: manualErrorSource(), message}], manualErrorSource())
         this._hasValidationResult = true
       } else {
-        this._errors = []
+        this._errors = this._errorState.set([], 'external')
         this._hasValidationResult = false
       }
       })
@@ -252,7 +261,7 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
   reset(): void {
     return this.update(() => {
       this._items.forEach(item => item.reset())
-      this._errors = []
+      this._errors = this._errorState.set([], 'external')
       this._hasValidationResult = false
       this.isTouched = false
       })
