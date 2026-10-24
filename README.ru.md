@@ -172,6 +172,26 @@ class PasswordForm extends Form {
 
 Валидаторы синхронные; возврат Promise не поддерживается. Для асинхронных проверок, например уникальности на сервере, вызовите сервис отдельно и примените ответ через API ошибок формы.
 
+## Структурированные ошибки (исходники HF-015)
+
+В текущих исходниках `getErrors()` у Field, коллекций и Form возвращает упорядоченные ошибки с обязательным `code`, необязательными `message`/`params`, относительным `path` и `source` (`client`, `custom`, `server`, `external`). Дубликаты сохраняются; UI и локализация не требуются. Опубликованный npm-пакет 2.2.0 этим PR не обновляется.
+
+```ts
+const email = new Field(StringType, null, {
+  validate: (value: string) => value.length < 2
+    ? [{code: 'min_length', message: 'Minimum length is 2', params: {min: 2}},
+       {code: 'review_required'}]
+    : true,
+});
+email.rawValue = 'x';
+for (const error of email.getErrors()) {
+  console.log(error.code, error.message, error.params, error.path, error.source);
+}
+console.log(email.errors); // ['Minimum length is 2', 'review_required']
+```
+
+Старые `errors`, `error`, `allErrors` и результаты boolean/string работают как раньше. Без `message` строковое представление показывает код. `field.setErrors([...])` заменяет собственные ручные ошибки. `form.setErrors({email: [{code: 'taken'}, {code: 'blocked'}]})` — новый серверный импорт с несколькими ошибками, вложенными путями и элементами ArrayField; старый `form.errors = response` сохраняет `parseErrors()` и поведение трансформеров. Новый `ErrorsSchema.parseValidationErrors()` сохраняет коды и дубликаты. Запись значения/валидация очищает ошибки поля по прежней политике; глобальные ошибки требуют явной очистки. Snapshots получают необязательный `validationErrors` только для собственных ошибок узла. [Модель, API, коды, миграция и ограничения](docs/ai/HEADLESS_ERRORS.ru.md).
+
 ## Жизненный цикл валидации и состояние
 
 - Значения по умолчанию начинают со состояния «не изменено».
@@ -349,8 +369,8 @@ const date = new Field(DateLuxonType, null, {
 
 | Класс | Основной API |
 | --- | --- |
-| `Form` | `fields`, `setFields()`, `fieldsValue`, `checkValid()`, `isValid`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `batch()`, `allErrors`, `globalErrors`, `errors`, `setGlobalError()`, `clearGlobalErrors()`, `reset()`, `toJSON()`, `toFormData()` |
-| `Field` | `rawValue`, `setRawValue()`, `valueClear`, `errors`, `error`, `isValid`, `isTouched`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `isEmpty`, `checkValid()`, `reset()` |
+| `Form` | `fields`, `setFields()`, `fieldsValue`, `checkValid()`, `isValid`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `batch()`, `allErrors`, `globalErrors`, `errors`, `getErrors()`, `setErrors()`, `setGlobalError()`, `clearGlobalErrors()`, `reset()`, `toJSON()`, `toFormData()` |
+| `Field` | `rawValue`, `setRawValue()`, `valueClear`, `errors`, `error`, `getErrors()`, `getOwnErrors()`, `setErrors()`, `isValid`, `isTouched`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `isEmpty`, `checkValid()`, `reset()` |
 | `ArrayField` | `items`, `itemsValue`, `add()`, `remove()`, `clear()`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `checkValid()`, `reset()` |
 | `ArrayFormField` | `forms`, `formsFieldsValue`, `add()`, `remove()`, `clear()`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `checkValid()`, `reset()` |
 | `ErrorsSchema` | `staticKey()`, `dynamicKey()`, `fallback()`, `transformValue()`, `parseErrors()`, `parseErrorsDetailed()`, `nest()`, `clone()`, `merge()`, `forArray()`, `fromObject()` |

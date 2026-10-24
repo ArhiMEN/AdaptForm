@@ -2,6 +2,8 @@
 
 [English](HEADLESS_STATE_USAGE.md) · [Русский](HEADLESS_STATE_USAGE.ru.md)
 
+Дополнение исходников HF-015: необязательный `validationErrors` содержит только собственные ошибки узла; агрегированные пути доступны через `getErrors()`. [Модель и сохранённые политики](HEADLESS_ERRORS.ru.md). HF-011 уже принят в PR #25, ограниченный HF-013 — в PR #27; исторический контракт 2.2.0 ниже сохраняет силу с этими дополнениями.
+
 HF-005–HF-010 прошли независимое ревью и объединены в [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16). **Кандидат исходников 2.2.0** объединён в master ([PR #18](https://github.com/ArhiMEN/AdaptForm/pull/18)), и **опубликован в npm как 2.2.0** через OIDC Trusted Publisher; см. [проверочный список релиза](../roadmap/v2.2.0/RELEASE.ru.md). Полная семантика и совместимость: [контракт](HEADLESS_STATE_CONTRACT.ru.md).
 
 ```ts

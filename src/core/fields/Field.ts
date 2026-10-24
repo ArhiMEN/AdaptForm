@@ -1,3 +1,4 @@
+import {ErrorState, customErrors, manualErrorSource, validationError, type ValidationError, type ValidationErrorInput, type ValidationErrorSource} from '../ValidationError'
 import {ObservableNode} from "@core/state/ObservableNode"
 import {snapshotValue, type FieldSnapshot} from "@core/state/snapshot"
 import {FieldOptions} from "@core/options"
@@ -16,6 +17,23 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
   protected defaultValue: T | null
   private _baseline: T | null = null
   protected _errors: string[] = []
+  private readonly _errorState = new ErrorState(this._errors)
+
+  /** Own structured errors, without collection descendants. */
+  getOwnErrors(): readonly ValidationError[] { return this._errorState.getErrors(this._errors) }
+
+  /** Structured errors relative to this node; collection indexes reflect current order. */
+  getErrors(): readonly ValidationError[] {
+    return this._errorState.getErrors(this._errors)
+  }
+
+  /** Replace this node's own errors; children are unaffected. */
+  setErrors(errors: readonly ValidationErrorInput[], source: ValidationErrorSource = 'external'): void {
+    this.update(() => {
+      this._errors = this._errorState.set(errors, source)
+      this.isValid = errors.length ? false : null
+    })
+  }
 
   private _isValid: boolean | null = null
 
@@ -60,18 +78,19 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
   private _snapshot?: FieldSnapshot
 
   protected captureState(): FieldSnapshot {
+    const validationErrors = this._errorState.getErrors(this._errors)
     const previous = this._snapshot
     const isValid = this.isValid, isTouched = this.isTouched, isDirty = this.isDirty
     // Mutable inputs must still be described on public reads (Date, Map, etc.).
     const scalar = (value: unknown) => value === null || typeof value !== 'object' && typeof value !== 'function'
     if (previous && this.captureState === Field.prototype.captureState && scalar(this._rawValue) && scalar(this._valueClear) &&
       Object.is(previous.rawValue, this._rawValue) && Object.is(previous.valueClear, this._valueClear) &&
-      previous.isValid === isValid && previous.isTouched === isTouched && previous.isDirty === isDirty &&
+      previous.validationErrors === validationErrors && previous.isValid === isValid && previous.isTouched === isTouched && previous.isDirty === isDirty &&
       previous.errors.length === this._errors.length && previous.errors.every((error, index) => error === this._errors[index])) {
       return previous
     }
     return this._snapshot = {rawValue: snapshotValue(this._rawValue), valueClear: snapshotValue(this._valueClear),
-      errors: [...this._errors], isValid, isTouched, isDirty}
+      errors: [...this._errors], validationErrors, isValid, isTouched, isDirty}
   }
 
   // ========== Getters and setters ==========
@@ -104,7 +123,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
   setRawValue(input: any, validate: boolean = true): void {
     return this.update(() => {
       this.assignRawValue(input)
-      this._errors = []
+      this._errors = this._errorState.set([], 'external')
       this.isTouched = true
 
       if (validate) {
@@ -147,9 +166,9 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
   set error(message: string | null) {
     this.update(() => {
       if (message) {
-        this._errors = [message]
+        this._errors = this._errorState.set([{code: manualErrorSource(), message}], manualErrorSource())
       } else {
-        this._errors = []
+        this._errors = this._errorState.set([], 'external')
       }
       this.isValid = message ? false : null
       })
@@ -185,12 +204,12 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
 
   checkValid(form?: Form): boolean {
     return this.update(() => {
-      this._errors = []
+      this._errors = this._errorState.set([], 'external')
 
       // 1. Check emptiness and required status.
       if (this.isEmpty) {
         if (this.isRequired(form)) {
-          this._errors.push(this.options.messages?.isRequired ?? 'Поле обязательно для заполнения')
+          this._errors = this._errorState.add({code: 'required', message: this.options.messages?.isRequired ?? 'Поле обязательно для заполнения'}, 'client')
           return false
         }
         return true
@@ -198,29 +217,24 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
 
       // 2. Check whether the value could be cast to the expected type.
       if (this._valueClear === null) {
-        this._errors.push(
-          this.options.messages?.type ??
-          `Ожидается ${this.fieldType.getTypeName()}`
-        )
+        this._errors = this._errorState.add({code: 'invalid_type', message: this.options.messages?.type ??
+          `Ожидается ${this.fieldType.getTypeName()}`, params: {expected: this.fieldType.getTypeName()}}, 'client')
         return false
       }
 
       // 3. Run type-specific validation.
-      const typeErrors = validationCallback(() => this.fieldType.validate(this._valueClear as T, form))
+      const typeErrors = validationCallback(() => this.fieldType.validateErrors(this._valueClear as T, form))
       if (typeErrors.length > 0) {
-        this._errors.push(...typeErrors)
+        this._errors = this._errorState.replace(typeErrors.map(error => validationError(error, 'client')))
         return false
       }
 
       // 4. Run custom validation.
       if (this.options.validate) {
         const result = validationCallback(() => this.options.validate!(this._valueClear, form))
-        if (result === false) {
-          this._errors.push(this.options.messages?.validate ?? 'Значение не прошло валидацию')
-          return false
-        }
-        if (typeof result === 'string') {
-          this._errors.push(result)
+        const errors = customErrors(result, this.options.messages?.validate ?? 'Значение не прошло валидацию')
+        if (errors.length) {
+          this._errors = this._errorState.set(errors, 'custom')
           return false
         }
       }
@@ -256,7 +270,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
         this._valueClear = null
       }
 
-      this._errors = []
+      this._errors = this._errorState.set([], 'external')
       this.isValid = null
       this.isTouched = false
       })

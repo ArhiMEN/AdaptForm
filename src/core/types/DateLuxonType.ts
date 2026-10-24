@@ -1,3 +1,5 @@
+import type {ValidationErrorInput} from '../ValidationError'
+import type {Form} from '../Form'
 import {DateTime} from "luxon"
 import {FieldType} from "@core/types/FieldType"
 import {FieldOptions, messagesOptions} from "@core/options"
@@ -81,13 +83,21 @@ export class DateLuxonType extends FieldType<DateTime, DateLuxonOptions> {
   }
 
   validate(value: DateTime): string[] {
-    const errors: string[] = []
+    return this.validateRules(value).map(error => error.message!)
+  }
+
+  validateErrors(value: DateTime, form?: Form): readonly ValidationErrorInput[] {
+    // Preserve subclasses that override the historical string validator.
+    return this.validate === DateLuxonType.prototype.validate
+      ? this.validateRules(value) : super.validateErrors(value, form)
+  }
+
+  private validateRules(value: DateTime): ValidationErrorInput[] {
+    const errors: ValidationErrorInput[] = []
 
     if (!value.isValid) {
-      errors.push(
-        this.options.messages?.invalid ??
-        `Неверная дата: ${value.invalidExplanation}`
-      )
+      errors.push({code: 'invalid_type', message: this.options.messages?.invalid ??
+        `Неверная дата: ${value.invalidExplanation}`, params: {expected: 'date'}})
       return errors
     }
 
@@ -96,10 +106,8 @@ export class DateLuxonType extends FieldType<DateTime, DateLuxonOptions> {
       const compareValue = this.normalizeForComparison(value)
 
       if (compareValue < minDate) {
-        errors.push(
-          this.options.messages?.minDate ??
-          `Дата должна быть не ранее ${this.formatDateTime(this.options.minDate)}`
-        )
+        errors.push({code: 'min_date', message: this.options.messages?.minDate ??
+          `Дата должна быть не ранее ${this.formatDateTime(this.options.minDate)}`, params: {min: this.options.minDate.toMillis()}})
       }
     }
 
@@ -108,16 +116,14 @@ export class DateLuxonType extends FieldType<DateTime, DateLuxonOptions> {
       const compareValue = this.normalizeForComparison(value)
 
       if (compareValue > maxDate) {
-        errors.push(
-          this.options.messages?.maxDate ??
-          `Дата должна быть не позднее ${this.formatDateTime(this.options.maxDate)}`
-        )
+        errors.push({code: 'max_date', message: this.options.messages?.maxDate ??
+          `Дата должна быть не позднее ${this.formatDateTime(this.options.maxDate)}`, params: {max: this.options.maxDate.toMillis()}})
       }
     }
 
     const year = value.year
     if (year < 1900 || year > 2100) {
-      errors.push(this.options.messages?.invalid ?? 'Некорректный год')
+      errors.push({code: 'invalid_year', message: this.options.messages?.invalid ?? 'Некорректный год', params: {min: 1900, max: 2100}})
     }
 
     return errors

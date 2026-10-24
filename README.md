@@ -172,6 +172,26 @@ class PasswordForm extends Form {
 
 Validators are synchronous; returning a Promise is not supported. For asynchronous checks such as server-side uniqueness, call the service separately and apply the response through the form's error API.
 
+## Structured errors (HF-015 source preview)
+
+Current source adds `getErrors()` on Field, collections and Form: ordered errors with required `code`, optional `message`/`params`, relative `path` and `source` (`client`, `custom`, `server`, `external`). Duplicates survive; no UI or localization is required. This PR does not update the published npm 2.2.0 package.
+
+```ts
+const email = new Field(StringType, null, {
+  validate: (value: string) => value.length < 2
+    ? [{code: 'min_length', message: 'Minimum length is 2', params: {min: 2}},
+       {code: 'review_required'}]
+    : true,
+});
+email.rawValue = 'x';
+for (const error of email.getErrors()) {
+  console.log(error.code, error.message, error.params, error.path, error.source);
+}
+console.log(email.errors); // ['Minimum length is 2', 'review_required']
+```
+
+Existing `errors`, `error`, `allErrors` and boolean/string results keep working. Without `message`, the string projection displays the code. `field.setErrors([...])` replaces own manual errors. `form.setErrors({email: [{code: 'taken'}, {code: 'blocked'}]})` is the new server importer for multiple errors, nested paths and ArrayField items; existing `form.errors = response` retains `parseErrors()` and transformer behavior. New `ErrorsSchema.parseValidationErrors()` preserves codes and duplicates. Value writes/validation clear field errors under the existing policy; global errors require explicit clearing. Snapshots gain optional `validationErrors` for node-owned errors only. [Model, API, codes, migration and limits](docs/ai/HEADLESS_ERRORS.md).
+
 ## Validation lifecycle and state
 
 - Constructor defaults begin untouched.
@@ -349,8 +369,8 @@ const date = new Field(DateLuxonType, null, {
 
 | Class | Main API |
 | --- | --- |
-| `Form` | `fields`, `setFields()`, `fieldsValue`, `checkValid()`, `isValid`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `batch()`, `allErrors`, `globalErrors`, `errors`, `setGlobalError()`, `clearGlobalErrors()`, `reset()`, `toJSON()`, `toFormData()` |
-| `Field` | `rawValue`, `setRawValue()`, `valueClear`, `errors`, `error`, `isValid`, `isTouched`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `isEmpty`, `checkValid()`, `reset()` |
+| `Form` | `fields`, `setFields()`, `fieldsValue`, `checkValid()`, `isValid`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `batch()`, `allErrors`, `globalErrors`, `errors`, `getErrors()`, `setErrors()`, `setGlobalError()`, `clearGlobalErrors()`, `reset()`, `toJSON()`, `toFormData()` |
+| `Field` | `rawValue`, `setRawValue()`, `valueClear`, `errors`, `error`, `getErrors()`, `getOwnErrors()`, `setErrors()`, `isValid`, `isTouched`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `isEmpty`, `checkValid()`, `reset()` |
 | `ArrayField` | `items`, `itemsValue`, `add()`, `remove()`, `clear()`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `checkValid()`, `reset()` |
 | `ArrayFormField` | `forms`, `formsFieldsValue`, `add()`, `remove()`, `clear()`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `checkValid()`, `reset()` |
 | `ErrorsSchema` | `staticKey()`, `dynamicKey()`, `fallback()`, `transformValue()`, `parseErrors()`, `parseErrorsDetailed()`, `nest()`, `clone()`, `merge()`, `forArray()`, `fromObject()` |

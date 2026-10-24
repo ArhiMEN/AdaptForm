@@ -2,6 +2,8 @@
 
 [English](HEADLESS_DEPENDENCIES_USAGE.md) · [Русский](HEADLESS_DEPENDENCIES_USAGE.ru.md)
 
+Accepted and merged in [PR #27](https://github.com/ArhiMEN/AdaptForm/pull/27). HF-015 adds [structured errors](HEADLESS_ERRORS.md): selected dependent rules can return error objects/arrays without changing scheduling, touched/dirty or existing invalidation.
+
 Implemented source API for the 2.3.0 milestone; package version stays **2.2.0**, with no new npm publication. This is the deliberately limited implementation of [HF-012](HEADLESS_DEPENDENCIES.md): ordinary `Field` properties of one `Form`, with explicit activation.
 
 ## API and examples

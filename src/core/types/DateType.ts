@@ -1,3 +1,5 @@
+import type {ValidationErrorInput} from '../ValidationError'
+import type {Form} from '../Form'
 import {FieldType} from "@core/types/FieldType"
 import {DateOptions} from "@core/options"
 
@@ -22,28 +24,34 @@ export class DateType extends FieldType<Date, DateOptions> {
   }
 
   validate(value: Date): string[] {
-    const errors: string[] = []
+    return this.validateRules(value).map(error => error.message!)
+  }
+
+  validateErrors(value: Date, form?: Form): readonly ValidationErrorInput[] {
+    // Preserve subclasses that override the historical string validator.
+    return this.validate === DateType.prototype.validate
+      ? this.validateRules(value) : super.validateErrors(value, form)
+  }
+
+  private validateRules(value: Date): ValidationErrorInput[] {
+    const errors: ValidationErrorInput[] = []
 
     if (isNaN(value.getTime())) {
-      errors.push(this.options.messages?.invalid ?? 'Неверная дата')
+      errors.push({code: 'invalid_type', message: this.options.messages?.invalid ?? 'Неверная дата', params: {expected: 'date'}})
       return errors
     }
 
     if (this.options.minDate) {
       if (!this.compareDates(value, this.options.minDate, 'min')) {
-        errors.push(
-          this.options.messages?.minDate ??
-          `Дата должна быть не ранее ${this.options.minDate!.toLocaleDateString()}`
-        )
+        errors.push({code: 'min_date', message: this.options.messages?.minDate ??
+          `Дата должна быть не ранее ${this.options.minDate!.toLocaleDateString()}`, params: {min: this.options.minDate.getTime()}})
       }
     }
 
     if (this.options.maxDate) {
       if (!this.compareDates(value, this.options.maxDate, 'max')) {
-        errors.push(
-          this.options.messages?.maxDate ??
-          `Дата должна быть не позднее ${this.options.maxDate!.toLocaleDateString()}`
-        )
+        errors.push({code: 'max_date', message: this.options.messages?.maxDate ??
+          `Дата должна быть не позднее ${this.options.maxDate!.toLocaleDateString()}`, params: {max: this.options.maxDate.getTime()}})
       }
     }
 

@@ -1,8 +1,12 @@
+import type {ValidationError} from '../ValidationError'
+
 /** Snapshots contain data only: mutable built-ins and opaque instances are described. */
 export type SnapshotValue = null | undefined | string | number | boolean | bigint |
   readonly SnapshotValue[] | {readonly [key: string]: SnapshotValue}
 
 export interface NodeSnapshot {
+  /** Own errors only; descendants live in their node snapshots. Optional for legacy producers. */
+  readonly validationErrors?: readonly ValidationError[]
   readonly isValid: boolean | null
   readonly isTouched: boolean
   readonly isDirty: boolean
