@@ -6,6 +6,8 @@
 
 ## Проверки
 
+[PR #28](https://github.com/ArhiMEN/AdaptForm/pull/28) открыт в master. [CI #40082508903](https://github.com/ArhiMEN/AdaptForm/actions/runs/40082508903) на `69f0878` завершился FAIL на Audit dependencies: undici, 1 high + транзитивный moderate jsdom; последующие проверки пропущены. Это подтверждено логами, не ошибка тестов HF-015. Для последующих documentation-only коммитов актуальны [проверки PR](https://github.com/ArhiMEN/AdaptForm/pull/28/checks).
+
 - `npm test`: **711 тестов / 33 файла**, включая 51 новую регрессию HF-015. Последний полный прогон выполнен после оптимизации пустых ошибок.
 - PASS: `npm run lint`, `npx tsc --noEmit -p tsconfig.json`, `npx tsc --noEmit -p tsconfig.test.json`, `npm run check:demo`, `npm run build`, `npm run check:package` (21 файл), `npm run build:demo`, наличие вывода демо, `git diff --check`, локальные Markdown-ссылки и одинаковые EN/RU примеры.
 - Свежий `npm pack` проверен в отдельном временном каталоге: строгие NodeNext `.mts`/`.cts` потребители компилируются с `skipLibCheck: false`; ESM/CJS запускаются без установленного Luxon. Проверены экспорты типов, новые callback/пути/серверные ошибки/snapshots, вывод значений и отрицательные примеры declarations. Optional Luxon проверен unit-тестами и компиляцией исходников.
