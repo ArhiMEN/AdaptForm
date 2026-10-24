@@ -2,6 +2,15 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## HF-015 — 2026-10-24
+
+Branch `hf-015-structured-validation-errors` from current master `b9051dd`; source `1af1a2b`, tests `37ba83d`, empty-read optimization `934b378`. Version **2.2.0**, package/lockfile/dependencies unchanged. HF-011 accepted in PR #25, PERF-01 in #26, limited HF-013 in #27. [Error contract](HEADLESS_ERRORS.md) covers ordered code/message/params/path/source, getErrors, the legacy string facade, new validator results and additive server ingestion. Existing setter/parser/transformer behavior and clearing policy remain; snapshots add optional own validationErrors.
+
+Final local checks: **711 tests / 33 files** (51 new regressions), lint, source/test/demo TypeScript, library/demo builds, package (21 files), fresh packed ESM/CJS and strict NodeNext declarations without installed Luxon, links/EN-RU examples and diff — PASS. **npm audit FAIL**: existing high-severity undici 7.29.1 findings reproduce on untouched master with the same lockfile; production-only audit reports 0. [Full checks, raw benchmarks and model costs](../roadmap/v2.3.0/ERRORS_VERIFICATION.md): the paired 1000-node comparison shows about 9% unchanged-snapshot cost and 8–10% collection cost; the full harness has larger fluctuations. Measurements do not establish zero slowdown/leaks; extra metadata costs memory.
+
+Next: PR acceptance into master and independent review, inspect CI accounting for the existing audit blocker. New server ingestion is explicit; global errors survive value changes, and legacy allErrors does not start flattening scalar item errors. Mutable legacy arrays reconcile on reads without Proxy/automatic notifications. HF-014/016/017 are not implemented. No merge, publication, version bump, tag or branch deletion. Entries below are historical and do not imply HF-011/013 are still unmerged.
+
+
 ## HF-013 — 2026-10-21
 
 Branch `feature/v2.3.0-dependent-validation`, base master `30a45a2` (PR #26), implementation `654b162`. Package stays **2.2.0**. [Implemented EN/RU API and limits](HEADLESS_DEPENDENCIES_USAGE.md): optional `dependsOn: [{path: ['fieldName']}]`, explicit `enableDependencies()`/idempotent disposal, whole-pipeline selective checks, deterministic chains/diamonds, batch suppression/deduplication, atomic snapshots and configuration/purity errors. No subscription is required. Unactivated forms retain legacy behavior.

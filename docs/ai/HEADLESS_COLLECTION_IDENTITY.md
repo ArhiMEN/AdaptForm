@@ -2,6 +2,8 @@
 
 [English](HEADLESS_COLLECTION_IDENTITY.md) · [Русский](HEADLESS_COLLECTION_IDENTITY.ru.md)
 
+Current status: HF-011 accepted in PR #25; HF-013 in PR #27. HF-015 additive ingestion and structured paths are described in the [error contract](HEADLESS_ERRORS.md); the legacy server paths documented below remain unchanged.
+
 Implemented in the 2.3.0 foundation branch against published 2.2.0; package version remains 2.2.0. This does not change the published release. HF-004 reset redesign is excluded.
 
 ## Identity and snapshots

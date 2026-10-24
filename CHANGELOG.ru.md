@@ -6,6 +6,12 @@
 
 **[Интерактивное демо](https://arhimen.github.io/AdaptForm/?lang=ru)** · [Исходный код демо](https://github.com/ArhiMEN/AdaptForm/tree/master/demo) · [Документация](https://github.com/ArhiMEN/AdaptForm/blob/master/README.ru.md)
 
+## Не выпущено — исходники HF-015
+
+- Добавлены неизменяемые упорядоченные ошибки `ValidationError` с code/message/params/path/source, `getErrors()` для полей/коллекций/форм, собственные `getOwnErrors()`/`setErrors()` полей и структурированные результаты пользовательских валидаторов. Дубликаты кодов и ошибки без сообщения сохраняются.
+- Встроенные проверки получают стабильные коды; старые сообщения, строковые API, mutable errors, `FieldType.validate()`, схемы и политики валидации/очистки сохраняются. Новый серверный импорт `Form.setErrors()`/`ErrorsSchema.parseValidationErrors()` поддерживает несколько ошибок и пути элементов коллекций без переосмысления старого `form.errors = response`.
+- Snapshots получают необязательные собственные `validationErrors`; подписки, batch, HF-011 и HF-013 сохраняют семантику. [Контракт, миграция и ограничения](docs/ai/HEADLESS_ERRORS.ru.md). Версия остаётся 2.2.0; без публикации.
+
 ## Не выпущено — исходники HF-013
 
 - Добавлены необязательный `FieldOptions.dependsOn` с буквальными одноэлементными путями и `Form.enableDependencies(): () => void`. Явная активация включает выборочную синхронную валидацию обычных полей одной Form: цепочки/ромбы, дедупликацию batch, подавление запросов, атомарные snapshots и идемпотентное отключение.

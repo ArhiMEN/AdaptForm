@@ -10,3 +10,5 @@ AdaptForm is a framework-independent TypeScript-first, class-based headless form
 - Start with [AGENTS](../../AGENTS.md). Read only relevant README sections, files, and skills; this map is not a code audit.
 
 Use [DECISIONS](DECISIONS.md) for the agreed process, [BACKLOG](BACKLOG.md) for proposals, and [HANDOFF](HANDOFF.md) to resume work. These documents retain public project facts, not private ChatGPT conversations.
+
+Current master includes HF-011 (PR #25), PERF-01 (PR #26) and limited HF-013 (PR #27). HF-015: [structured errors](HEADLESS_ERRORS.md), separate branch/PR, version 2.2.0 without publication.

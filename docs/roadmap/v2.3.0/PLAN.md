@@ -2,13 +2,19 @@
 
 [English](PLAN.md) · [Русский](PLAN.ru.md)
 
+## Current status — 2026-10-24
+
+HF-011/STAB was accepted in PR #25 (`7d9a13b`), PERF-01 in PR #26 (`30a45a2`), and limited HF-013 in PR #27 (`b9051dd`). Older sections below record historical scope. HF-015 adds structured errors, compatible string projections, additive server ingestion and the retained clearing policy; [contract](../../ai/HEADLESS_ERRORS.md). Source is implemented, with PR acceptance/independent review pending. No HF-014/016/017, version change from 2.2.0 or publication.
+
+## Historical foundation scope
+
 Approved source scope on `feature/v2.3.0-foundation`, based on master `9942aac`. **Not a release candidate or npm publication.** Manifests and published version remain 2.2.0. One integration PR, no auto-merge, tags, release or branch removal.
 
 | Stage | Source status | Evidence |
 | --- | --- | --- |
 | STAB-01 | Complete; 54 → 0 diagnostics | [Typing](TEST_TYPES.md), regression type tests and CI test typecheck |
 | STAB-02 | Complete measurement/lifecycle scope; performance concerns deferred | [Benchmarks](BENCHMARKS.md), raw baseline/foundation JSON and lifecycle tests |
-| HF-011 | Implemented, pending independent review | [Identity contract](../../ai/HEADLESS_COLLECTION_IDENTITY.md), insert/move/ordered snapshot IDs |
+| HF-011 | Accepted in PR #25 | [Identity contract](../../ai/HEADLESS_COLLECTION_IDENTITY.md), insert/move/ordered snapshot IDs |
 | HF-012 | Specification complete, owner decisions pending | [Dependency proposal](../../ai/HEADLESS_DEPENDENCIES.md); no engine code |
 
 [Verification](VERIFICATION.md) records actual local checks and integration checks. Acceptance of this PR must not imply approval of the proposed HF-012 API. Owner gates include activation/disposal, missing/cyclic refs, opt-in purity and selective invalidation. Next safe work is independent review and those decisions; **do not start HF-013 automatically**.
@@ -24,3 +30,5 @@ The separately scoped performance task starts from accepted master `7d9a13b` (PR
 ## HF-013 follow-up
 
 A separate explicit task authorizes the limited dependent-validation source implementation in `feature/v2.3.0-dependent-validation`, based on accepted master `30a45a2` (PERF-01, PR #26). It supersedes the historical HF-013 exclusion above for ordinary fields of one Form only. [API, examples and boundaries](../../ai/HEADLESS_DEPENDENCIES_USAGE.md): activation/disposal, literal one-property paths, deterministic selective checks and opt-in purity. The expanded HF-012 collection/direct-ref proposal is still excluded. Package stays 2.2.0; no merge, publication or branch deletion.
+
+Checks and measured metadata costs: [HF-015 report](ERRORS_VERIFICATION.md).

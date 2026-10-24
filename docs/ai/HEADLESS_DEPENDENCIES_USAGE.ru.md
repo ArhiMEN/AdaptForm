@@ -2,6 +2,8 @@
 
 [English](HEADLESS_DEPENDENCIES_USAGE.md) · [Русский](HEADLESS_DEPENDENCIES_USAGE.ru.md)
 
+Принят и объединён в [PR #27](https://github.com/ArhiMEN/AdaptForm/pull/27). HF-015 добавляет [структурированные ошибки](HEADLESS_ERRORS.ru.md): выбранные зависимые правила могут возвращать объекты/массивы ошибок, не меняя планирование, touched/dirty или прежнюю очистку.
+
 Реализованный исходный API этапа 2.3.0; версия пакета остаётся **2.2.0**, новой публикации npm нет. Это намеренно ограниченная реализация [HF-012](HEADLESS_DEPENDENCIES.ru.md): обычные свойства `Field` одной `Form`, с явной активацией.
 
 ## API и примеры

@@ -4,6 +4,10 @@
 
 **Status: direction B (headless engine) selected; tasks below are a proposed decomposition, not blanket implementation approval.** Each code task needs separately approved scope via ChatGPT and runs only in Codex Cloud. No release version or date is committed.
 
+## Current status — 2026-10-24
+
+HF-011 was accepted in [PR #25](https://github.com/ArhiMEN/AdaptForm/pull/25), PERF-01 optimizations in [PR #26](https://github.com/ArhiMEN/AdaptForm/pull/26), and limited HF-013 in [PR #27](https://github.com/ArhiMEN/AdaptForm/pull/27), master `b9051dd`. HF-012 remains an expanded proposal; only the HF-013 subset is implemented. HF-015 is implemented in a separate PR: [error contract](HEADLESS_ERRORS.md). Dated sections below describe historical scope, not current master status. Package stays 2.2.0; HF-014/016/017 and publication are excluded.
+
 ## STAB-01/02 + HF-011/012 foundation — 2026-10-20
 
 The separately approved combined scope is implemented in `feature/v2.3.0-foundation` with sequential stage commits and one integration PR. STAB-01 fixes all 54 baseline test diagnostics; STAB-02 measures performance/lifecycle (large observed collections remain expensive); HF-011 adds retained-node identity and insert/move; HF-012 is a specification proposal only. See [2.3.0 milestone](../roadmap/v2.3.0/PLAN.md), [identity](HEADLESS_COLLECTION_IDENTITY.md), [dependency proposal](HEADLESS_DEPENDENCIES.md) and [verification](../roadmap/v2.3.0/VERIFICATION.md). Source completion is not PR acceptance or publication. Package stays 2.2.0. This scoped run supersedes the earlier stop-between-cards rule; HF-004 and HF-013+ remain excluded.
@@ -119,21 +123,24 @@ Every task is independent in scope but must obey its prerequisites. No task may 
 
 ### HF-011 — Stabilize dynamic collection identity
 
-**Source implemented in this foundation branch; pending independent review.** [Contract](HEADLESS_COLLECTION_IDENTITY.md).
+**Accepted and merged in PR #25.** [Contract](HEADLESS_COLLECTION_IDENTITY.md).
 
 - Depends on: HF-010; phase/size: P1 / M; model/effort: Sol / High; API decision gate: yes.
 - Scope: Add internal stable element identity across reorder and index shifts, without changing existing indexed serialization.
 - Acceptance: Insert/delete/reorder retain surviving item identity and appropriate subscriptions; index paths stay accurate.
 
+
 ### HF-012 — Specify dependency graph semantics
 
-**Specification complete as a proposal; owner gates remain before HF-013. No engine implemented.** [Proposal](HEADLESS_DEPENDENCIES.md).
+**Expanded specification remains a proposal; its limited subset was accepted as HF-013 in PR #27.** [Proposal](HEADLESS_DEPENDENCIES.md).
 
 - Depends on: HF-005, HF-009; phase/size: P2 / S; model/effort: Sol / High; API decision gate: yes.
 - Scope: Specify explicit dependsOn paths, cycle handling, nested/array paths and invalidation rules before implementation.
 - Acceptance: Decision record includes cycle handling, non-mutating validators and backward-compatibility boundary.
 
 ### HF-013 — Implement selective dependency revalidation
+
+**Accepted and merged in PR #27; ordinary fields of one Form only.** [Contract](HEADLESS_DEPENDENCIES_USAGE.md).
 
 - Depends on: HF-012, HF-011; phase/size: P2 / M; model/effort: Sol / High; API decision gate: no.
 - Scope: Revalidate explicit dependents once per committed batch; do not introduce implicit Proxy tracking.
@@ -146,6 +153,8 @@ Every task is independent in scope but must obey its prerequisites. No task may 
 - Acceptance: Default 2.1.0 semantics retained; targeted tests for untouched fields, blur, submit and dependency changes.
 
 ### HF-015 — Introduce structured error internals
+
+**Source implemented; PR acceptance and independent review pending.** [Model, compatibility and retained clearing policy](HEADLESS_ERRORS.md).
 
 - Depends on: HF-005, HF-011; phase/size: P2 / M; model/effort: Sol / High; API decision gate: yes.
 - Scope: Model path/code/source/params/message internally; keep errors, allErrors and ErrorsSchema compatibility façade.
@@ -189,4 +198,4 @@ Every task is independent in scope but must obey its prerequisites. No task may 
 4. Summarize ID, files, actual checks, limitations, risk, next task in `docs/ai/HANDOFF.md` and Russian companion. Update `DECISIONS` only after approval; do not include private discussion in public git.
 5. Do not automatically start the next task. ChatGPT Library is not synced with GitHub: this roadmap is the public plan and Library holds a separate copy.
 
-**Next action:** independent review of the foundation PR and owner decisions in HF-012. Do not implement HF-013, merge or publish automatically.
+**Next action:** review HF-015 and its PR CI. HF-011/013 are already merged; do not auto-start further tasks, merge or publish.
