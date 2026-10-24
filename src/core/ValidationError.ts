@@ -61,6 +61,7 @@ export class ErrorState {
 
   getErrors(messages: string[] = this.messages): readonly ValidationError[] {
     this.messages = messages
+    if (messages.length === 0 && this.entries.length === 0) return this.entries
     if (messages.length !== this.entries.length ||
       messages.some((message, index) => message !== errorMessage(this.entries[index]))) {
       // Discover legacy in-place edits on reads, as with values and collection arrays.
