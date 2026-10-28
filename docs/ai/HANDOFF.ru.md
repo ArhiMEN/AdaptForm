@@ -2,15 +2,15 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
-## Спецификация V3-02 — 2026-10-28
+## Финализация V3-02 / ODR-01–05 — 2026-10-28
 
-**BLOCKED для реализации до решений владельца.** Только документация в `work`, база `670c6a04014fbf938574bfd8eb2a706e44a9d4d0` совпадает с remote master; исходно tree/index чистые. [Спецификация](V3_ARCHITECTURE.ru.md), [каталог 17 кодов I18N-01](V3_ERROR_CODES.ru.md), [миграция/задачи/риски](../roadmap/v3.0.0/PLAN.ru.md), полные EN companions. Требования отделены от candidate APIs; разрешение реализации не подразумевается.
+**READY_FOR_OWNER_REVIEW**. Все пять решений владельца утверждены, открытых ODR по этой задаче нет; спецификация ожидает приёмки. Ветка docs/v3-02-specification, исходный HEAD 96a82c8f015ff34115e192b0c3947d50052b2ebf, чистые index/tree; существующий [Draft PR #30](https://github.com/ArhiMEN/AdaptForm/pull/30). [Архитектура](V3_ARCHITECTURE.ru.md), [17-code catalogue](V3_ERROR_CODES.ru.md), [полный legacy ledger/задачи/риски](../roadmap/v3.0.0/PLAN.ru.md) и EN companions согласованы.
 
-PR #29 — открытый unmerged draft `aab14d29b428c57cabb9ec5ceb069fcc5adaba6e`. Его architecture files отсутствовали локально; пути переиспользованы без интеграции patch AGENTS/DECISIONS. Перед отдельно разрешённой интеграцией согласовать обе истории документации. ODR-01…05 останавливают затронутое проектирование: machine type metadata, domain params, constructor/container timing, полезные legacy/helper/export replacements и post-commit failures относительно безусловной атомарности Apply. Cast metadata и Apply failure channel явно не определены.
+ODR-01: typeId, восемь IDs шести built-ins/modes, без getTypeName alias. ODR-02: точный JSON-domain, глубокие checks/detach/freeze/пределы и rich-params migration. ODR-03 B: ноль constructor/deferred callbacks, граница завершения, full explicit traversal и local structural counts. ODR-04: финальный REMOVE/REPLACE/KEEP, один parser/explicit config, ErrorsMapping composition, trace, own/aggregate readers и required itemIds. ODR-05 A: атомарный staged commit, отдельные retained pending/delivered diagnostic reports, точный порядок/nested batch и fault matrix. Контракты будущие; runtime не менялся.
 
-Фактические проверки PASS: relative links/fences/whitespace, parity TS/decision/task EN/RU, 17 source codes против catalogue/map; strict noEmit candidate declarations/examples с exactOptionalPropertyTypes и ambient node scaffolding; семь negative cases, включая readonly errors. Это проверка документации, не runtime implementation. Test/script files не создавались; runtime/build/package/audit/benchmarks для этапа не запускались. Финальные diff/index/HEAD checks указаны при передаче.
+Фактические проверки PASS: scratch-only `node work/check-docs.mjs` — 342 consistency assertions, 190 relative links/anchors, EN/RU TS/IDs/tables/headings, 17 source codes, восемь type/mode IDs, 30 строк legacy ledger и точный allowlist 10 files. TypeScript 5.9.3: 14 Markdown blocks, strict/noEmit/exactOptionalPropertyTypes, 19 negative cases; ambient Form/Field scaffolding проверяет будущие сигнатуры/примеры, не runtime. Проверены сохранность исторических HANDOFF/DECISIONS и отсутствие открытых ODR-противоречий. `git diff --check` — PASS. Checker/scripts находятся только в scratch, не включены в коммит; runtime suites/builds/audit/benchmarks не запускались.
 
-Далее: закрыть ODR-01…05, утвердить replacement/export ledger, затем отдельно разрешить V3-03 core → V3-04 schema/Apply → V3-05 migration → V3-06 independent RC review. Release V3-07 отдельно согласуется. Source/tests/package/dependencies/workflows/AGENTS не менялись; без branch/commit/push/merge/tag/bump/publication.
+Изменены только 10 разрешённых Markdown files; runtime/tests/dependencies/version/workflows/AGENTS и исторические audit/test results неизменны. PR #29 не изменён/не интегрирован; исходный draft head aab14d29b428c57cabb9ec5ceb069fcc5adaba6e. Разрешены один documentation commit/push и обновление Draft PR #30; без force push/merge/release. Далее — приёмка спецификации владельцем и отдельное разрешение V3-03; не начинать реализацию автоматически.
 
 ## Проверка HF-015 — 2026-10-28
 

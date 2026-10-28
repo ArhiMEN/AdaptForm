@@ -2,7 +2,7 @@
 
 [English](V3_ERROR_CODES.md) · [Русский](V3_ERROR_CODES.ru.md)
 
-Дополнение к [V3-02](V3_ARCHITECTURE.ru.md). **Инвентаризированы 17 существующих built-in codes.** Формы params и условия сохраняют проверки текущей корректной конфигурации, кроме удаления сообщений по I18N-01. Для invalid_type.expected явно открыто ODR-01; пока строка заблокирована, каталог не объявляется полностью финальным. Нормализация произвольных пользовательских params — ODR-02.
+Дополнение к [V3-02](V3_ARCHITECTURE.ru.md), **READY_FOR_OWNER_REVIEW**. Все **17 встроенных codes** сохранены. Будущий каталог учитывает утверждённые ODR-01 (машинный typeId), ODR-02 (JSON params) и ODR-03 (lifecycle). Runtime пока не изменён; миграционные отличия ниже заданы явно.
 
 ## Контракт и происхождение
 
@@ -12,12 +12,12 @@ Custom FieldType тоже получает source type; options.validate — cus
 
 ## Полный перечень правил
 
-Обозначения: v — clean value; n — длина коллекции. Ограничение выполняется, когда настроено. Numeric boundary params — numbers, exclusivity flags — booleans. Scalar empty/required и cast gates предшествуют правилам типа; custom callback запускается после успеха типа. ODR-03 определяет traversal/constructor timing, не значения кодов.
+Обозначения: v — clean value; n — длина коллекции. Ограничение выполняется, когда настроено. Numeric boundary params — numbers, exclusivity flags — booleans. Scalar empty/required и cast gates предшествуют правилам типа; custom callback запускается после успеха типа. ODR-03 фиксирует traversal/timing по архитектуре; значения кодов сохраняются.
 
 | Code | Точные params | Владелец и условие | Порядок/gates |
 | --- | --- | --- | --- |
 | required | нет | Raw Field: null/undefined, строка пуста после trim или пустой массив, isRequired=true; коллекция n=0 и required=true | Пустой optional scalar успешен, type/custom пропущены. Текущие defaults различаются: ArrayField true, ArrayFormField false/undefined; молча не унифицировать. |
-| invalid_type | `{expected: string}`; точные target IDs — **ODR-01** | Nonempty Field не приводится (clean null); защитная finite-проверка NumberType; защитная validity-проверка Date/Luxon | Field cast failure пропускает type/custom. Прямая проверка типа не выполняет required/cast. См. таблицу routes. |
+| invalid_type | `{expected: BuiltinTypeId}`; точные IDs ниже | Nonempty Field не приводится (clean null); защитная finite-проверка NumberType; защитная validity-проверка Date/Luxon | Field cast failure пропускает type/custom. Прямая проверка типа не выполняет required/cast. См. таблицу routes. |
 | min_length | `{min: number}` | String v.length < minLength | Длина в UTF-16 code units JavaScript, не graphemes; до max_length/pattern |
 | max_length | `{max: number}` | String v.length > maxLength | После min_length, до pattern |
 | pattern | нет | Не совпал configured String regex; Decimal нарушает numeric grammar, не имеет integer part либо после separator ноль fractional digits | String клонирует regex без g/y. Grammar Decimal: `^-?\d+\.?\d*$`; + и exponent text отклоняются. Nonfinite/direct numeric exponent representation после String conversion тоже может дать pattern. Новые reason/pattern params не добавляются. |
@@ -34,16 +34,45 @@ Custom FieldType тоже получает source type; options.validate — cus
 | min_items | `{min: number}` | ArrayField n<minItems либо ArrayFormField n<minForms | Текущий required gate до minimum; кода min_forms нет |
 | max_items | `{max: number}` | ArrayField n>maxItems либо ArrayFormField n>maxForms | Текущий minimum gate до maximum; кода max_forms нет |
 
-## Routes invalid_type — нерешённая граница локализации
+## Стабильные машинные идентификаторы типов — ODR-01
 
-| Route | Текущее доказательство | Текущее expected | Target status |
-| --- | --- | --- | --- |
-| Field failed cast | Field.ts:219–228 | getTypeName(): String/Number/Decimal/Boolean/Date возвращают русские labels; Date/Luxon зависят от isDatetime | **Заблокировано**: утвердить machine identity member/values; localized labels в 3.0 не выдавать |
-| Защитная finite-проверка NumberType | NumberType.ts:31–36 | finite_number | Существующее machine value; согласовать с cast route |
-| Защитная invalid Date | DateType.ts:36–41 | date | Существующее machine value |
-| Защитная invalid DateTime | DateLuxonType.ts:95–101 | date | Существующее machine value; молча не переименовывать в luxon |
+В исходниках шесть конкретных built-in FieldType classes, **отдельного DateTimeType нет**. DateType использует native Date в обоих режимах isDatetime; DateLuxonType — Luxon DateTime в обоих режимах через optional adaptform/luxon. DateTime здесь — класс значения Luxon, не core built-in constructor. Date-only/datetime определяет настроенный семантический тип, не localized label или constructor.name.
 
-validateErrors(value:T) принимает type-domain value, не произвольный raw JSON. Required/cast принадлежат Field. При прямом вызове Number NaN/Infinity, invalid Date и invalid DateTime дают существующие защитные ошибки. Decimal.cast отклоняет nonfinite input (Field invalid_type), а прямые Decimal rules преобразуют его в строку и дают pattern. Не вводить новые codes для сокрытия различий входных путей. Values вне объявленного domain типа могут вызвать исключение; validateErrors не обещает universal coercion.
+| Built-in / mode | Обязательный typeId / invalid_type.expected | Clean representation |
+| --- | --- | --- |
+| StringType | string | string |
+| NumberType | number | finite number |
+| DecimalType | decimal | Существующее clean string/number representation |
+| BooleanType | boolean | boolean |
+| DateType, isDatetime отсутствует/false | date | native Date, calendar-date comparison |
+| DateType, isDatetime true | datetime | native Date, timestamp comparison |
+| DateLuxonType, isDatetime отсутствует/false | luxon_date | Luxon DateTime, прежняя date normalization |
+| DateLuxonType, isDatetime true | luxon_datetime | Luxon DateTime, datetime comparison |
+
+IDs — стабильные case-sensitive contract literals. Date typeId — readonly getter эффективного isDatetime mode: явное поддерживаемое изменение опции режима меняет semantic ID и инвалидирует client-check marker; locale/constructor name не используются. Сохранить cast/inputFormat/comparison, включая существующие отличия веток Luxon. OutputFormat удалить: проверка исходников показала использование только для message formatting; приложение форматирует вывод само.
+
+| Route invalid_type | Исторический expected (исходники не менялись) | Будущий expected |
+| --- | --- | --- |
+| Field failed cast | localized getTypeName() | fieldType.typeId, включая явные custom IDs |
+| NumberType direct defensive finite check | finite_number | number; тот же machine ID, что при cast |
+| DateType direct invalid Date | date | date либо datetime по mode |
+| DateLuxonType direct invalid DateTime | date | luxon_date либо luxon_datetime по mode |
+
+Finite_number Number и date Luxon намеренно мигрируют как metadata без новых validation codes. validateErrors(value:T) принимает type-domain values, не raw JSON. Field владеет required/cast. Direct NaN/Infinity, invalid Date/DateTime сохраняют defensive invalid_type. Decimal.cast отклоняет nonfinite raw input (Field invalid_type), а direct rules преобразуют type-domain numeric input в строку и могут дать pattern; это преобразование правила не связано с запретом неявной сериализации params/message. Значения вне declared domain могут бросать; universal coercion не обещается.
+
+Миграция custom types: явно реализовать readonly typeId:string и validateErrors; удалить getTypeName/старые validate overrides без alias. Выбрать стабильный application ID (например app.slug), независимый от rename/minification/locale. Нельзя переиспользовать reserved built-in IDs для другого semantic domain; общий ID намеренно означает общий domain. UI introspection заменить словарём приложения по typeId. Отсутствующий/пустой typeId — ErrorContractError при type setup, не fallback к имени конструктора.
+
+```ts
+class SlugType implements FieldTypeContract<string, object> {
+  readonly typeId = 'app.slug'
+  constructor(public options: object) {}
+  cast(raw: unknown): string | null { return typeof raw === 'string' ? raw : null }
+  validateErrors(value: string): readonly ValidationErrorInput[] {
+    return /^[a-z-]+$/.test(value) ? [] : [{code: 'app.slug_format'}]
+  }
+}
+void SlugType
+```
 
 ## Порядок и особенности Decimal
 
@@ -52,16 +81,20 @@ validateErrors(value:T) принимает type-domain value, не произв�
 - Decimal: grammar/no-integer failure немедленно возвращает pattern. Затем integer max_digits, total max_digits (только с separator), empty-fraction pattern или decimal_places. При любом таком нарушении до gt/ge/lt/le не доходит. Numeric bounds используют существующий parseFloat.
 - `123.`, `0.`, `-123.` и comma-normalized equivalents остаются редактируемыми clean strings, но validation даёт pattern; без округления/автозавершения. Completed decimal strings сохраняются строками.
 - Date без isDatetime сравнивает локальные календарные даты, иначе timestamps; Luxon сохраняет сравнение startOf('day'). Params хранят исходный boundary timestamp, даже если время игнорируется. Formatting/outputFormat, ранее применявшиеся только к сообщениям, не должны порождать перевод/форматирование дат внутри validators.
-- Текущие коллекции останавливаются на первом own required/min/max failure. Изменение descendant traversal — ODR-03. ArrayFormField required по умолчанию false, ArrayField true. Это текущее различие, не согласованное legacy removal.
+- Будущие коллекции сохраняют первую own required/min/max failure, пропускают own custom при ней, независимо обходят всех детей при explicit full validate (ODR-03 B). ArrayFormField required по умолчанию false, ArrayField true. Это текущее различие, не согласованное legacy removal.
 
 ## TypeScript-карта параметров
 
-Exact literals invalid_type остаются ODR-01. Карта фиксирует существующие shapes, не выбирая literals и не сужая custom params. Built-in message запрещён типами. Runtime formatter/factory этим каталогом не вводится.
+Тип BuiltinTypeId фиксирует восемь IDs шести реализаций с режимами даты. Это union только для built-in producers; общий custom invalid_type.expected остаётся string. Number требует runtime finite-check по ODR-02. Built-in message запрещён типами; runtime formatter/factory не добавляется.
 
 ```ts
+export type BuiltinTypeId =
+  | 'string' | 'number' | 'decimal' | 'boolean'
+  | 'date' | 'datetime' | 'luxon_date' | 'luxon_datetime'
+
 export interface BuiltinErrorParams {
   required: undefined
-  invalid_type: {readonly expected: string}
+  invalid_type: {readonly expected: BuiltinTypeId}
   min_length: {readonly min: number}
   max_length: {readonly max: number}
   pattern: undefined
@@ -89,10 +122,10 @@ export type BuiltinValidationErrorInput = {
 }[keyof BuiltinErrorParams]
 ```
 
-Использовать discriminated union (или конкретный Extract member) для проверки built-in producers и примеров каталога. Union с неограниченным `{code:string}` нельзя объявлять защитой от неверных built-in params: общий member поглотит проверку. General user input намеренно расширяем. Type-level precision произвольных custom params определяется ODR-02.
+Использовать discriminated union (или конкретный Extract member) для проверки built-in producers и примеров каталога. Union с неограниченным `{code:string}` нельзя объявлять защитой от неверных built-in params: общий member поглотит проверку. General user input намеренно расширяем. Custom params используют точный recursive JSON-domain и пределы раздела 6 архитектуры (ODR-02).
 
 ## Доказательства и проверки перед выпуском
 
 Исходники: [Field required/cast](../../src/core/fields/Field.ts#L193), [String](../../src/core/types/StringType.ts#L23), [Number](../../src/core/types/NumberType.ts#L31), [Decimal](../../src/core/types/DecimalType.ts#L55), [Boolean](../../src/core/types/BooleanType.ts#L34), [Date](../../src/core/types/DateType.ts#L36), [Luxon](../../src/core/types/DateLuxonType.ts#L95), [ArrayField](../../src/core/fields/ArrayField.ts#L185), [ArrayFormField](../../src/core/fields/ArrayFormField.ts#L195). [Structured tests](../../tests/unit/structured-errors.test.ts#L130) покрывают families и повторяющиеся bounds; [Decimal tests](../../tests/unit/types/DecimalType.test.ts) сохраняют input rules.
 
-До релиза: закрыть ODR-01/02; проверить точные code/params/order всех строк и routes; отсутствие message и language/type-label fallback в built-ins; сохранение absent/empty custom/server messages; duplicate codes; negative declarations, оба entry points и loaders. Invalid options, validator exceptions, configuration/parser failures не добавляются в этот каталог ValidationError; developer diagnostics не являются переводом validation errors.
+До релиза: реализовать утверждённые ODR-01/02; проверить точные code/params/order всех строк и routes; отсутствие message и language/type-label fallback в built-ins; сохранение absent/empty custom/server messages; duplicate codes; negative declarations, оба entry points и loaders. Invalid options, validator exceptions, configuration/parser failures не добавляются в этот каталог ValidationError; developer diagnostics не являются переводом validation errors.

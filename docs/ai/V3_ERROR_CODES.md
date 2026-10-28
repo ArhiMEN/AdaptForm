@@ -2,7 +2,7 @@
 
 [English](V3_ERROR_CODES.md) · [Русский](V3_ERROR_CODES.ru.md)
 
-Specification companion to [V3-02](V3_ARCHITECTURE.md). **17 existing built-in codes inventoried.** Parameter shapes and conditions below preserve current valid-configuration checks, except removal of messages required by I18N-01. `invalid_type.expected` has an explicit unresolved decision (ODR-01); no complete final catalogue is claimed while that row is blocked. Arbitrary user-parameter normalization is ODR-02.
+Companion to [V3-02](V3_ARCHITECTURE.md), **READY_FOR_OWNER_REVIEW**. All **17 built-in codes** are retained. The future catalogue incorporates approved ODR-01 (machine typeId), ODR-02 (JSON params) and ODR-03 (lifecycle). Runtime is unchanged; migration differences are explicit below.
 
 ## Contract and ownership
 
@@ -12,12 +12,12 @@ Custom FieldType checks also receive source type; options.validate receives sour
 
 ## Complete rule inventory
 
-Symbols: v is clean value; n is collection length. Constraints run only when configured. All listed numeric boundary parameters are numbers, all exclusivity flags booleans. Scalar empty/required and cast gates precede type rules; custom callbacks run only after type success. ODR-03 decides future container traversal/constructor timing, not these code meanings.
+Symbols: v is clean value; n is collection length. Constraints run only when configured. All listed numeric boundary parameters are numbers, all exclusivity flags booleans. Scalar empty/required and cast gates precede type rules; custom callbacks run only after type success. ODR-03 fixes traversal/timing as specified in the architecture; code meanings remain unchanged.
 
 | Code | Exact params | Owner and occurrence | Ordering/gates |
 | --- | --- | --- | --- |
 | required | none | Field raw input is null/undefined, a trimmed-empty string or empty array and isRequired resolves true; collection n=0 and required true | Scalar empty optional succeeds and skips type/custom. Collection default required differs: ArrayField true, ArrayFormField false/undefined in current code; do not silently unify defaults. |
-| invalid_type | `{expected: string}`; exact target IDs **ODR-01** | Nonempty Field cannot cast (clean null); defensive NumberType finite check; defensive Date/Luxon validity check | Failed Field cast skips type/custom. Direct type checks do not run required/cast. See route table below. |
+| invalid_type | `{expected: BuiltinTypeId}`; exact IDs below | Nonempty Field cannot cast (clean null); defensive NumberType finite check; defensive Date/Luxon validity check | Failed Field cast skips type/custom. Direct type checks do not run required/cast. See route table below. |
 | min_length | `{min: number}` | String v.length < minLength | JavaScript UTF-16 code-unit length, not grapheme count; before max_length/pattern |
 | max_length | `{max: number}` | String v.length > maxLength | After min_length, before pattern |
 | pattern | none | String configured regex does not match; Decimal fails numeric grammar, has no integer part, or has a separator with zero fractional digits | String clones regex without g/y flags. Decimal grammar is `^-?\d+\.?\d*$`; leading + and exponent text are rejected. Nonfinite/direct exponent-form numeric values can become pattern errors after String conversion. No reason/pattern text is added as a new param. |
@@ -34,16 +34,45 @@ Symbols: v is clean value; n is collection length. Constraints run only when con
 | min_items | `{min: number}` | ArrayField n<minItems or ArrayFormField n<minForms | Current container required gate precedes minimum; no min_forms code |
 | max_items | `{max: number}` | ArrayField n>maxItems or ArrayFormField n>maxForms | Current minimum gate precedes maximum; no max_forms code |
 
-## invalid_type routes — unresolved localization boundary
+## Stable machine type identifiers — ODR-01
 
-| Route | Current source evidence | Current expected value | Target status |
-| --- | --- | --- | --- |
-| Field failed cast | Field.ts:219–228 | getTypeName(): string/number/decimal/boolean/date types return Russian labels; Date/Luxon label varies with isDatetime | **Blocked**: approve machine identity member and values; do not emit these localized labels in 3.0 |
-| NumberType defensive finite check | NumberType.ts:31–36 | finite_number | Existing machine value inventoried; reconcile with final cast route |
-| DateType defensive invalid Date | DateType.ts:36–41 | date | Existing machine value inventoried |
-| DateLuxonType defensive invalid DateTime | DateLuxonType.ts:95–101 | date | Existing machine value inventoried; do not silently rename to luxon |
+Source inspection found six concrete built-in FieldType classes, **no separate DateTimeType**. DateType uses native Date in both isDatetime modes; DateLuxonType uses Luxon DateTime in both modes through the optional adaptform/luxon entry. DateTime here is a Luxon value class, not a core built-in constructor. Date-only versus datetime identifies the configured semantic type, not a localized label or constructor.name.
 
-`validateErrors(value:T)` takes a type-domain value, not arbitrary raw JSON. Field owns required/cast. Number NaN/Infinity, invalid Date and invalid DateTime receive the existing defensive errors when passed directly. Decimal.cast rejects nonfinite input (Field invalid_type), while direct Decimal rule validation stringifies it and emits pattern. Do not invent new codes to hide these different entry paths. Direct values outside a type's declared domain may throw; that is not a promise of universal coercion by validateErrors.
+| Built-in / mode | Required typeId / invalid_type.expected | Clean representation |
+| --- | --- | --- |
+| StringType | string | string |
+| NumberType | number | finite number |
+| DecimalType | decimal | Existing clean string/number representation |
+| BooleanType | boolean | boolean |
+| DateType, isDatetime absent/false | date | native Date, calendar-date comparison |
+| DateType, isDatetime true | datetime | native Date, timestamp comparison |
+| DateLuxonType, isDatetime absent/false | luxon_date | Luxon DateTime, existing date normalization |
+| DateLuxonType, isDatetime true | luxon_datetime | Luxon DateTime, datetime comparison |
+
+IDs are stable case-sensitive contract literals. Date typeId is a readonly getter of the effective isDatetime mode: an explicit supported mode-option change changes its semantic ID and invalidates the client-check marker; it never derives from locale or constructor name. Preserve cast/inputFormat/comparison behavior, including existing Luxon branch differences. Remove outputFormat because source inspection shows it is used only by message formatting; applications format output themselves.
+
+| invalid_type route | Historical expected (unchanged source) | Future expected |
+| --- | --- | --- |
+| Field failed cast | localized getTypeName() | fieldType.typeId, including explicit custom IDs |
+| NumberType direct defensive finite check | finite_number | number; same machine ID as its cast route |
+| DateType direct invalid Date | date | date or datetime according to mode |
+| DateLuxonType direct invalid DateTime | date | luxon_date or luxon_datetime according to mode |
+
+Number's finite_number and Luxon's date are intentionally migrated as metadata, without new validation codes. validateErrors(value:T) still accepts type-domain values rather than raw JSON. Field owns required/cast. Direct NaN/Infinity, invalid Date and invalid DateTime retain defensive invalid_type checks. Decimal.cast rejects nonfinite raw input (Field invalid_type), while direct Decimal rules stringify their type-domain numeric input and can emit pattern; this rule-specific conversion is unrelated to forbidden implicit params/message serialization. Values outside the declared domain may throw; validateErrors does not promise universal coercion.
+
+Custom-type migration: implement explicit readonly typeId:string and validateErrors; delete getTypeName and old validate overrides, with no alias. Use a stable application ID (for example app.slug), independent of class renaming/minification/locale. Applications must not reuse reserved built-in IDs for different semantic domains; shared IDs deliberately mean the same domain. Replace UI introspection with an application dictionary keyed by typeId. Missing/empty typeId is an ErrorContractError during type setup, never a constructor-name fallback.
+
+```ts
+class SlugType implements FieldTypeContract<string, object> {
+  readonly typeId = 'app.slug'
+  constructor(public options: object) {}
+  cast(raw: unknown): string | null { return typeof raw === 'string' ? raw : null }
+  validateErrors(value: string): readonly ValidationErrorInput[] {
+    return /^[a-z-]+$/.test(value) ? [] : [{code: 'app.slug_format'}]
+  }
+}
+void SlugType
+```
 
 ## Ordering and Decimal details
 
@@ -52,16 +81,20 @@ Symbols: v is clean value; n is collection length. Constraints run only when con
 - Decimal: grammar/no-integer failures return pattern immediately. Otherwise integer max_digits, total max_digits (only with separator), empty-fraction pattern or decimal_places. Any such errors return before gt/ge/lt/le. Numeric bound parsing uses the existing parseFloat semantics.
 - `123.`, `0.`, `-123.` and comma-normalized equivalents remain editable clean strings but fail validation with pattern; no rounding or automatic completion. Completed decimal strings preserve their clean string representation.
 - Date compares local calendar dates when isDatetime is false, timestamps otherwise; Luxon uses its existing startOf('day') comparison. Parameters retain original boundary timestamps even when comparison ignores time. Formatting/outputFormat previously used only for messages must not create translation or date-formatting behavior in validators.
-- Containers currently return on their first own required/min/max failure. Changing descendant traversal is ODR-03. ArrayFormField isRequired currently defaults to false; ArrayField defaults to true. This is a current difference, not approved legacy removal.
+- Future containers retain the first own required/min/max failure, skip own custom on that failure, and independently traverse every child on explicit full validate (ODR-03 B). ArrayFormField isRequired currently defaults to false; ArrayField defaults to true. This is a current difference, not approved legacy removal.
 
 ## TypeScript parameter map
 
-The exact literals for invalid_type remain ODR-01. This map expresses existing parameter shapes without selecting those literals or narrowing custom params. Built-in message is forbidden at the type level. No runtime formatter/factory is introduced by this type catalogue.
+BuiltinTypeId fixes eight IDs for six implementations including date modes. This union applies only to built-in producers; custom invalid_type.expected remains string in the general input. Numbers require runtime finite checks under ODR-02. Built-in message is forbidden at the type level; no runtime formatter/factory is added.
 
 ```ts
+export type BuiltinTypeId =
+  | 'string' | 'number' | 'decimal' | 'boolean'
+  | 'date' | 'datetime' | 'luxon_date' | 'luxon_datetime'
+
 export interface BuiltinErrorParams {
   required: undefined
-  invalid_type: {readonly expected: string}
+  invalid_type: {readonly expected: BuiltinTypeId}
   min_length: {readonly min: number}
   max_length: {readonly max: number}
   pattern: undefined
@@ -89,10 +122,10 @@ export type BuiltinValidationErrorInput = {
 }[keyof BuiltinErrorParams]
 ```
 
-Use this discriminated union (or its specific Extract member) to validate built-in producers and catalogue examples. A union with an unconstrained `{code:string}` member must not be advertised as rejecting invalid built-in parameters: that member would swallow the check. General user input deliberately remains extensible. Type-level precision of arbitrary custom parameter data is governed by ODR-02.
+Use this discriminated union (or its specific Extract member) to validate built-in producers and catalogue examples. A union with an unconstrained `{code:string}` member must not be advertised as rejecting invalid built-in parameters: that member would swallow the check. General user input deliberately remains extensible. Custom parameter values use the exact recursive JSON domain and budgets in architecture section 6 (ODR-02).
 
 ## Evidence and release checks
 
 Sources: [Field required/cast](../../src/core/fields/Field.ts#L193), [String](../../src/core/types/StringType.ts#L23), [Number](../../src/core/types/NumberType.ts#L31), [Decimal](../../src/core/types/DecimalType.ts#L55), [Boolean](../../src/core/types/BooleanType.ts#L34), [Date](../../src/core/types/DateType.ts#L36), [Luxon](../../src/core/types/DateLuxonType.ts#L95), [ArrayField](../../src/core/fields/ArrayField.ts#L185), [ArrayFormField](../../src/core/fields/ArrayFormField.ts#L195). Existing [structured error tests](../../tests/unit/structured-errors.test.ts#L130) cover code families and repeated bounds; [Decimal tests](../../tests/unit/types/DecimalType.test.ts) preserve input rules.
 
-Before release: close ODR-01/02; assert exact code/params and order for every row and route; assert no built-in owns message or language/type-label fallback; test custom/server absent and empty messages unchanged; verify duplicate codes; run negative declaration cases, both entry points and both loaders. Invalid options/validator exceptions/configuration/parser failures are not additions to this ValidationError catalogue; their developer diagnostics do not translate validation errors.
+Before release: implement approved ODR-01/02; assert exact code/params and order for every row and route; assert no built-in owns message or language/type-label fallback; test custom/server absent and empty messages unchanged; verify duplicate codes; run negative declaration cases, both entry points and both loaders. Invalid options/validator exceptions/configuration/parser failures are not additions to this ValidationError catalogue; their developer diagnostics do not translate validation errors.
