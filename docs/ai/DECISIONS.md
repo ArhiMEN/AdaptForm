@@ -66,3 +66,11 @@ Minimal safe subset: `dependsOn: [{path: ['fieldName']}]`, no direct references,
 ## HF-015 — 2026-10-24
 
 Approved scope: ordered structured errors, compatible legacy string APIs/validators/parser, additive server ingestion and paths, snapshots/subscriptions/batch/HF-013, tests and EN/RU documentation, and a separate PR to master. [Contract](HEADLESS_ERRORS.md) records code-as-text fallback for absent messages, client/custom/server/external provenance and retained invalidation. Legacy server arrays/paths are not reinterpreted; new ingestion is explicit. No HF-014/016/017, version bump, merge, publication or branch deletion.
+
+## V3-02 requirements and specification review — 2026-10-28
+
+Approved for 3.0 design: canonical readonly structured errors; type/custom/server/manual provenance; code/params-only built-ins with no translation, formatter/resolver or message fallback (I18N-01); array-only synchronous validators and structural FieldType implementations; stateful validate returns {valid} across all sources. Validation preserves server/manual; an actual own-value change clears both. ErrorsSchema separates configurable parsing from token/revision-protected atomic application; whole-form replace and unknown-path error are defaults. Preserve accepted headless state, identity, performance and limited dependencies. No async validation or backend-specific formats.
+
+This task authorizes documentation only. [V3-02 specification](V3_ARCHITECTURE.md), [code catalogue](V3_ERROR_CODES.md) and [migration/task plan](../roadmap/v3.0.0/PLAN.md) distinguish these requirements from exact API proposals. Implementation is **BLOCKED** by ODR-01…05: machine type metadata, parameter domain, construction/container timing, explicit useful-function/legacy replacements and post-commit Apply failure semantics. No option is silently approved; no implementation or release action follows from this entry.
+
+PR #29 remains an open, unmerged draft at aab14d29b428c57cabb9ec5ceb069fcc5adaba6e. Its architecture paths were absent from the local baseline and are reused for the V3-02 documents; its AGENTS/DECISIONS additions are not claimed integrated. Reconcile both documentation histories before separately authorized integration. Historical 2.x entries above continue to describe their own versions.

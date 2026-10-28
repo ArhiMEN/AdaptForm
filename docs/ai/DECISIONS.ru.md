@@ -66,3 +66,11 @@ HF-011 использует weak ID с объектными ключами и о
 ## HF-015 — 2026-10-24
 
 Разрешённый объём: упорядоченные структурированные ошибки, совместимые старые строковые API/валидаторы/парсер, дополнительный серверный импорт и пути, snapshots/подписки/batch/HF-013, тесты и EN/RU документация, отдельный PR в master. [Контракт](HEADLESS_ERRORS.ru.md) фиксирует код без сообщения как текстовый fallback, источники client/custom/server/external и сохранённую очистку ошибок. Старые серверные массивы/пути не переосмысливаются; новый импорт включается явно. Без HF-014/016/017, повышения версии, merge, публикации или удаления веток.
+
+## Требования V3-02 и проверка спецификации — 2026-10-28
+
+Утверждено для проектирования 3.0: canonical readonly structured errors; источники type/custom/server/manual; built-ins только code/params, без перевода, formatter/resolver и message fallback (I18N-01); array-only синхронные validators и структурные FieldType; stateful validate возвращает {valid} по всем источникам. Validation сохраняет server/manual; фактическое изменение собственного значения очищает оба. ErrorsSchema отделяет configurable parsing от атомарного Apply с token/revision; defaults — whole-form replace и ошибка unknown path. Сохранить принятые state/identity/performance/ограниченные dependencies. Без async validation и backend-specific formats.
+
+Этап разрешает только документацию. [Спецификация V3-02](V3_ARCHITECTURE.ru.md), [каталог кодов](V3_ERROR_CODES.ru.md), [миграция и задачи](../roadmap/v3.0.0/PLAN.ru.md) отделяют требования от точных предложений API. Implementation **BLOCKED** по ODR-01…05: machine type metadata, domain параметров, construction/container timing, явные замены полезных функций/legacy и post-commit failures Apply. Ни один вариант молча не утверждён; запись не разрешает реализацию или выпуск.
+
+PR #29 остаётся открытым unmerged draft aab14d29b428c57cabb9ec5ceb069fcc5adaba6e. Его architecture paths отсутствовали в локальной базе и переиспользованы под V3-02; additions AGENTS/DECISIONS не считаются интегрированными. До отдельно разрешённой интеграции согласовать обе истории документации. Исторические записи 2.x выше продолжают описывать свои версии.

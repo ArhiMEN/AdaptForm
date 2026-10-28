@@ -2,6 +2,16 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## V3-02 specification — 2026-10-28
+
+**BLOCKED for implementation pending owner decisions.** Documentation-only on `work`, baseline `670c6a04014fbf938574bfd8eb2a706e44a9d4d0`, equal to remote master; tree/index initially clean. [Specification](V3_ARCHITECTURE.md), [17-code I18N-01 catalogue](V3_ERROR_CODES.md), [migration/tasks/risks](../roadmap/v3.0.0/PLAN.md), with complete Russian companions. Approved requirements are separate from candidate APIs; no implementation approval is inferred.
+
+PR #29 is an open, unmerged draft `aab14d29b428c57cabb9ec5ceb069fcc5adaba6e`. Its architecture files were absent locally; their paths are reused here, without integrating its AGENTS/DECISIONS patch. Reconcile both documentation histories before separately approved integration. ODR-01…05 stop affected design: machine type metadata, params domain, constructor/container timing, useful legacy/helper/export replacements, and post-commit failures versus unconditional Apply atomicity. Cast metadata and the Apply failure channel are explicitly unresolved.
+
+Actual checks PASS: relative links, fences/whitespace, bilingual TypeScript/decision/task parity, 17 source codes versus catalogue/map; strict noEmit candidate declarations/examples with exactOptionalPropertyTypes and ambient node scaffolding; seven negative cases including readonly errors. These check documentation, not runtime implementation. No test/script files created; no runtime/build/package/audit/benchmark runs for this documentation task. Final diff/index/HEAD checks accompany delivery.
+
+Next: resolve ODR-01…05, approve replacement/export ledger, then separately authorize V3-03 core → V3-04 schema/Apply → V3-05 migration → V3-06 independent RC review. V3-07 release actions remain separately gated. Source/tests/package/dependencies/workflows/AGENTS unchanged; no branch/commit/push/merge/tag/bump/publication.
+
 ## HF-015 review — 2026-10-28
 
 PR #28, branch `hf-015-structured-validation-errors`, master/base `b9051dd`, reviewed original head `66fcbd8`. **PASS_WITH_LIMITATIONS**: fix cross-node/key provenance leakage, prototype-named global error publication, and frozen custom-parser bridge results. **720 tests / 34 files**, lint, source/test/demo types, library/demo builds, package integrity, packed strict NodeNext ESM/CJS without Luxon and diff checks pass. Repeated full/paired benchmarks retain measurable collection costs and about 0.3 MiB additional heap; rule/notification counts match master. Audit still blocks CI on dev-only undici 7.29.1; propose separately approved override 7.30.1, no dependencies/workflows changed. [Review, raw data, limitations and exact plan](../roadmap/v2.3.0/ERRORS_REVIEW.md). Next: final-head CI and independent acceptance; resolve audit separately before merge. Version remains 2.2.0; no merge/publication/tag/branch deletion.

@@ -2,6 +2,16 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## Спецификация V3-02 — 2026-10-28
+
+**BLOCKED для реализации до решений владельца.** Только документация в `work`, база `670c6a04014fbf938574bfd8eb2a706e44a9d4d0` совпадает с remote master; исходно tree/index чистые. [Спецификация](V3_ARCHITECTURE.ru.md), [каталог 17 кодов I18N-01](V3_ERROR_CODES.ru.md), [миграция/задачи/риски](../roadmap/v3.0.0/PLAN.ru.md), полные EN companions. Требования отделены от candidate APIs; разрешение реализации не подразумевается.
+
+PR #29 — открытый unmerged draft `aab14d29b428c57cabb9ec5ceb069fcc5adaba6e`. Его architecture files отсутствовали локально; пути переиспользованы без интеграции patch AGENTS/DECISIONS. Перед отдельно разрешённой интеграцией согласовать обе истории документации. ODR-01…05 останавливают затронутое проектирование: machine type metadata, domain params, constructor/container timing, полезные legacy/helper/export replacements и post-commit failures относительно безусловной атомарности Apply. Cast metadata и Apply failure channel явно не определены.
+
+Фактические проверки PASS: relative links/fences/whitespace, parity TS/decision/task EN/RU, 17 source codes против catalogue/map; strict noEmit candidate declarations/examples с exactOptionalPropertyTypes и ambient node scaffolding; семь negative cases, включая readonly errors. Это проверка документации, не runtime implementation. Test/script files не создавались; runtime/build/package/audit/benchmarks для этапа не запускались. Финальные diff/index/HEAD checks указаны при передаче.
+
+Далее: закрыть ODR-01…05, утвердить replacement/export ledger, затем отдельно разрешить V3-03 core → V3-04 schema/Apply → V3-05 migration → V3-06 independent RC review. Release V3-07 отдельно согласуется. Source/tests/package/dependencies/workflows/AGENTS не менялись; без branch/commit/push/merge/tag/bump/publication.
+
 ## Проверка HF-015 — 2026-10-28
 
 PR #28, ветка `hf-015-structured-validation-errors`, master/base `b9051dd`, исходный проверенный head `66fcbd8`. **PASS_WITH_LIMITATIONS**: исправлены утечка происхождения между узлами/ключами, публикация глобальных ошибок с именами прототипа и заморозка результатов моста пользовательского парсера. **720 тестов / 34 файла**, lint, source/test/demo types, library/demo builds, package integrity, packed strict NodeNext ESM/CJS без Luxon и diff checks проходят. Повторные полные/парные benchmarks сохраняют измеримую цену коллекций и около 0.3 MiB дополнительного heap; счётчики правил/уведомлений совпадают с master. Audit продолжает блокировать CI из-за dev-only undici 7.29.1; предложен отдельно согласуемый override 7.30.1, зависимости/workflows не менялись. [Проверка, исходные данные, ограничения и точный план](../roadmap/v2.3.0/ERRORS_REVIEW.ru.md). Далее: CI итогового head и независимая приёмка; отдельно решить audit до merge. Версия 2.2.0; merge/публикация/tag/удаление веток не выполнялись.
