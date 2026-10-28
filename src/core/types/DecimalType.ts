@@ -1,3 +1,5 @@
+import type {ValidationErrorInput} from '../ValidationError'
+import type {Form} from '../Form'
 import {FieldType} from "@core/types/FieldType"
 import {DecimalOptions} from "@core/options"
 
@@ -41,12 +43,22 @@ export class DecimalType extends FieldType<number | string, DecimalOptions> {
   }
 
   validate(value: number | string): string[] {
-    const errors: string[] = []
+    return this.validateRules(value).map(error => error.message!)
+  }
+
+  validateErrors(value: number | string, form?: Form): readonly ValidationErrorInput[] {
+    // Preserve subclasses that override the historical string validator.
+    return this.validate === DecimalType.prototype.validate
+      ? this.validateRules(value) : super.validateErrors(value, form)
+  }
+
+  private validateRules(value: number | string): ValidationErrorInput[] {
+    const errors: ValidationErrorInput[] = []
     value = typeof value === 'number' ? String(value) : value
 
     // Check whether the input matches the numeric format.
     if (!this.isValidNumberString(value)) {
-      errors.push(this.options.messages?.invalid ?? 'Пример: 1.00')
+      errors.push({code: 'pattern', message: this.options.messages?.invalid ?? 'Пример: 1.00'})
       return errors
     }
 
@@ -63,38 +75,30 @@ export class DecimalType extends FieldType<number | string, DecimalOptions> {
 
     // Validate the integer part.
     if (intPart.length === 0) {
-      errors.push(this.options.messages?.invalid ?? 'Пример: 1.00')
+      errors.push({code: 'pattern', message: this.options.messages?.invalid ?? 'Пример: 1.00'})
       return errors
     }
 
     if (intPart.length > maxIntDigits) {
-      errors.push(
-        this.options.messages?.maxDigits ??
-        `Максимальное количество знаков перед запятой ${maxIntDigits}`
-      )
+      errors.push({code: 'max_digits', message: this.options.messages?.maxDigits ??
+        `Максимальное количество знаков перед запятой ${maxIntDigits}`, params: {max: maxIntDigits, scope: 'integer'}})
     }
 
     // Validate the decimal part.
     if (parts.length === 2) {
       // Check the total number of digits.
       if (intPart.length + decPart.length > maxDigits) {
-        errors.push(
-          this.options.messages?.maxDigits ??
-          `Максимальное количество знаков ${maxDigits}`
-        )
+        errors.push({code: 'max_digits', message: this.options.messages?.maxDigits ??
+          `Максимальное количество знаков ${maxDigits}`, params: {max: maxDigits, scope: 'total'}})
       }
 
       // Check the number of digits after the decimal point.
       if (decPart.length === 0) {
-        errors.push(
-          this.options.messages?.invalid ??
-          'После точки должен быть минимум 1 знак'
-        )
+        errors.push({code: 'pattern', message: this.options.messages?.invalid ??
+          'После точки должен быть минимум 1 знак'})
       } else if (decPart.length > decimalPlaces) {
-        errors.push(
-          this.options.messages?.decimalPlaces ??
-          `Максимальное количество знаков после запятой ${decimalPlaces}`
-        )
+        errors.push({code: 'decimal_places', message: this.options.messages?.decimalPlaces ??
+          `Максимальное количество знаков после запятой ${decimalPlaces}`, params: {max: decimalPlaces}})
       }
     }
 
@@ -107,31 +111,23 @@ export class DecimalType extends FieldType<number | string, DecimalOptions> {
 
       if (!isNaN(numValue)) {
         if (this.options.gt != null && numValue <= this.options.gt) {
-          errors.push(
-            this.options.messages?.gt ??
-            `Значение должно быть больше ${this.options.gt}`
-          )
+          errors.push({code: 'min_value', message: this.options.messages?.gt ??
+            `Значение должно быть больше ${this.options.gt}`, params: {min: this.options.gt, exclusive: true}})
         }
 
         if (this.options.ge != null && numValue < this.options.ge) {
-          errors.push(
-            this.options.messages?.ge ??
-            `Значение должно быть не менее ${this.options.ge}`
-          )
+          errors.push({code: 'min_value', message: this.options.messages?.ge ??
+            `Значение должно быть не менее ${this.options.ge}`, params: {min: this.options.ge, exclusive: false}})
         }
 
         if (this.options.lt != null && numValue >= this.options.lt) {
-          errors.push(
-            this.options.messages?.lt ??
-            `Значение должно быть меньше ${this.options.lt}`
-          )
+          errors.push({code: 'max_value', message: this.options.messages?.lt ??
+            `Значение должно быть меньше ${this.options.lt}`, params: {max: this.options.lt, exclusive: true}})
         }
 
         if (this.options.le != null && numValue > this.options.le) {
-          errors.push(
-            this.options.messages?.le ??
-            `Значение должно быть не более ${this.options.le}`
-          )
+          errors.push({code: 'max_value', message: this.options.messages?.le ??
+            `Значение должно быть не более ${this.options.le}`, params: {max: this.options.le, exclusive: false}})
         }
       }
     }

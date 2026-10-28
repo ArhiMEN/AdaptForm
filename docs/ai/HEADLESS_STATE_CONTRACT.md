@@ -2,6 +2,8 @@
 
 [English](HEADLESS_STATE_CONTRACT.md) · [Русский](HEADLESS_STATE_CONTRACT.ru.md)
 
+HF-015 source extension: optional `validationErrors` contains node-owned errors only; aggregated paths are available through `getErrors()`. [Model and retained policies](HEADLESS_ERRORS.md). HF-011 is accepted in PR #25 and limited HF-013 in PR #27; the historical 2.2.0 contract below remains valid with these extensions.
+
 Approved scope: additive state foundation for 2.2.0. Source/package metadata are prepared as 2.2.0; npm publication remains separate. HF-005–HF-010 passed review and merged in [PR #16](https://github.com/ArhiMEN/AdaptForm/pull/16). Implementation and verification are recorded in [HANDOFF](HANDOFF.md).
 
 ## Next-milestone extension

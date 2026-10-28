@@ -1,3 +1,5 @@
+import {isValidationError, validationError, type ValidationError} from './ValidationError'
+
 type ErrorFieldMapping = string | ((errorValue: any) => string)
 
 export interface ParsedError {
@@ -162,19 +164,63 @@ export class ErrorsSchema {
         if (typeof mapping === 'function') {
           const fieldName = mapping(transformedValue)
           if (fieldName) {
-            result[fieldName] = typeof transformedValue === 'string'
+            Object.defineProperty(result, fieldName, {value: typeof transformedValue === 'string'
               ? transformedValue
-              : JSON.stringify(transformedValue)
+              : JSON.stringify(transformedValue), enumerable: true, writable: true, configurable: true})
           }
         } else {
-          result[mapping] = typeof transformedValue === 'string'
+          Object.defineProperty(result, mapping, {value: typeof transformedValue === 'string'
             ? transformedValue
-            : JSON.stringify(transformedValue)
+            : JSON.stringify(transformedValue), enumerable: true, writable: true, configurable: true})
         }
       }
     }
 
     return result
+  }
+
+  /**
+   * Lossless server input. Transformers run on each leaf before mapping, as in parseErrors.
+   * Legacy parseErrors overrides remain authoritative for custom schemas.
+   */
+  parseValidationErrors(errors: Record<string, unknown>, prefix: string = ''): readonly ValidationError[] {
+    if (this.parseErrors !== ErrorsSchema.prototype.parseErrors) {
+      return Object.freeze(Object.entries(this.parseErrors(errors, prefix)).map(([path, message]) =>
+        validationError({code: 'server', message}, 'server', this.errorPath(path))))
+    }
+    const result: ValidationError[] = []
+    const visit = (data: Record<string, unknown>, parent: string) => {
+      for (const [key, value] of Object.entries(data)) {
+        if (value === null || value === undefined) continue
+        const fullKey = parent ? `${parent}.${key}` : key
+        if (!isValidationError(value) && this.isNestedObject(value)) {
+          visit(value as Record<string, unknown>, fullKey)
+          continue
+        }
+        let transformedValue: unknown = value
+        for (const transformer of this._valueTransformers) transformedValue = transformer(transformedValue)
+        if (Array.isArray(transformedValue) && transformedValue.some(item => this.isNestedObject(item) && !isValidationError(item))) {
+          visit(Object.fromEntries(transformedValue.map((item, index) => [String(index), item])), fullKey)
+          continue
+        }
+        const mapping = this.findMapping(fullKey, transformedValue)
+        const fieldName = typeof mapping === 'function' ? mapping(transformedValue) : mapping
+        if (!fieldName) continue
+        const values = Array.isArray(transformedValue) ? transformedValue : [transformedValue]
+        for (const item of values) {
+          if (item === null || item === undefined) continue
+          const input = isValidationError(item) ? item : {code: 'server',
+            message: typeof item === 'string' ? item : JSON.stringify(item)}
+          result.push(validationError(input, 'server', this.errorPath(fieldName)))
+        }
+      }
+    }
+    visit(errors, prefix)
+    return Object.freeze(result)
+  }
+
+  private errorPath(path: string): (string | number)[] {
+    return path.split('.').map(part => /^(0|[1-9]\d*)$/.test(part) ? Number(part) : part)
   }
 
   /**
@@ -211,12 +257,12 @@ export class ErrorsSchema {
           ? transformedValue
           : JSON.stringify(transformedValue)
 
-        result[matchResult.fieldName] = {
+        Object.defineProperty(result, matchResult.fieldName, {value: {
           fieldName: matchResult.fieldName,
           message,
           sourceKey: fullKey,
           matchedBy: matchResult.matchedBy
-        }
+        }, enumerable: true, writable: true, configurable: true})
       }
     }
 

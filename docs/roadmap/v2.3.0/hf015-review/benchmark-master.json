@@ -1,0 +1,463 @@
+{
+  "generatedAt": "2026-10-28T06:54:25.728Z",
+  "commit": "b9051dd9f8eae4894a75356e03f5247447db7bf0",
+  "environment": {
+    "node": "v24.19.0",
+    "v8": "13.6.233.17-node.51",
+    "platform": "linux",
+    "release": "6.18.55",
+    "arch": "x64",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "cpus": 3
+  },
+  "harness": {
+    "warmup": 5,
+    "samples": 7,
+    "targetMs": 25,
+    "maxIterations": 100,
+    "timer": "performance.now; fixture preparation and cleanup excluded; per-operation timing overhead included"
+  },
+  "results": [
+    {
+      "name": "flat/10/create",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.030346650000000322,
+      "minMs": 0.025723139999999915,
+      "maxMs": 0.05967270999999961
+    },
+    {
+      "name": "flat/10/firstSnapshot",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.03147796999999983,
+      "minMs": 0.0247277299999989,
+      "maxMs": 0.044334050000000076
+    },
+    {
+      "name": "flat/10/unchangedSnapshot",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.007771490000000227,
+      "minMs": 0.006933640000000309,
+      "maxMs": 0.018928880000000845
+    },
+    {
+      "name": "flat/10/oneField",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.004567250000000911,
+      "minMs": 0.002911290000000122,
+      "maxMs": 0.010586579999999514
+    },
+    {
+      "name": "flat/10/batch10",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.051921880000000156,
+      "minMs": 0.038144359999999725,
+      "maxMs": 0.06368322000000105
+    },
+    {
+      "name": "flat/10/notify1/empty",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.017091780000000938,
+      "minMs": 0.015902480000002585,
+      "maxMs": 0.04239201999999835
+    },
+    {
+      "name": "flat/10/notify1/read",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.015503569999999627,
+      "minMs": 0.013388139999998714,
+      "maxMs": 0.018960910000000126
+    },
+    {
+      "name": "flat/10/notify10/empty",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.01646553000000239,
+      "minMs": 0.013646679999999663,
+      "maxMs": 0.018226079999998604
+    },
+    {
+      "name": "flat/10/notify10/read",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.016333769999999106,
+      "minMs": 0.012809379999997645,
+      "maxMs": 0.019538399999998148
+    },
+    {
+      "name": "flat/10/notify100/empty",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.01636376000000155,
+      "minMs": 0.01307011000000017,
+      "maxMs": 0.019215780000000394
+    },
+    {
+      "name": "flat/10/notify100/read",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.017477489999998853,
+      "minMs": 0.015285859999998479,
+      "maxMs": 0.020303190000001903
+    },
+    {
+      "name": "flat/100/create",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.16772257000000082,
+      "minMs": 0.15791788000000168,
+      "maxMs": 0.25282644000000176
+    },
+    {
+      "name": "flat/100/firstSnapshot",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.20688830999999822,
+      "minMs": 0.1683015399999988,
+      "maxMs": 0.22165284999999757
+    },
+    {
+      "name": "flat/100/unchangedSnapshot",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.048636939999998956,
+      "minMs": 0.04547639000000004,
+      "maxMs": 0.06291071999999645
+    },
+    {
+      "name": "flat/100/oneField",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.002673049999999648,
+      "minMs": 0.0023688699999945585,
+      "maxMs": 0.0049109899999928075
+    },
+    {
+      "name": "flat/100/batch10",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.15826017999999523,
+      "minMs": 0.1487169100000085,
+      "maxMs": 0.16771427000000586
+    },
+    {
+      "name": "flat/100/notify1/empty",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.10106551999999965,
+      "minMs": 0.09142315000000621,
+      "maxMs": 0.10626752000000124
+    },
+    {
+      "name": "flat/100/notify1/read",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.11421779000000243,
+      "minMs": 0.09688615000000596,
+      "maxMs": 0.2363633800000025
+    },
+    {
+      "name": "flat/100/notify10/empty",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.08693724999999404,
+      "minMs": 0.0826598700000045,
+      "maxMs": 0.10731696999999826
+    },
+    {
+      "name": "flat/100/notify10/read",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.09022652000000562,
+      "minMs": 0.08889171000000942,
+      "maxMs": 0.0943052799999964
+    },
+    {
+      "name": "flat/100/notify100/empty",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.08898666000000048,
+      "minMs": 0.083788710000008,
+      "maxMs": 0.09531016999999566
+    },
+    {
+      "name": "flat/100/notify100/read",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.0919741099999942,
+      "minMs": 0.08634643000000551,
+      "maxMs": 0.09928162999999814
+    },
+    {
+      "name": "flat/1000/create",
+      "iterations": 18,
+      "samples": 7,
+      "medianMs": 1.486969055555556,
+      "minMs": 1.395016388888861,
+      "maxMs": 1.9620778333333218
+    },
+    {
+      "name": "flat/1000/firstSnapshot",
+      "iterations": 8,
+      "samples": 7,
+      "medianMs": 2.9874004999999784,
+      "minMs": 2.62638687499998,
+      "maxMs": 4.2304302499999835
+    },
+    {
+      "name": "flat/1000/unchangedSnapshot",
+      "iterations": 19,
+      "samples": 7,
+      "medianMs": 1.1126080526315658,
+      "minMs": 1.091334736842064,
+      "maxMs": 1.286757526315808
+    },
+    {
+      "name": "flat/1000/oneField",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.0023181100000078912,
+      "minMs": 0.0022375199999942197,
+      "maxMs": 0.0026364099999932476
+    },
+    {
+      "name": "flat/1000/batch10",
+      "iterations": 9,
+      "samples": 7,
+      "medianMs": 2.943382777777793,
+      "minMs": 2.8974264444444646,
+      "maxMs": 3.0131307777778096
+    },
+    {
+      "name": "flat/1000/notify1/empty",
+      "iterations": 12,
+      "samples": 7,
+      "medianMs": 2.1658283333334034,
+      "minMs": 2.1091324166667014,
+      "maxMs": 2.3338370833334543
+    },
+    {
+      "name": "flat/1000/notify1/read",
+      "iterations": 12,
+      "samples": 7,
+      "medianMs": 2.138021499999885,
+      "minMs": 2.0899857499999066,
+      "maxMs": 2.2093791666667357
+    },
+    {
+      "name": "flat/1000/notify10/empty",
+      "iterations": 12,
+      "samples": 7,
+      "medianMs": 2.161690500000001,
+      "minMs": 2.1029181666666923,
+      "maxMs": 2.358652833333243
+    },
+    {
+      "name": "flat/1000/notify10/read",
+      "iterations": 12,
+      "samples": 7,
+      "medianMs": 2.2802681666666254,
+      "minMs": 2.2462474166666575,
+      "maxMs": 2.400091166666622
+    },
+    {
+      "name": "flat/1000/notify100/empty",
+      "iterations": 12,
+      "samples": 7,
+      "medianMs": 2.1803480000000186,
+      "minMs": 2.1360767499999533,
+      "maxMs": 2.468133666666707
+    },
+    {
+      "name": "flat/1000/notify100/read",
+      "iterations": 12,
+      "samples": 7,
+      "medianMs": 2.329747749999948,
+      "minMs": 2.1811115833333283,
+      "maxMs": 2.4882035000000164
+    },
+    {
+      "name": "collection/fields/10/addRemove",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.047794759999987946,
+      "minMs": 0.031381820000024166,
+      "maxMs": 0.056788829999991325
+    },
+    {
+      "name": "collection/forms/10/addRemove",
+      "iterations": 87,
+      "samples": 7,
+      "medianMs": 0.15085877011493387,
+      "minMs": 0.10077833333332234,
+      "maxMs": 0.28268063218393275
+    },
+    {
+      "name": "collection/fields/100/addRemove",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.20597393999992164,
+      "minMs": 0.16774932999999237,
+      "maxMs": 0.21784103999998933
+    },
+    {
+      "name": "collection/forms/100/addRemove",
+      "iterations": 20,
+      "samples": 7,
+      "medianMs": 1.0987327999999252,
+      "minMs": 0.8557718999999906,
+      "maxMs": 1.2175493999999163
+    },
+    {
+      "name": "collection/fields/1000/addRemove",
+      "iterations": 16,
+      "samples": 7,
+      "medianMs": 1.6214530624999952,
+      "minMs": 1.614615062500036,
+      "maxMs": 1.7463498125001706
+    },
+    {
+      "name": "collection/forms/1000/addRemove",
+      "iterations": 3,
+      "samples": 7,
+      "medianMs": 9.904034666666726,
+      "minMs": 8.809481333333983,
+      "maxMs": 13.384584000000359
+    },
+    {
+      "name": "depth/0/create",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.014108539999942877,
+      "minMs": 0.010743730000021968,
+      "maxMs": 0.027653039999950123
+    },
+    {
+      "name": "depth/0/firstSnapshot",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.021728560000046856,
+      "minMs": 0.01803895000000921,
+      "maxMs": 0.02700487999998586
+    },
+    {
+      "name": "depth/0/leafChange",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.013310290000008536,
+      "minMs": 0.011350950000023658,
+      "maxMs": 0.01616078000001835
+    },
+    {
+      "name": "depth/1/create",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.026019090000008873,
+      "minMs": 0.023213139999988926,
+      "maxMs": 0.06305054999999811
+    },
+    {
+      "name": "depth/1/firstSnapshot",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.05001153999996859,
+      "minMs": 0.043123439999972105,
+      "maxMs": 0.17350204999997004
+    },
+    {
+      "name": "depth/1/leafChange",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.029369010000036725,
+      "minMs": 0.027769030000035853,
+      "maxMs": 0.04331040000002759
+    },
+    {
+      "name": "depth/3/create",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.06705739000000904,
+      "minMs": 0.05637684999995145,
+      "maxMs": 0.12032743999999183
+    },
+    {
+      "name": "depth/3/firstSnapshot",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.12770644000003814,
+      "minMs": 0.11367143000000396,
+      "maxMs": 0.2880973800000538
+    },
+    {
+      "name": "depth/3/leafChange",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.08497851999999512,
+      "minMs": 0.07695818999999574,
+      "maxMs": 0.2106873400000404
+    },
+    {
+      "name": "depth/5/create",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.11593271999997341,
+      "minMs": 0.11198134000002029,
+      "maxMs": 0.23451238000002378
+    },
+    {
+      "name": "depth/5/firstSnapshot",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.29260716000000686,
+      "minMs": 0.23661732999999913,
+      "maxMs": 0.3244142799999827
+    },
+    {
+      "name": "depth/5/leafChange",
+      "iterations": 86,
+      "samples": 7,
+      "medianMs": 0.16338525581395938,
+      "minMs": 0.1507362674418864,
+      "maxMs": 0.25556431395348544
+    }
+  ],
+  "memory": {
+    "available": true,
+    "rounds": [
+      {
+        "round": 0,
+        "heapUsed": 14134312
+      },
+      {
+        "round": 1,
+        "heapUsed": 14138584
+      },
+      {
+        "round": 2,
+        "heapUsed": 14167712
+      },
+      {
+        "round": 3,
+        "heapUsed": 14170744
+      },
+      {
+        "round": 4,
+        "heapUsed": 14170800
+      },
+      {
+        "round": 5,
+        "heapUsed": 14198912
+      }
+    ]
+  },
+  "harnessReportedCommit": "66fcbd8bfd336645a0acb6dcb7b609dc74215b4c",
+  "artifactSha256": {
+    "master": "92d7597600784f6b44f82013c28abc8e0afcaf1ab768150f314b61926a207736"
+  }
+}

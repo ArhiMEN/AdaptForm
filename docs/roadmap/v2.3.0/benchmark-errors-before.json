@@ -1,0 +1,463 @@
+{
+  "generatedAt": "2026-10-24T09:25:41.791Z",
+  "commit": "b9051dd9f8eae4894a75356e03f5247447db7bf0",
+  "environment": {
+    "node": "v24.19.0",
+    "v8": "13.6.233.17-node.51",
+    "platform": "linux",
+    "release": "6.18.55",
+    "arch": "x64",
+    "cpu": "INTEL(R) XEON(R) PLATINUM 8573C",
+    "cpus": 3
+  },
+  "harness": {
+    "warmup": 5,
+    "samples": 7,
+    "targetMs": 25,
+    "maxIterations": 100,
+    "timer": "performance.now; fixture preparation and cleanup excluded; per-operation timing overhead included"
+  },
+  "results": [
+    {
+      "name": "flat/10/create",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.0572425200000005,
+      "minMs": 0.03446206000000032,
+      "maxMs": 0.11504990999999969
+    },
+    {
+      "name": "flat/10/firstSnapshot",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.0445542599999996,
+      "minMs": 0.028899669999998993,
+      "maxMs": 0.07973956999999998
+    },
+    {
+      "name": "flat/10/unchangedSnapshot",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.013752459999999474,
+      "minMs": 0.012091199999999844,
+      "maxMs": 0.037242510000000666
+    },
+    {
+      "name": "flat/10/oneField",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.00910066000000029,
+      "minMs": 0.005532149999999376,
+      "maxMs": 0.01002637000000135
+    },
+    {
+      "name": "flat/10/batch10",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.09656191000000092,
+      "minMs": 0.05858820999999978,
+      "maxMs": 0.10866850000000113
+    },
+    {
+      "name": "flat/10/notify1/empty",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.0394288499999999,
+      "minMs": 0.03074016000000313,
+      "maxMs": 0.04604361000000154
+    },
+    {
+      "name": "flat/10/notify1/read",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.024171260000003372,
+      "minMs": 0.019459820000001286,
+      "maxMs": 0.046079030000000784
+    },
+    {
+      "name": "flat/10/notify10/empty",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.030478280000003792,
+      "minMs": 0.022164359999998738,
+      "maxMs": 0.040217580000001474
+    },
+    {
+      "name": "flat/10/notify10/read",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.032627559999997405,
+      "minMs": 0.02284028999999748,
+      "maxMs": 0.04522521000000324
+    },
+    {
+      "name": "flat/10/notify100/empty",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.038333360000002016,
+      "minMs": 0.0302606400000019,
+      "maxMs": 0.04834382999999775
+    },
+    {
+      "name": "flat/10/notify100/read",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.04876123000000177,
+      "minMs": 0.02416875000000232,
+      "maxMs": 0.07316191000000004
+    },
+    {
+      "name": "flat/100/create",
+      "iterations": 63,
+      "samples": 7,
+      "medianMs": 0.23851180952381254,
+      "minMs": 0.19924144444444714,
+      "maxMs": 0.6741128730158694
+    },
+    {
+      "name": "flat/100/firstSnapshot",
+      "iterations": 63,
+      "samples": 7,
+      "medianMs": 0.27892446031745793,
+      "minMs": 0.27147393650793783,
+      "maxMs": 0.3298759206349157
+    },
+    {
+      "name": "flat/100/unchangedSnapshot",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.05386215999999763,
+      "minMs": 0.049247560000000024,
+      "maxMs": 0.10491019000000279
+    },
+    {
+      "name": "flat/100/oneField",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.0026800399999956427,
+      "minMs": 0.0021213799999986803,
+      "maxMs": 0.006778979999996864
+    },
+    {
+      "name": "flat/100/batch10",
+      "iterations": 87,
+      "samples": 7,
+      "medianMs": 0.21974301149424294,
+      "minMs": 0.18776772413792675,
+      "maxMs": 0.406011793103446
+    },
+    {
+      "name": "flat/100/notify1/empty",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.1096317199999919,
+      "minMs": 0.09894197000001213,
+      "maxMs": 0.11821561000000087
+    },
+    {
+      "name": "flat/100/notify1/read",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.1078331100000014,
+      "minMs": 0.1003220399999941,
+      "maxMs": 0.13955440000000408
+    },
+    {
+      "name": "flat/100/notify10/empty",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.10572331000000985,
+      "minMs": 0.09212117999999236,
+      "maxMs": 0.12232987999999523
+    },
+    {
+      "name": "flat/100/notify10/read",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.12169333999999253,
+      "minMs": 0.1020508700000164,
+      "maxMs": 0.15315855000001194
+    },
+    {
+      "name": "flat/100/notify100/empty",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.10822743000000629,
+      "minMs": 0.09710337000000437,
+      "maxMs": 0.1165771000000018
+    },
+    {
+      "name": "flat/100/notify100/read",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.111071670000008,
+      "minMs": 0.09490798999999014,
+      "maxMs": 0.1260038499999996
+    },
+    {
+      "name": "flat/1000/create",
+      "iterations": 13,
+      "samples": 7,
+      "medianMs": 2.393840461538485,
+      "minMs": 2.0409244615384696,
+      "maxMs": 3.2825658461538647
+    },
+    {
+      "name": "flat/1000/firstSnapshot",
+      "iterations": 6,
+      "samples": 7,
+      "medianMs": 4.266218500000036,
+      "minMs": 3.7519868333332624,
+      "maxMs": 6.66533183333335
+    },
+    {
+      "name": "flat/1000/unchangedSnapshot",
+      "iterations": 12,
+      "samples": 7,
+      "medianMs": 1.6433554166666984,
+      "minMs": 1.5921725833333085,
+      "maxMs": 1.7840353333333496
+    },
+    {
+      "name": "flat/1000/oneField",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.0025936200000433018,
+      "minMs": 0.002426659999991898,
+      "maxMs": 0.003758100000000013
+    },
+    {
+      "name": "flat/1000/batch10",
+      "iterations": 6,
+      "samples": 7,
+      "medianMs": 4.488013666666575,
+      "minMs": 4.083615999999968,
+      "maxMs": 4.615745000000136
+    },
+    {
+      "name": "flat/1000/notify1/empty",
+      "iterations": 9,
+      "samples": 7,
+      "medianMs": 2.937560444444393,
+      "minMs": 2.8033166666666856,
+      "maxMs": 3.2463222222222106
+    },
+    {
+      "name": "flat/1000/notify1/read",
+      "iterations": 7,
+      "samples": 7,
+      "medianMs": 3.0129527142859325,
+      "minMs": 2.904887857142772,
+      "maxMs": 3.133274571428501
+    },
+    {
+      "name": "flat/1000/notify10/empty",
+      "iterations": 9,
+      "samples": 7,
+      "medianMs": 2.941485222222329,
+      "minMs": 2.9151678888888455,
+      "maxMs": 3.0575498888888433
+    },
+    {
+      "name": "flat/1000/notify10/read",
+      "iterations": 10,
+      "samples": 7,
+      "medianMs": 2.9957828000000517,
+      "minMs": 2.8218228000000636,
+      "maxMs": 3.2985745999999834
+    },
+    {
+      "name": "flat/1000/notify100/empty",
+      "iterations": 7,
+      "samples": 7,
+      "medianMs": 3.4853015714284084,
+      "minMs": 3.061803142857246,
+      "maxMs": 4.041463285714339
+    },
+    {
+      "name": "flat/1000/notify100/read",
+      "iterations": 9,
+      "samples": 7,
+      "medianMs": 3.1534218888888668,
+      "minMs": 2.94755366666656,
+      "maxMs": 3.4346947777778243
+    },
+    {
+      "name": "collection/fields/10/addRemove",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.0712388699999974,
+      "minMs": 0.03992542999991201,
+      "maxMs": 0.11034305999997741
+    },
+    {
+      "name": "collection/forms/10/addRemove",
+      "iterations": 59,
+      "samples": 7,
+      "medianMs": 0.1991974067796653,
+      "minMs": 0.1454584406779543,
+      "maxMs": 0.4436698474575709
+    },
+    {
+      "name": "collection/fields/100/addRemove",
+      "iterations": 66,
+      "samples": 7,
+      "medianMs": 0.2741104848484445,
+      "minMs": 0.24843981818180924,
+      "maxMs": 0.38798160606059656
+    },
+    {
+      "name": "collection/forms/100/addRemove",
+      "iterations": 16,
+      "samples": 7,
+      "medianMs": 1.2352240624999808,
+      "minMs": 1.0897491250000257,
+      "maxMs": 2.1117593750000196
+    },
+    {
+      "name": "collection/fields/1000/addRemove",
+      "iterations": 9,
+      "samples": 7,
+      "medianMs": 2.8272228888890822,
+      "minMs": 2.683792000000014,
+      "maxMs": 2.9649010000000797
+    },
+    {
+      "name": "collection/forms/1000/addRemove",
+      "iterations": 2,
+      "samples": 7,
+      "medianMs": 14.323725000000195,
+      "minMs": 10.669550499999787,
+      "maxMs": 27.907674999999927
+    },
+    {
+      "name": "depth/0/create",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.01791515000001709,
+      "minMs": 0.01311490000000049,
+      "maxMs": 0.032679989999996904
+    },
+    {
+      "name": "depth/0/firstSnapshot",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.02917730000001029,
+      "minMs": 0.026163679999999658,
+      "maxMs": 0.039990919999982
+    },
+    {
+      "name": "depth/0/leafChange",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.01635613999996167,
+      "minMs": 0.013651060000001962,
+      "maxMs": 0.10765245000005962
+    },
+    {
+      "name": "depth/1/create",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.03551829000000908,
+      "minMs": 0.02869173000000046,
+      "maxMs": 0.04762539999997898
+    },
+    {
+      "name": "depth/1/firstSnapshot",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.07268741999997473,
+      "minMs": 0.05608587000003354,
+      "maxMs": 0.1134479200000078
+    },
+    {
+      "name": "depth/1/leafChange",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.0459336400000484,
+      "minMs": 0.035670569999965665,
+      "maxMs": 0.06536928999998963
+    },
+    {
+      "name": "depth/3/create",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.11176665999994839,
+      "minMs": 0.07663336999999046,
+      "maxMs": 0.16556767000002764
+    },
+    {
+      "name": "depth/3/firstSnapshot",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.15834428999997727,
+      "minMs": 0.14876686000007794,
+      "maxMs": 0.295312980000017
+    },
+    {
+      "name": "depth/3/leafChange",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.12386024999999791,
+      "minMs": 0.114359679999925,
+      "maxMs": 0.30398838000006434
+    },
+    {
+      "name": "depth/5/create",
+      "iterations": 100,
+      "samples": 7,
+      "medianMs": 0.15504211999998915,
+      "minMs": 0.1382243699999526,
+      "maxMs": 0.19415750999995907
+    },
+    {
+      "name": "depth/5/firstSnapshot",
+      "iterations": 76,
+      "samples": 7,
+      "medianMs": 0.4035441710526524,
+      "minMs": 0.30785489473688404,
+      "maxMs": 0.6048016710526674
+    },
+    {
+      "name": "depth/5/leafChange",
+      "iterations": 82,
+      "samples": 7,
+      "medianMs": 0.24935636585368917,
+      "minMs": 0.22553657317075704,
+      "maxMs": 0.3846835243902117
+    }
+  ],
+  "memory": {
+    "available": true,
+    "rounds": [
+      {
+        "round": 0,
+        "heapUsed": 14091176
+      },
+      {
+        "round": 1,
+        "heapUsed": 14109512
+      },
+      {
+        "round": 2,
+        "heapUsed": 14124240
+      },
+      {
+        "round": 3,
+        "heapUsed": 14124296
+      },
+      {
+        "round": 4,
+        "heapUsed": 14124520
+      },
+      {
+        "round": 5,
+        "heapUsed": 14125872
+      }
+    ]
+  },
+  "harnessReportedCommit": "37ba83d8745b462cfd9c894561dd9a59fd0d76a6",
+  "provenanceNote": "Runtime built from an untouched git archive of master. The harness inherits the caller cwd for git rev-parse; commit is corrected to the archived runtime revision, with the original reported value retained.",
+  "baselineRuntimeSha256": "92d7597600784f6b44f82013c28abc8e0afcaf1ab768150f314b61926a207736",
+  "currentRuntimeSha256": "8ff33e2eeadb453a58502698bd6eaddba90c1c86226fd1f6397630eaf57e59e8"
+}

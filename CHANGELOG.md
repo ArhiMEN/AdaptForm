@@ -6,6 +6,12 @@ All notable changes to AdaptForm are documented here. Version `2.1.0` was publis
 
 **[Interactive demo](https://arhimen.github.io/AdaptForm/)** · [Demo source](https://github.com/ArhiMEN/AdaptForm/tree/master/demo) · [Documentation](https://github.com/ArhiMEN/AdaptForm/blob/master/README.md)
 
+## Unreleased — HF-015 source
+
+- Add immutable ordered `ValidationError` metadata with code/message/params/path/source, `getErrors()` on fields/collections/forms, local field `getOwnErrors()`/`setErrors()`, and structured custom-validator results. Duplicate codes and errors without messages survive.
+- Assign stable codes to existing built-in checks; retain messages, string APIs, mutable errors, `FieldType.validate()`, schemas and validation/clearing policies. Add server ingestion with `Form.setErrors()`/`ErrorsSchema.parseValidationErrors()` for multiple errors and collection item paths without reinterpreting legacy `form.errors = response`.
+- Snapshots gain optional own `validationErrors`; subscriptions, batch, HF-011 and HF-013 retain their semantics. [Contract, migration and limits](docs/ai/HEADLESS_ERRORS.md). Version stays 2.2.0; no publication.
+
 ## Unreleased — HF-013 source
 
 - Add optional `FieldOptions.dependsOn` with literal single-property paths and `Form.enableDependencies(): () => void`. Explicit activation enables selective synchronous validation for ordinary fields in one Form, with chains/diamonds, batch deduplication, suppression, atomic snapshots and idempotent disposal.
