@@ -66,3 +66,10 @@ Minimal safe subset: `dependsOn: [{path: ['fieldName']}]`, no direct references,
 ## HF-015 — 2026-10-24
 
 Approved scope: ordered structured errors, compatible legacy string APIs/validators/parser, additive server ingestion and paths, snapshots/subscriptions/batch/HF-013, tests and EN/RU documentation, and a separate PR to master. [Contract](HEADLESS_ERRORS.md) records code-as-text fallback for absent messages, client/custom/server/external provenance and retained invalidation. Legacy server arrays/paths are not reinterpreted; new ingestion is explicit. No HF-014/016/017, version bump, merge, publication or branch deletion.
+
+## AdaptForm 3.0 architecture direction — 2026-10-28
+
+- Target **3.0.0** rather than 2.3.0; consolidate validation and errors into one structured contract and remove redundant legacy compatibility only after inventory and owner-approved migration design.
+- Server error parsing must be configurable for arbitrary API formats, building on existing ErrorsSchema; no Django/PlayLease-specific assumptions. Distinguish parsing from applying errors and define server/manual/type/custom lifecycle rules.
+- **Mandatory legacy escalation:** disclose any proposed fallback, bridge, duplicate representation or workaround before implementation; request an owner decision rather than silently adding it. Normalizing external API formats is supported functionality, not legacy.
+- V3-01 is read-only; exact API, implementation, version bump, merge and publication require separate approval. See [3.0 architecture direction](V3_ARCHITECTURE.md).
