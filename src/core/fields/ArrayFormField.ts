@@ -258,7 +258,7 @@ export class ArrayFormField<T extends Form = Form> extends ObservableNode<ArrayF
   set error(message: string | null) {
     this.update(() => {
       if (message) {
-        this._errors = this._errorState.set([{code: manualErrorSource(), message}], manualErrorSource())
+        this._errors = this._errorState.set([{code: manualErrorSource(this), message}], manualErrorSource(this))
         this._hasValidationResult = true
       } else {
         this._errors = this._errorState.set([], 'external')

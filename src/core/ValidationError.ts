@@ -23,15 +23,23 @@ export function isValidationError(value: unknown): value is ValidationErrorInput
     'code' in value && typeof value.code === 'string' && value.code.length > 0
 }
 
-let manualSource: ValidationErrorSource = 'external'
+interface ErrorSourceContext {
+  readonly target: object
+  readonly key?: string
+  readonly source: ValidationErrorSource
+}
+let manualContext: ErrorSourceContext | undefined
 
-export function manualErrorSource(): ValidationErrorSource { return manualSource }
+/** Only the addressed legacy setter inherits provenance, not other receivers or keys. */
+export function manualErrorSource(target: object, key?: string): ValidationErrorSource {
+  return manualContext?.target === target && manualContext.key === key ? manualContext.source : 'external'
+}
 
-/** Preserve legacy setter dispatch while assigning server provenance synchronously. */
-export function withErrorSource<T>(source: ValidationErrorSource, callback: () => T): T {
-  const previous = manualSource
-  manualSource = source
-  try { return callback() } finally { manualSource = previous }
+/** Preserve synchronous subclass dispatch; nested scopes restore even on exceptions. */
+export function withErrorSource<T>(target: object, source: ValidationErrorSource, callback: () => T, key?: string): T {
+  const previous = manualContext
+  manualContext = {target, source, key}
+  try { return callback() } finally { manualContext = previous }
 }
 
 export function errorMessage(error: ValidationErrorInput): string {

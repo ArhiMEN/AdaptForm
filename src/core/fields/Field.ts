@@ -166,7 +166,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
   set error(message: string | null) {
     this.update(() => {
       if (message) {
-        this._errors = this._errorState.set([{code: manualErrorSource(), message}], manualErrorSource())
+        this._errors = this._errorState.set([{code: manualErrorSource(this), message}], manualErrorSource(this))
       } else {
         this._errors = this._errorState.set([], 'external')
       }

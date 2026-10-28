@@ -241,7 +241,9 @@ export abstract class Form extends ObservableNode<FormSnapshot> {
     // Add global errors.
     for (const error of this._globalErrorState.getErrors()) {
       const key = error.path.join('.')
-      if (!errors[key]) errors[key] = []
+      if (!Object.prototype.hasOwnProperty.call(errors, key)) {
+        Object.defineProperty(errors, key, {value: [], enumerable: true, writable: true, configurable: true})
+      }
       errors[key].push(errorMessage(error))
     }
 
@@ -285,11 +287,9 @@ export abstract class Form extends ObservableNode<FormSnapshot> {
       const parsedErrors = this.errorsShema.parseErrors(errors)
 
       // Apply the parsed errors.
-      withErrorSource('server', () => {
-        for (const [fieldName, errorMessage] of Object.entries(parsedErrors)) {
-          this.applyErrorToField(fieldName, errorMessage, fields, this)
-        }
-      })
+      for (const [fieldName, errorMessage] of Object.entries(parsedErrors)) {
+        this.applyErrorToField(fieldName, errorMessage, fields, this)
+      }
       })
   }
 
@@ -328,8 +328,8 @@ export abstract class Form extends ObservableNode<FormSnapshot> {
     }
 
     // Check for a direct field match first.
-    if (fieldPath in fields && fields[fieldPath]) {
-      fields[fieldPath].error = errorMessage
+    if (Object.prototype.hasOwnProperty.call(fields, fieldPath) && fields[fieldPath]) {
+      withErrorSource(fields[fieldPath], 'server', () => { fields[fieldPath].error = errorMessage })
       return
     }
 
@@ -337,17 +337,17 @@ export abstract class Form extends ObservableNode<FormSnapshot> {
     const parts = fieldPath.split('.')
     const rootField = parts[0]
 
-    if (rootField in fields && fields[rootField]) {
+    if (Object.prototype.hasOwnProperty.call(fields, rootField) && fields[rootField]) {
       const field = fields[rootField]
 
       if (parts.length === 1) {
-        field.error = errorMessage
+        withErrorSource(field, 'server', () => { field.error = errorMessage })
       } else if (parts.length > 1) {
         this.applyNestedError(field, parts.slice(1), errorMessage, fieldPath, targetForm)
       }
     } else {
       // If the field is not found, add the error to the target form's global errors.
-      targetForm.setGlobalError(fieldPath, errorMessage)
+      withErrorSource(targetForm, 'server', () => targetForm.setGlobalError(fieldPath, errorMessage), fieldPath)
     }
   }
 
@@ -379,16 +379,16 @@ export abstract class Form extends ObservableNode<FormSnapshot> {
         } else {
           // If the path specifies an index without a field,
           // add it as a global form error.
-          form.setGlobalError(`index_${index}`, errorMessage)
+          withErrorSource(form, 'server', () => form.setGlobalError(`index_${index}`, errorMessage), `index_${index}`)
         }
       } else {
         // If the index is out of range, add a global error to the target form.
-        targetForm.setGlobalError(fullPath, errorMessage)
+        withErrorSource(targetForm, 'server', () => targetForm.setGlobalError(fullPath, errorMessage), fullPath)
       }
     }
     // For ArrayField and Field, add the error to the target form's global errors.
     else {
-      targetForm.setGlobalError(fullPath, errorMessage)
+      withErrorSource(targetForm, 'server', () => targetForm.setGlobalError(fullPath, errorMessage), fullPath)
     }
   }
 
@@ -402,7 +402,7 @@ export abstract class Form extends ObservableNode<FormSnapshot> {
 
   setGlobalError(key: string, message: string): void {
     return this.update(() => {
-      this.replaceGlobalError(key, {code: manualErrorSource(), message}, manualErrorSource())
+      this.replaceGlobalError(key, {code: manualErrorSource(this, key), message}, manualErrorSource(this, key))
       })
   }
 

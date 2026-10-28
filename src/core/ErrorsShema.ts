@@ -164,14 +164,14 @@ export class ErrorsSchema {
         if (typeof mapping === 'function') {
           const fieldName = mapping(transformedValue)
           if (fieldName) {
-            result[fieldName] = typeof transformedValue === 'string'
+            Object.defineProperty(result, fieldName, {value: typeof transformedValue === 'string'
               ? transformedValue
-              : JSON.stringify(transformedValue)
+              : JSON.stringify(transformedValue), enumerable: true, writable: true, configurable: true})
           }
         } else {
-          result[mapping] = typeof transformedValue === 'string'
+          Object.defineProperty(result, mapping, {value: typeof transformedValue === 'string'
             ? transformedValue
-            : JSON.stringify(transformedValue)
+            : JSON.stringify(transformedValue), enumerable: true, writable: true, configurable: true})
         }
       }
     }
@@ -185,8 +185,8 @@ export class ErrorsSchema {
    */
   parseValidationErrors(errors: Record<string, unknown>, prefix: string = ''): readonly ValidationError[] {
     if (this.parseErrors !== ErrorsSchema.prototype.parseErrors) {
-      return Object.entries(this.parseErrors(errors, prefix)).map(([path, message]) =>
-        validationError({code: 'server', message}, 'server', this.errorPath(path)))
+      return Object.freeze(Object.entries(this.parseErrors(errors, prefix)).map(([path, message]) =>
+        validationError({code: 'server', message}, 'server', this.errorPath(path))))
     }
     const result: ValidationError[] = []
     const visit = (data: Record<string, unknown>, parent: string) => {
@@ -257,12 +257,12 @@ export class ErrorsSchema {
           ? transformedValue
           : JSON.stringify(transformedValue)
 
-        result[matchResult.fieldName] = {
+        Object.defineProperty(result, matchResult.fieldName, {value: {
           fieldName: matchResult.fieldName,
           message,
           sourceKey: fullKey,
           matchedBy: matchResult.matchedBy
-        }
+        }, enumerable: true, writable: true, configurable: true})
       }
     }
 
