@@ -30,6 +30,14 @@
 - Preserve existing user-facing validation and error messages and public type names unless the user explicitly authorizes a contract change and migration plan.
 - Add or update regression tests for bug fixes and meaningful behavior changes. Documentation and agent-configuration edits do not need behavior tests.
 
+
+## Legacy and compatibility escalation
+
+- Before adding a fallback, compatibility bridge, duplicate state, deprecated alias, or workaround, identify the old contract and why it is still needed. Report the finding to the owner **immediately**, with affected API, evidence, alternatives, migration impact, and recommendation.
+- Do **not** silently implement legacy support or a temporary workaround. Stop the affected design/implementation and request an explicit decision: remove, replace, retain with justification, or defer. Continue independent approved work only if safe.
+- A major-version direction is not blanket permission to remove functionality: preserve useful behavior through a designed replacement and document migration. Do not introduce a breaking change outside the approved task scope.
+- For AdaptForm 3.0, prefer one structured error model and one validation contract. Server response normalization is a supported integration boundary, **not** legacy compatibility; keep it configurable and backend-agnostic.
+
 ## Language and documentation
 
 - Write code comments, test descriptions, and examples in English. Keep English documentation and complete Russian companions (`*.ru.md`) aligned. Preserve user-provided and language-neutral values.
