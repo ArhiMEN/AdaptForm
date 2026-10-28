@@ -1,0 +1,65 @@
+[
+  {
+    "name": "master",
+    "fields": 1000,
+    "operations": [
+      {
+        "operation": "unchangedSnapshot3",
+        "validators": 0,
+        "notifications": 0
+      },
+      {
+        "operation": "write1",
+        "validators": 1,
+        "notifications": 1
+      },
+      {
+        "operation": "batch10",
+        "validators": 1000,
+        "notifications": 1
+      }
+    ]
+  },
+  {
+    "name": "prHead",
+    "fields": 1000,
+    "operations": [
+      {
+        "operation": "unchangedSnapshot3",
+        "validators": 0,
+        "notifications": 0
+      },
+      {
+        "operation": "write1",
+        "validators": 1,
+        "notifications": 1
+      },
+      {
+        "operation": "batch10",
+        "validators": 1000,
+        "notifications": 1
+      }
+    ]
+  },
+  {
+    "name": "fixed",
+    "fields": 1000,
+    "operations": [
+      {
+        "operation": "unchangedSnapshot3",
+        "validators": 0,
+        "notifications": 0
+      },
+      {
+        "operation": "write1",
+        "validators": 1,
+        "notifications": 1
+      },
+      {
+        "operation": "batch10",
+        "validators": 1000,
+        "notifications": 1
+      }
+    ]
+  }
+]

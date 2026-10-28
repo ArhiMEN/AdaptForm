@@ -4,6 +4,8 @@
 
 Base: master `b9051dd9f8eae4894a75356e03f5247447db7bf0`; verified source: `934b378b847749aef3f256ab36fca79d448fa459`. Version **2.2.0**, dependencies and lockfile unchanged. [Contract](../../ai/HEADLESS_ERRORS.md).
 
+Follow-up independent review (2026-10-28): **720 tests**, three addressed defects, repeated benchmarks and updated audit analysis. [Current review report](ERRORS_REVIEW.md); the original evidence below is retained unchanged.
+
 ## Checks
 
 [PR #28](https://github.com/ArhiMEN/AdaptForm/pull/28) is open against master. [CI #40082508903](https://github.com/ArhiMEN/AdaptForm/actions/runs/40082508903) on `69f0878` failed at Audit dependencies: undici, 1 high + transitive jsdom moderate; subsequent checks were skipped. Logs confirm the dependency blocker, not a failing HF-015 test. [PR checks](https://github.com/ArhiMEN/AdaptForm/pull/28/checks) are authoritative for later documentation-only commits.

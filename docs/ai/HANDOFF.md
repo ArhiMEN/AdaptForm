@@ -2,6 +2,10 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## HF-015 review — 2026-10-28
+
+PR #28, branch `hf-015-structured-validation-errors`, master/base `b9051dd`, reviewed original head `66fcbd8`. **PASS_WITH_LIMITATIONS**: fix cross-node/key provenance leakage, prototype-named global error publication, and frozen custom-parser bridge results. **720 tests / 34 files**, lint, source/test/demo types, library/demo builds, package integrity, packed strict NodeNext ESM/CJS without Luxon and diff checks pass. Repeated full/paired benchmarks retain measurable collection costs and about 0.3 MiB additional heap; rule/notification counts match master. Audit still blocks CI on dev-only undici 7.29.1; propose separately approved override 7.30.1, no dependencies/workflows changed. [Review, raw data, limitations and exact plan](../roadmap/v2.3.0/ERRORS_REVIEW.md). Next: final-head CI and independent acceptance; resolve audit separately before merge. Version remains 2.2.0; no merge/publication/tag/branch deletion.
+
 ## HF-015 — 2026-10-24
 
 [PR #28](https://github.com/ArhiMEN/AdaptForm/pull/28) is open against master. [CI #40082508903](https://github.com/ArhiMEN/AdaptForm/actions/runs/40082508903) on `69f0878` failed at Audit dependencies: undici, 1 high + transitive jsdom moderate; subsequent checks were skipped. Logs confirm the dependency blocker, not a failing HF-015 test. [PR checks](https://github.com/ArhiMEN/AdaptForm/pull/28/checks) are authoritative for later documentation-only commits.

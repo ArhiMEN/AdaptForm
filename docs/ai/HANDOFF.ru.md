@@ -2,6 +2,10 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## Проверка HF-015 — 2026-10-28
+
+PR #28, ветка `hf-015-structured-validation-errors`, master/base `b9051dd`, исходный проверенный head `66fcbd8`. **PASS_WITH_LIMITATIONS**: исправлены утечка происхождения между узлами/ключами, публикация глобальных ошибок с именами прототипа и заморозка результатов моста пользовательского парсера. **720 тестов / 34 файла**, lint, source/test/demo types, library/demo builds, package integrity, packed strict NodeNext ESM/CJS без Luxon и diff checks проходят. Повторные полные/парные benchmarks сохраняют измеримую цену коллекций и около 0.3 MiB дополнительного heap; счётчики правил/уведомлений совпадают с master. Audit продолжает блокировать CI из-за dev-only undici 7.29.1; предложен отдельно согласуемый override 7.30.1, зависимости/workflows не менялись. [Проверка, исходные данные, ограничения и точный план](../roadmap/v2.3.0/ERRORS_REVIEW.ru.md). Далее: CI итогового head и независимая приёмка; отдельно решить audit до merge. Версия 2.2.0; merge/публикация/tag/удаление веток не выполнялись.
+
 ## HF-015 — 2026-10-24
 
 [PR #28](https://github.com/ArhiMEN/AdaptForm/pull/28) открыт в master. [CI #40082508903](https://github.com/ArhiMEN/AdaptForm/actions/runs/40082508903) на `69f0878` завершился FAIL на Audit dependencies: undici, 1 high + транзитивный moderate jsdom; последующие проверки пропущены. Это подтверждено логами, не ошибка тестов HF-015. Для последующих documentation-only коммитов актуальны [проверки PR](https://github.com/ArhiMEN/AdaptForm/pull/28/checks).

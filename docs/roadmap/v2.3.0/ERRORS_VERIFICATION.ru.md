@@ -4,6 +4,8 @@
 
 База: master `b9051dd9f8eae4894a75356e03f5247447db7bf0`; проверенные исходники: `934b378b847749aef3f256ab36fca79d448fa459`. Версия **2.2.0**, зависимости и lockfile не изменены. [Контракт](../../ai/HEADLESS_ERRORS.ru.md).
 
+Повторная независимая проверка (2026-10-28): **720 тестов**, три адресно исправленных дефекта, повторные benchmarks и актуальный анализ audit. [Актуальный отчёт проверки](ERRORS_REVIEW.ru.md); исходные данные ниже сохранены без изменений.
+
 ## Проверки
 
 [PR #28](https://github.com/ArhiMEN/AdaptForm/pull/28) открыт в master. [CI #40082508903](https://github.com/ArhiMEN/AdaptForm/actions/runs/40082508903) на `69f0878` завершился FAIL на Audit dependencies: undici, 1 high + транзитивный moderate jsdom; последующие проверки пропущены. Это подтверждено логами, не ошибка тестов HF-015. Для последующих documentation-only коммитов актуальны [проверки PR](https://github.com/ArhiMEN/AdaptForm/pull/28/checks).

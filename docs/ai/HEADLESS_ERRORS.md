@@ -12,6 +12,8 @@ The internal source of truth is an ordered error list, with a shared string-arra
 
 New structured server ingestion uses an additive method because silently reinterpreting old arrays or changing scalar collection routing would break existing contracts. Existing `form.errors = response` still calls the configured `parseErrors()`. New `form.setErrors(response)` calls `parseValidationErrors()`; neither path silently changes the other. Custom `parseErrors()` overrides remain authoritative through a compatibility bridge, so information already collapsed by an override cannot be recovered. There are no pending behavior changes requiring migration approval.
 
+Review repair: legacy server provenance is scoped to the dispatched receiver (and global key), not unrelated manual writes. Nested synchronous scopes restore on exceptions; repeated delegation to the same receiver/key remains part of the server operation. Delayed callbacks do not inherit the scope. This bridge must not cross `await`; HF-016 requires explicit async result ownership. Unknown prototype-named global paths publish safely, and custom-parser bridge lists are frozen. [Independent review and current limits](../roadmap/v2.3.0/ERRORS_REVIEW.md).
+
 ## Model
 
 ```ts
