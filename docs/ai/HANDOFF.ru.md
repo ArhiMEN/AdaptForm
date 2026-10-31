@@ -2,6 +2,30 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## Интеграция документации PR #29 — 2026-10-31
+
+V3-02: **ACCEPTED** владельцем на `b041806ee35c56f55c0a0925e7d0de8b533f09bd`; ODR-01–05 окончательны. Результат интеграции: **READY_FOR_OWNER_REVIEW**. Ветка `docs/v3-02-specification`; существующий [Draft PR #30](https://github.com/ArhiMEN/AdaptForm/pull/30). [Матрица переноса](V3_DOCUMENTATION_INTEGRATION.ru.md) согласует все шесть файлов PR #29 в 33 строках.
+
+Перенесены полные правила эскалации legacy/обходов из AGENTS и исходное направление DECISIONS; явно включены архитектурные отклонения и приоритет принятого V3-02. Обновлены статус приёмки и происхождение architecture/catalogue/plan EN/RU; сохранены исторические A01–A04 и release/downstream gates. Все 30 решений реестра, ODR-01–05 и будущие контракты неизменны. PR #29 остаётся открытым Draft на `aab14d29b428c57cabb9ec5ceb069fcc5adaba6e`, его ветка не изменена.
+
+Фактические проверки PASS: scratch-only `python /tmp/adaptform-doc-integration/check_docs.py` — 517 assertions, 232 относительные ссылки/якоря, точный список 14 файлов, EN/RU blocks/IDs/структура таблиц и заголовков, все 33 строки переноса, четыре дословных правила AGENTS и четыре исходных пункта DECISIONS на язык. Точное сравнение с принятым HEAD подтверждает сохранность 30 строк реестра, пяти строк ODR, описаний утверждённых решений, нормативных разделов контрактов и 14 TypeScript-блоков. TypeScript 5.9.3 strict/noEmit/exactOptionalPropertyTypes/skipLibCheck:false проходит для всех 14 блоков и 19 проверенных отрицательных случаев с ambient Form/Field scaffold; это проверка будущих сигнатур/примеров, не runtime. Сохранность истории и `git diff --check` — PASS. Проверочные скрипты и сгенерированные файлы находятся только в `/tmp`, исключены из коммита.
+
+Изменены AGENTS EN/RU; docs/ai/{DECISIONS,HANDOFF,V3_ARCHITECTURE,V3_ERROR_CODES,V3_DOCUMENTATION_INTEGRATION} EN/RU; docs/roadmap/v3.0.0/PLAN EN/RU — 14 Markdown-файлов. Runtime/tests/dependencies/version/CI не затронуты. Runtime suites/builds/audit/benchmarks для этой задачи не запускались; исторические результаты ниже не являются текущими проверками.
+
+Неразрешённых содержательных конфликтов нет. Далее: проверка интеграции документации владельцем; приёмка V3-02 уже записана. Рекомендовано закрыть PR #29 как заменённый только после приёмки интеграции; в этой задаче его не закрывать. V3-03 требует отдельного разрешения. Разрешены один обычный коммит/push и обновление Draft PR #30, без force push, merge в master или публикации npm.
+
+## Финализация V3-02 / ODR-01–05 — 2026-10-28
+
+Историческая запись финализации до приёмки на `b041806ee35c56f55c0a0925e7d0de8b533f09bd`. Упоминания ожидаемой приёмки и неинтегрированного PR #29 относятся к 2026-10-28 и заменены записью 2026-10-31 выше; прежние результаты проверок сохранены.
+
+**READY_FOR_OWNER_REVIEW**. Все пять решений владельца утверждены, открытых ODR по этой задаче нет; спецификация ожидает приёмки. Ветка docs/v3-02-specification, исходный HEAD 96a82c8f015ff34115e192b0c3947d50052b2ebf, чистые index/tree; существующий [Draft PR #30](https://github.com/ArhiMEN/AdaptForm/pull/30). [Архитектура](V3_ARCHITECTURE.ru.md), [17-code catalogue](V3_ERROR_CODES.ru.md), [полный legacy ledger/задачи/риски](../roadmap/v3.0.0/PLAN.ru.md) и EN companions согласованы.
+
+ODR-01: typeId, восемь IDs шести built-ins/modes, без getTypeName alias. ODR-02: точный JSON-domain, глубокие checks/detach/freeze/пределы и rich-params migration. ODR-03 B: ноль constructor/deferred callbacks, граница завершения, full explicit traversal и local structural counts. ODR-04: финальный REMOVE/REPLACE/KEEP, один parser/explicit config, ErrorsMapping composition, trace, own/aggregate readers и required itemIds. ODR-05 A: атомарный staged commit, отдельные retained pending/delivered diagnostic reports, точный порядок/nested batch и fault matrix. Контракты будущие; runtime не менялся.
+
+Фактические проверки PASS: scratch-only `node work/check-docs.mjs` — 342 consistency assertions, 190 relative links/anchors, EN/RU TS/IDs/tables/headings, 17 source codes, восемь type/mode IDs, 30 строк legacy ledger и точный allowlist 10 files. TypeScript 5.9.3: 14 Markdown blocks, strict/noEmit/exactOptionalPropertyTypes, 19 negative cases; ambient Form/Field scaffolding проверяет будущие сигнатуры/примеры, не runtime. Проверены сохранность исторических HANDOFF/DECISIONS и отсутствие открытых ODR-противоречий. `git diff --check` — PASS. Checker/scripts находятся только в scratch, не включены в коммит; runtime suites/builds/audit/benchmarks не запускались.
+
+Изменены только 10 разрешённых Markdown files; runtime/tests/dependencies/version/workflows/AGENTS и исторические audit/test results неизменны. PR #29 не изменён/не интегрирован; исходный draft head aab14d29b428c57cabb9ec5ceb069fcc5adaba6e. Разрешены один documentation commit/push и обновление Draft PR #30; без force push/merge/release. Далее — приёмка спецификации владельцем и отдельное разрешение V3-03; не начинать реализацию автоматически.
+
 ## Проверка HF-015 — 2026-10-28
 
 PR #28, ветка `hf-015-structured-validation-errors`, master/base `b9051dd`, исходный проверенный head `66fcbd8`. **PASS_WITH_LIMITATIONS**: исправлены утечка происхождения между узлами/ключами, публикация глобальных ошибок с именами прототипа и заморозка результатов моста пользовательского парсера. **720 тестов / 34 файла**, lint, source/test/demo types, library/demo builds, package integrity, packed strict NodeNext ESM/CJS без Luxon и diff checks проходят. Повторные полные/парные benchmarks сохраняют измеримую цену коллекций и около 0.3 MiB дополнительного heap; счётчики правил/уведомлений совпадают с master. Audit продолжает блокировать CI из-за dev-only undici 7.29.1; предложен отдельно согласуемый override 7.30.1, зависимости/workflows не менялись. [Проверка, исходные данные, ограничения и точный план](../roadmap/v2.3.0/ERRORS_REVIEW.ru.md). Далее: CI итогового head и независимая приёмка; отдельно решить audit до merge. Версия 2.2.0; merge/публикация/tag/удаление веток не выполнялись.
