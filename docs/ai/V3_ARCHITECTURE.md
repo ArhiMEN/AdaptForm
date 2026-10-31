@@ -2,13 +2,13 @@
 
 [English](V3_ARCHITECTURE.md) · [Русский](V3_ARCHITECTURE.ru.md)
 
-Status: **READY_FOR_OWNER_REVIEW**. Owner decisions ODR-01–05 are approved; the resulting design contracts below await specification acceptance. This is a future API, not an implemented feature. V3-03 requires separate authorization; merge and release are not authorized.
+V3-02 status: **ACCEPTED** by the owner at `b041806ee35c56f55c0a0925e7d0de8b533f09bd`; ODR-01–05 are final for this stage. Documentation integration status: **READY_FOR_OWNER_REVIEW**. This is a future API, not an implemented feature. V3-03 requires separate authorization; merge and release are not authorized.
 
 ## 1. Baseline and document provenance
 
 Initial V3-02 inspection: 2026-10-28, `work`/`670c6a04014fbf938574bfd8eb2a706e44a9d4d0`, then equal to remote master; index/tree clean. ODR finalization starts on `docs/v3-02-specification` at `96a82c8f015ff34115e192b0c3947d50052b2ebf`, clean index/tree, existing [Draft PR #30](https://github.com/ArhiMEN/AdaptForm/pull/30). Package remains 2.2.0. Historical 2.3.0 documents describe source work, not a published 2.3.0.
 
-[PR #29](https://github.com/ArhiMEN/AdaptForm/pull/29), `docs/v3-architecture-legacy-policy`, is an **open, unmerged draft**, head `aab14d29b428c57cabb9ec5ceb069fcc5adaba6e`, base equal to the inspected HEAD. Its six files are AGENTS EN/RU, DECISIONS EN/RU and V3_ARCHITECTURE EN/RU. Its architecture files were absent locally. These files use the same intended paths and extend the direction into V3-02; this does not integrate PR #29 or its AGENTS changes. Reconcile the documentation histories during separately authorized integration; do not overwrite either side automatically.
+On 2026-10-31, the owner-authorized documentation integration inspected all six changed files of [PR #29](https://github.com/ArhiMEN/AdaptForm/pull/29), `docs/v3-architecture-legacy-policy`, at `aab14d29b428c57cabb9ec5ceb069fcc5adaba6e`, against master `670c6a04014fbf938574bfd8eb2a706e44a9d4d0` and accepted PR #30 HEAD `b041806ee35c56f55c0a0925e7d0de8b533f09bd`. Its missing AGENTS/DECISIONS rules are now integrated here; earlier architecture proposals yield to accepted V3-02. The [transfer matrix](V3_DOCUMENTATION_INTEGRATION.md) records every provision, superseded proposal and historical risk. PR #29 remains an open, unmerged Draft; its branch is unchanged. This is selective documentation integration, not a Git merge.
 
 Read AGENTS EN/RU, project context/decisions, HF-005–010 state, HF-011 identity, HF-013 dependencies and HF-015 errors. Evidence links below refer to this unchanged source baseline. The V3-01 audit is evidence, not blanket approval of its API proposals.
 
@@ -25,6 +25,14 @@ Navigation: [code catalogue](V3_ERROR_CODES.md), [migration, tasks and risk matr
 - Mutations from validators and required callbacks are forbidden in every entry path, including collections, standalone checks and dependency passes. Exceptions are contract/programming failures, never user ValidationError.
 - Evolve ErrorsSchema, with declarative configuration and an adapter escape hatch; no backend detection. Separate Parse/Normalize and Apply. Default replace scope is the whole receiver Form; append is explicit. Unknown paths default to an application error; global/ignore are explicit. Preflight precedes all writes. Revision plus an explicit operation token protects delayed responses. No HTTP client.
 - No implicit legacy bridge. Stop affected design/implementation on a disputed removal, fallback, workaround or duplicate state; provide evidence and choices. Independent approved documentation can continue.
+
+### Development policy retained from PR #29
+
+Core remains TypeScript-first, headless and framework-agnostic. Deferred async validation, submit lifecycle, UI adapters and unrelated reset changes remain outside scope. Configurable server-response normalization is a supported integration boundary, not legacy compatibility.
+
+Before adding any fallback, compatibility bridge, duplicate state/representation, deprecated alias or workaround, identify the old contract and why it is needed; immediately report the affected API, evidence, alternatives, costs, migration impact and recommendation to the owner. Stop the affected design/implementation pending an explicit remove/replace/retain-with-justification/defer decision. Apply the same rule to architectural deviations. Independent approved work may continue only when safe. A major release does not authorize unrelated breaking changes or loss of useful behavior without a designed replacement and documented migration.
+
+The accepted ODR-01–05 and 30-row ledger already supply those decisions for V3-02; no re-approval or bridge/alias is introduced. [AGENTS](../../AGENTS.md) is the governing development policy; this section records its application to V3-02. New substantive conflicts that the accepted decisions cannot resolve require an owner decision before affected work continues.
 
 ## 3. Error and validation signatures
 
@@ -602,7 +610,7 @@ Evidence: [PERF-01](../roadmap/v2.3.0/PERFORMANCE.md), [HF-015 measurements](../
 
 ## 10. Approved owner decisions — 2026-10-28
 
-All five ODRs are closed as owner decisions. The detailed contracts above are the final design for V3-02 acceptance, not a claim of implemented runtime behavior.
+All five ODRs are closed as owner decisions. The detailed contracts above are the accepted V3-02 design, not a claim of implemented runtime behavior.
 
 | ID | Decision | Outcome and migration |
 | --- | --- | --- |
@@ -612,4 +620,4 @@ All five ODRs are closed as owner decisions. The detailed contracts above are th
 | ODR-04 | APPROVED — new API without bridges | Final REMOVE/REPLACE/KEEP ledger; one parser, explicit config, immutable ErrorsMapping composition, trace, own/aggregate readers, required itemIds |
 | ODR-05 | APPROVED — A | Parse/Preflight/Commit/Notification; atomic installation, separate retained diagnostic report; post-commit subscriber failure is no rollback |
 
-[Migration ledger and V3-03–06 dependencies](../roadmap/v3.0.0/PLAN.md) align with these decisions. No open OWNER_DECISION_REQUIRED remains for ODR-01–05. READY_FOR_OWNER_REVIEW is neither DONE nor ACCEPTED and does not authorize implementation.
+[Migration ledger and V3-03–06 dependencies](../roadmap/v3.0.0/PLAN.md) align with these decisions. No open OWNER_DECISION_REQUIRED remains for ODR-01–05. V3-02 is ACCEPTED; READY_FOR_OWNER_REVIEW applies only to the documentation integration and does not authorize implementation.

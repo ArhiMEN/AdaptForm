@@ -67,12 +67,28 @@ Minimal safe subset: `dependsOn: [{path: ['fieldName']}]`, no direct references,
 
 Approved scope: ordered structured errors, compatible legacy string APIs/validators/parser, additive server ingestion and paths, snapshots/subscriptions/batch/HF-013, tests and EN/RU documentation, and a separate PR to master. [Contract](HEADLESS_ERRORS.md) records code-as-text fallback for absent messages, client/custom/server/external provenance and retained invalidation. Legacy server arrays/paths are not reinterpreted; new ingestion is explicit. No HF-014/016/017, version bump, merge, publication or branch deletion.
 
+## AdaptForm 3.0 architecture direction — 2026-10-28
+
+Historical direction from PR #29, retained during integration on 2026-10-31. The exact API and migration were subsequently accepted as V3-02 at `b041806ee35c56f55c0a0925e7d0de8b533f09bd`; the earlier V3-01/API approval gate below is historical. Mandatory escalation still applies to new proposals and deviations, without reopening ODR-01–05.
+
+- Target **3.0.0** rather than 2.3.0; consolidate validation and errors into one structured contract and remove redundant legacy compatibility only after inventory and owner-approved migration design.
+- Server error parsing must be configurable for arbitrary API formats, building on existing ErrorsSchema; no Django/PlayLease-specific assumptions. Distinguish parsing from applying errors and define server/manual/type/custom lifecycle rules.
+- **Mandatory legacy escalation:** disclose any proposed fallback, bridge, duplicate representation or workaround before implementation; request an owner decision rather than silently adding it. Normalizing external API formats is supported functionality, not legacy.
+- V3-01 is read-only; exact API, implementation, version bump, merge and publication require separate approval. See [3.0 architecture direction](V3_ARCHITECTURE.md).
+
 ## V3-02 requirements and approved ODR-01–05 — 2026-10-28
 
 Approved for 3.0 design: canonical readonly structured errors; type/custom/server/manual; I18N-01 without translation/formatter/fallback; array-only synchronous validators and structural types; validate→{valid} across all sources. Validation preserves server/manual; actual own-value change clears both. One ErrorsSchema.parse is separate from token/revision-protected Apply, default whole-form replace/unknown-path error. Preserve headless state, identity, performance and limited dependencies; no async/backend presets.
 
 Owner decisions: **ODR-01 APPROVED** — required readonly typeId, machine expected, remove getTypeName without alias; **ODR-02 APPROVED** — JSON params, deep validation/copy/freeze and budgets; **ODR-03 APPROVED (B)** — zero intermediate assembly checks, full explicit traversal despite container errors; **ODR-04 APPROVED** — final REMOVE/REPLACE/KEEP, structured readers/writers, one parser/explicit config, immutable ErrorsMapping composition, trace, required itemIds; **ODR-05 APPROVED (A)** — Parse/Preflight/Commit/Notification, atomic installation, retained notification diagnostics without post-commit rollback.
 
-[Specification](V3_ARCHITECTURE.md), [catalogue](V3_ERROR_CODES.md), [ledger/plan](../roadmap/v3.0.0/PLAN.md) define final future signatures and migration. Status **READY_FOR_OWNER_REVIEW**, neither DONE nor ACCEPTED and no implemented-runtime claim. Authorized only: documentation, one logical commit/push to docs/v3-02-specification and update of [Draft PR #30](https://github.com/ArhiMEN/AdaptForm/pull/30). No V3-03/merge/version bump/tag/release/npm publish. Historical audit/test results are unchanged.
+[Specification](V3_ARCHITECTURE.md), [catalogue](V3_ERROR_CODES.md), [ledger/plan](../roadmap/v3.0.0/PLAN.md) define final future signatures and migration. V3-02 status **ACCEPTED** by the owner at `b041806ee35c56f55c0a0925e7d0de8b533f09bd`; documentation integration status **READY_FOR_OWNER_REVIEW**, with no implemented-runtime claim. Authorized only: documentation, one logical commit/push to docs/v3-02-specification and update of [Draft PR #30](https://github.com/ArhiMEN/AdaptForm/pull/30). No V3-03/merge/version bump/tag/release/npm publish. Historical audit/test results are unchanged.
 
-PR #29 remains a separate unmerged draft, original head aab14d29b428c57cabb9ec5ceb069fcc5adaba6e. Its AGENTS/DECISIONS changes are not integrated; reconcile architecture-document histories during separately authorized integration. Historical 2.x entries above describe their own versions.
+PR #29 remains a separate unmerged Draft at `aab14d29b428c57cabb9ec5ceb069fcc5adaba6e`. Its AGENTS/DECISIONS policy and useful architecture direction are integrated as recorded below; accepted V3-02 contracts take precedence. Historical 2.x entries above describe their own versions.
+
+## PR #29 documentation integration — 2026-10-31
+
+- V3-02 is **ACCEPTED** at `b041806ee35c56f55c0a0925e7d0de8b533f09bd`. ODR-01–05, all 30 legacy-ledger decisions and future signatures are unchanged; this task records acceptance, not a new architecture approval.
+- Integrated the missing PR #29 development policy into AGENTS EN/RU: immediate escalation, affected-work stop, evidence/options/migration/recommendation, explicit remove/replace/retain/defer decision, useful-behavior replacement and backend-independent normalization. New architectural deviations follow the same rule. Approved removals do not require re-approval; bridges and aliases remain excluded.
+- [Transfer matrix](V3_DOCUMENTATION_INTEGRATION.md) accounts for all six source files and preserves historical direction, A01–A04 risks and milestone gates. PR #29 stays open and unchanged; recommend owner closure as superseded only after this integration is accepted.
+- Integration result: **READY_FOR_OWNER_REVIEW**. Authorized delivery is one ordinary commit/push in docs/v3-02-specification and an update of existing Draft PR #30. No runtime/tests/dependencies/version/CI changes, history rewrite, master merge, PR #29 closure, V3-03 or npm publication. No unresolved substantive conflict.

@@ -2,7 +2,21 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## PR #29 documentation integration — 2026-10-31
+
+V3-02: **ACCEPTED** by the owner at `b041806ee35c56f55c0a0925e7d0de8b533f09bd`; ODR-01–05 are final. Integration result: **READY_FOR_OWNER_REVIEW**. Branch `docs/v3-02-specification`; existing [Draft PR #30](https://github.com/ArhiMEN/AdaptForm/pull/30). [Transfer matrix](V3_DOCUMENTATION_INTEGRATION.md) reconciles all six PR #29 files in 33 rows.
+
+Transferred the full AGENTS legacy/workaround escalation policy and original DECISIONS direction; explicitly included architectural deviations and accepted-V3-02 precedence. Updated acceptance/provenance in architecture, catalogue and plan EN/RU; retained historical A01–A04 and release/downstream gates. All 30 ledger decisions, ODR-01–05 and future contracts remain unchanged. PR #29 stays open Draft at `aab14d29b428c57cabb9ec5ceb069fcc5adaba6e`, with no branch change.
+
+Actual checks PASS: scratch-only `python /tmp/adaptform-doc-integration/check_docs.py` — 517 assertions, 232 relative links/anchors, exact 14-file allowlist, EN/RU blocks/IDs/table and heading structure, all 33 transfer rows, four verbatim AGENTS rules and four original DECISIONS bullets per language. Exact comparison with accepted HEAD confirms all 30 ledger rows, five ODR rows, approved decision descriptions, normative contract sections and 14 TypeScript blocks unchanged. TypeScript 5.9.3 strict/noEmit/exactOptionalPropertyTypes/skipLibCheck:false passes all 14 blocks and 19 verified negative cases with ambient Form/Field scaffolding; this checks future signatures/examples, not runtime. Historical records and `git diff --check` pass. Checkers/generated files live only in `/tmp`, excluded from the commit.
+
+Changed files: AGENTS EN/RU; docs/ai/{DECISIONS,HANDOFF,V3_ARCHITECTURE,V3_ERROR_CODES,V3_DOCUMENTATION_INTEGRATION} EN/RU; docs/roadmap/v3.0.0/PLAN EN/RU — 14 Markdown files. No runtime/tests/dependencies/version/CI changes. Runtime suites/builds/audit/benchmarks were not run for this documentation task; historical results below are not current checks.
+
+No unresolved substantive conflict. Next: owner reviews documentation integration; V3-02 acceptance is already recorded. Recommend closing PR #29 as superseded only after integration acceptance; do not close it in this task. V3-03 requires separate authorization. Delivery permits one normal commit/push and Draft PR #30 update, without force push, master merge or npm publication.
+
 ## V3-02 / ODR-01–05 finalization — 2026-10-28
+
+Historical record of the pre-acceptance finalization at `b041806ee35c56f55c0a0925e7d0de8b533f09bd`. Its pending-acceptance/unintegrated-PR-29 statements describe 2026-10-28 and are superseded by the 2026-10-31 entry above; recorded check results are preserved.
 
 **READY_FOR_OWNER_REVIEW**. All five owner decisions are approved; no open ODR remains in this task; specification acceptance is pending. Branch docs/v3-02-specification, initial HEAD 96a82c8f015ff34115e192b0c3947d50052b2ebf, clean index/tree; existing [Draft PR #30](https://github.com/ArhiMEN/AdaptForm/pull/30). [Architecture](V3_ARCHITECTURE.md), [17-code catalogue](V3_ERROR_CODES.md), [complete legacy ledger/tasks/risks](../roadmap/v3.0.0/PLAN.md) and RU companions align.
 

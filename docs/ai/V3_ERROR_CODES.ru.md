@@ -2,7 +2,7 @@
 
 [English](V3_ERROR_CODES.md) · [Русский](V3_ERROR_CODES.ru.md)
 
-Дополнение к [V3-02](V3_ARCHITECTURE.ru.md), **READY_FOR_OWNER_REVIEW**. Все **17 встроенных codes** сохранены. Будущий каталог учитывает утверждённые ODR-01 (машинный typeId), ODR-02 (JSON params) и ODR-03 (lifecycle). Runtime пока не изменён; миграционные отличия ниже заданы явно.
+Дополнение к принятому владельцем [V3-02](V3_ARCHITECTURE.ru.md), **ACCEPTED** на `b041806ee35c56f55c0a0925e7d0de8b533f09bd`. Интеграция документации: **READY_FOR_OWNER_REVIEW**. Все **17 встроенных codes** сохранены. Будущий каталог учитывает утверждённые ODR-01 (машинный typeId), ODR-02 (JSON params) и ODR-03 (lifecycle). Runtime пока не изменён; миграционные отличия ниже заданы явно.
 
 ## Контракт и происхождение
 

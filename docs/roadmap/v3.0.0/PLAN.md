@@ -2,11 +2,11 @@
 
 [English](PLAN.md) · [Русский](PLAN.ru.md)
 
-Status: **READY_FOR_OWNER_REVIEW**. ODR-01–05 are approved. [Specification](../../ai/V3_ARCHITECTURE.md), [I18N-01 catalogue](../../ai/V3_ERROR_CODES.md). Authorized: documentation finalization, one logical commit/push to docs/v3-02-specification and update of existing Draft PR #30. V3-03 implementation, merge and release require separate authorization. Version 2.2.0 is unchanged.
+V3-02 status: **ACCEPTED** at `b041806ee35c56f55c0a0925e7d0de8b533f09bd`; ODR-01–05 are final. Documentation integration status: **READY_FOR_OWNER_REVIEW**. [Specification](../../ai/V3_ARCHITECTURE.md), [I18N-01 catalogue](../../ai/V3_ERROR_CODES.md). Authorized: PR #29 documentation integration, one logical commit/push to docs/v3-02-specification and update of existing Draft PR #30. V3-03 implementation, merge and release require separate authorization. Version 2.2.0 is unchanged.
 
 ## 1. Sequence and authority
 
-PR #29 is an open, unmerged draft at aab14d29b428c57cabb9ec5ceb069fcc5adaba6e. Its proposed V3-03…07 IDs denote milestones; use subtasks below rather than assigning incompatible meanings to those IDs. PR #29 changes have not been fetched into refs, checked out or merged. Initial V3-02 baseline was work/670c6a04014fbf938574bfd8eb2a706e44a9d4d0, then equal to remote master; this finalization starts on docs/v3-02-specification at 96a82c8f015ff34115e192b0c3947d50052b2ebf. Its architecture-document paths are reused; future integration must reconcile both versions and the separate AGENTS/DECISIONS additions.
+PR #29 remains an open, unmerged Draft at `aab14d29b428c57cabb9ec5ceb069fcc5adaba6e`; its V3-03…07 IDs denote milestones, with subtasks below. On 2026-10-31 both branches were fetched and compared with master `670c6a04014fbf938574bfd8eb2a706e44a9d4d0`. Integration starts from owner-accepted PR #30 HEAD `b041806ee35c56f55c0a0925e7d0de8b533f09bd` and transfers missing AGENTS/DECISIONS policy while preserving the accepted architecture. See the complete [PR #29 transfer matrix](../../ai/V3_DOCUMENTATION_INTEGRATION.md); no merge or PR #29 branch change is performed.
 
 Approved ODR-01–05 supersede incompatible V3-01/V3-02 proposals: mandatory typeId replaces getTypeName; JSON params with deep checks/budgets; ODR-03 B removes intermediate checks and ensures full explicit traversal; final legacy ledger and mapping composition; ODR-05 A separates atomic commit from notification diagnostics. Retain manual clearing on actual own-value change, validate→{valid}, I18N-01, whole-form replace, unknown-path error and operation tokens/revisions.
 
@@ -29,7 +29,7 @@ Preserve STAB-01 FormFieldsValue inference, STAB-02 deterministic subscription b
 
 ## 3. Final REMOVE / REPLACE / KEEP ledger — ODR-04
 
-Owner-approved direction, with final replacement designs for specification acceptance. These classify future 3.0 contracts; no runtime removal occurs in V3-02. Useful behavior has an explicit replacement; no aliases, hidden dispatch or second parser. Evidence E1–E10 remains the unchanged 2.x source.
+Owner-accepted direction and final replacement designs. These classify future 3.0 contracts; no runtime removal occurs in V3-02. Useful behavior has an explicit replacement; no aliases, hidden dispatch or second parser. Evidence E1–E10 remains the unchanged 2.x source.
 
 | Mechanism / evidence | Decision | Future API / migration consequence |
 | --- | --- | --- |
@@ -95,7 +95,7 @@ ESM and CommonJS: keep adaptform and adaptform/luxon export paths and both runti
 
 ## 5. Small implementation tasks
 
-ODR-01–05 are closed; all tasks still require separate implementation authorization after specification acceptance. Model: **GPT-6.1-Sol**, effort per row. No Astra is needed. Each task should have its own reviewable commit when commits are authorized. Dependency columns are technical dependencies, not permission to skip approval. The final ODR-04 ledger governs every public removal/replacement.
+ODR-01–05 are closed; the specification is accepted, but all tasks still require separate implementation authorization. Model: **GPT-6.1-Sol**, effort per row. No Astra is needed. Each task should have its own reviewable commit when commits are authorized. Dependency columns are technical dependencies, not permission to skip approval. The final ODR-04 ledger governs every public removal/replacement.
 
 | ID / title | Goal and components | Dependencies | Acceptance | Targeted tests/checks | Risk | Effort |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -153,6 +153,6 @@ V3-02 deliverables: architecture EN/RU (signatures, schema/apply/lifecycle, deci
 
 Documentation verification: relative links, identical bilingual TypeScript blocks, 17-code coverage against source literals, EN/RU decision/task IDs, strict TypeScript checks of future declarations/examples, whitespace/diff and documentation-only changed-file inspection. These checks validate consistency, not runtime implementation or owner approval. Record actual results in handoff; full runtime/build/audit/benchmark checks are intentionally not part of this documentation task.
 
-Before release: accept this specification and its exact helper/export ledger; implement separately authorized subtasks; migrate examples/consumers; pass independent A02/A03 correctness/security review and measured A04 performance review; run full candidate gates and packed strict ESM/CJS consumers, including core without Luxon. Review CI/publish workflow: a future master version bump can trigger publication. Only the authorized documentation commit/push and Draft PR #30 update are inside this task; version bump, merge, tag/release and npm publication remain excluded. Downstream adoption (including PR #29's PL-01) is outside the AdaptForm release.
+Before release: use the accepted specification and its exact helper/export ledger; implement separately authorized subtasks; migrate examples/consumers; pass independent A02/A03 correctness/security review and measured A04 performance review; run full candidate gates and packed strict ESM/CJS consumers, including core without Luxon. Review CI/publish workflow: a future master version bump can trigger publication. Only the authorized documentation commit/push and Draft PR #30 update are inside this task; version bump, merge, tag/release and npm publication remain excluded. Downstream adoption (including PR #29's PL-01) is outside the AdaptForm release.
 
-Overall status: **READY_FOR_OWNER_REVIEW** — ODR-01–05 are approved; the final contracts/ledger await owner specification acceptance. No implementation has started; V3-03 requires separate authorization.
+Documentation integration status: **READY_FOR_OWNER_REVIEW**. V3-02 and its final contracts/30-row ledger are **ACCEPTED**; ODR-01–05 remain unchanged. No implementation has started; V3-03 requires separate authorization.

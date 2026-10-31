@@ -2,11 +2,11 @@
 
 [English](PLAN.md) · [Русский](PLAN.ru.md)
 
-Статус: **READY_FOR_OWNER_REVIEW**. ODR-01–05 утверждены. [Спецификация](../../ai/V3_ARCHITECTURE.ru.md), [каталог I18N-01](../../ai/V3_ERROR_CODES.ru.md). Разрешена финализация документации, один логический коммит/push в docs/v3-02-specification и обновление существующего Draft PR #30. Реализация V3-03, merge и выпуск требуют отдельного разрешения. Версия 2.2.0 не меняется.
+Статус V3-02: **ACCEPTED** на `b041806ee35c56f55c0a0925e7d0de8b533f09bd`; ODR-01–05 окончательны. Статус интеграции документации: **READY_FOR_OWNER_REVIEW**. [Спецификация](../../ai/V3_ARCHITECTURE.ru.md), [каталог I18N-01](../../ai/V3_ERROR_CODES.ru.md). Разрешена интеграция документации PR #29, один логический коммит/push в docs/v3-02-specification и обновление существующего Draft PR #30. Реализация V3-03, merge и выпуск требуют отдельного разрешения. Версия 2.2.0 не меняется.
 
 ## 1. Последовательность и полномочия
 
-PR #29 — открытый unmerged draft, head aab14d29b428c57cabb9ec5ceb069fcc5adaba6e. Его V3-03…07 — milestones; ниже используются подзадачи, а не конфликтующие значения тех же ID. Изменения PR #29 не загружались в refs, не checkout и не merged. Исходная база V3-02 work/670c6a04014fbf938574bfd8eb2a706e44a9d4d0 совпадала с remote master; эта финализация начинается в docs/v3-02-specification на 96a82c8f015ff34115e192b0c3947d50052b2ebf. Архитектурные пути переиспользованы; будущая интеграция должна согласовать обе версии и отдельные additions AGENTS/DECISIONS.
+PR #29 остаётся открытым Draft без merge на `aab14d29b428c57cabb9ec5ceb069fcc5adaba6e`; его V3-03…07 обозначают milestones, ниже используются подзадачи. 2026-10-31 обе ветки загружены и сравнены с master `670c6a04014fbf938574bfd8eb2a706e44a9d4d0`. Интеграция начинается с принятого владельцем HEAD PR #30 `b041806ee35c56f55c0a0925e7d0de8b533f09bd`: перенесены недостающие правила AGENTS/DECISIONS с сохранением принятой архитектуры. См. полную [матрицу переноса PR #29](../../ai/V3_DOCUMENTATION_INTEGRATION.ru.md); merge и изменение ветки PR #29 не выполняются.
 
 Утверждённые ODR-01–05 заменяют несовместимые предложения V3-01/V3-02: обязательный typeId вместо getTypeName; JSON params с глубокими checks/limits; ODR-03 B без промежуточных проверок, с полным explicit traversal; финальный legacy ledger и композиция mappings; ODR-05 A с атомарным commit и отдельными notification diagnostics. Сохраняются manual clear при own-value change, validate→{valid}, I18N-01, whole-form replace, unknown-path error и operation tokens/revisions.
 
@@ -29,7 +29,7 @@ PR #29 — открытый unmerged draft, head aab14d29b428c57cabb9ec5ceb069fc
 
 ## 3. Итоговый реестр REMOVE / REPLACE / KEEP — ODR-04
 
-Направление утверждено владельцем; итоговые замены представлены для приёмки спецификации. Классификация относится к будущей 3.0; в V3-02 runtime ничего не удаляется. Полезное поведение имеет явную замену, без aliases/hidden dispatch/второго parser. E1–E10 — неизменённые исходники 2.x.
+Направление и итоговые замены приняты владельцем. Классификация относится к будущей 3.0; в V3-02 runtime ничего не удаляется. Полезное поведение имеет явную замену, без aliases/hidden dispatch/второго parser. E1–E10 — неизменённые исходники 2.x.
 
 | Механизм / доказательство | Решение | Будущий API / миграционные последствия |
 | --- | --- | --- |
@@ -95,7 +95,7 @@ ESM/CommonJS: сохранить adaptform/adaptform/luxon и оба runtime for
 
 ## 5. Небольшие задачи реализации
 
-ODR-01–05 закрыты; каждая задача требует отдельного разрешения после приёмки спецификации. Модель **GPT-6.1-Sol**, effort по строкам. Astra не требуется. Отдельный reviewable commit на задачу — когда коммиты разрешены. Зависимости технические, не разрешение пропускать approval. Все удаления/замены public APIs определены итоговым реестром ODR-04.
+ODR-01–05 закрыты; спецификация принята, но каждая задача требует отдельного разрешения на реализацию. Модель **GPT-6.1-Sol**, effort по строкам. Astra не требуется. Отдельный reviewable commit на задачу — когда коммиты разрешены. Зависимости технические, не разрешение пропускать approval. Все удаления/замены public APIs определены итоговым реестром ODR-04.
 
 | ID / задача | Цель и компоненты | Зависимости | Приёмка | Адресные тесты/проверки | Риск | Effort |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -153,6 +153,6 @@ ODR-01–05 закрыты; каждая задача требует отдел�
 
 Проверки документации: relative links, идентичность TS blocks EN/RU, 17-code coverage по source literals, IDs решений/задач, strict TypeScript future declarations/examples в памяти, whitespace/diff и inspection списка только docs. Это consistency checks, не runtime implementation и не owner approval. Фактические результаты — в handoff; full runtime/build/audit/benchmark не входят в этот этап документации.
 
-Перед релизом: принять спецификацию и точный helper/export ledger; выполнить отдельно разрешённые subtasks; мигрировать examples/consumers; пройти независимую A02/A03 security/correctness и измеренную A04 performance review; полные candidate gates и packed strict ESM/CJS, включая core без Luxon. Проверить publish workflow: future master version bump может запустить публикацию. В эту задачу входят только documentation commit/push и обновление Draft PR #30; version bump, merge, tag/release/npm publish исключены. Downstream adoption (включая PL-01 PR #29) вне релиза AdaptForm.
+Перед релизом: использовать принятую спецификацию и точный helper/export ledger; выполнить отдельно разрешённые subtasks; мигрировать examples/consumers; пройти независимую A02/A03 security/correctness и измеренную A04 performance review; полные candidate gates и packed strict ESM/CJS, включая core без Luxon. Проверить publish workflow: future master version bump может запустить публикацию. В эту задачу входят только documentation commit/push и обновление Draft PR #30; version bump, merge, tag/release/npm publish исключены. Downstream adoption (включая PL-01 PR #29) вне релиза AdaptForm.
 
-Общий статус: **READY_FOR_OWNER_REVIEW** — ODR-01–05 утверждены; итоговые contracts/ledger ожидают приёмки спецификации владельцем. Реализация не начата, V3-03 требует отдельного разрешения.
+Статус интеграции документации: **READY_FOR_OWNER_REVIEW**. V3-02 и итоговые контракты/реестр из 30 строк имеют статус **ACCEPTED**; ODR-01–05 сохранены без изменений. Реализация не начата, V3-03 требует отдельного разрешения.

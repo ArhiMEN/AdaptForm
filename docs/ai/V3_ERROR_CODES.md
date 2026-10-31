@@ -2,7 +2,7 @@
 
 [English](V3_ERROR_CODES.md) · [Русский](V3_ERROR_CODES.ru.md)
 
-Companion to [V3-02](V3_ARCHITECTURE.md), **READY_FOR_OWNER_REVIEW**. All **17 built-in codes** are retained. The future catalogue incorporates approved ODR-01 (machine typeId), ODR-02 (JSON params) and ODR-03 (lifecycle). Runtime is unchanged; migration differences are explicit below.
+Companion to owner-accepted [V3-02](V3_ARCHITECTURE.md), **ACCEPTED** at `b041806ee35c56f55c0a0925e7d0de8b533f09bd`. Documentation integration: **READY_FOR_OWNER_REVIEW**. All **17 built-in codes** are retained. The future catalogue incorporates approved ODR-01 (machine typeId), ODR-02 (JSON params) and ODR-03 (lifecycle). Runtime is unchanged; migration differences are explicit below.
 
 ## Contract and ownership
 

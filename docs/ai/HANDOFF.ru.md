@@ -2,7 +2,21 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## Интеграция документации PR #29 — 2026-10-31
+
+V3-02: **ACCEPTED** владельцем на `b041806ee35c56f55c0a0925e7d0de8b533f09bd`; ODR-01–05 окончательны. Результат интеграции: **READY_FOR_OWNER_REVIEW**. Ветка `docs/v3-02-specification`; существующий [Draft PR #30](https://github.com/ArhiMEN/AdaptForm/pull/30). [Матрица переноса](V3_DOCUMENTATION_INTEGRATION.ru.md) согласует все шесть файлов PR #29 в 33 строках.
+
+Перенесены полные правила эскалации legacy/обходов из AGENTS и исходное направление DECISIONS; явно включены архитектурные отклонения и приоритет принятого V3-02. Обновлены статус приёмки и происхождение architecture/catalogue/plan EN/RU; сохранены исторические A01–A04 и release/downstream gates. Все 30 решений реестра, ODR-01–05 и будущие контракты неизменны. PR #29 остаётся открытым Draft на `aab14d29b428c57cabb9ec5ceb069fcc5adaba6e`, его ветка не изменена.
+
+Фактические проверки PASS: scratch-only `python /tmp/adaptform-doc-integration/check_docs.py` — 517 assertions, 232 относительные ссылки/якоря, точный список 14 файлов, EN/RU blocks/IDs/структура таблиц и заголовков, все 33 строки переноса, четыре дословных правила AGENTS и четыре исходных пункта DECISIONS на язык. Точное сравнение с принятым HEAD подтверждает сохранность 30 строк реестра, пяти строк ODR, описаний утверждённых решений, нормативных разделов контрактов и 14 TypeScript-блоков. TypeScript 5.9.3 strict/noEmit/exactOptionalPropertyTypes/skipLibCheck:false проходит для всех 14 блоков и 19 проверенных отрицательных случаев с ambient Form/Field scaffold; это проверка будущих сигнатур/примеров, не runtime. Сохранность истории и `git diff --check` — PASS. Проверочные скрипты и сгенерированные файлы находятся только в `/tmp`, исключены из коммита.
+
+Изменены AGENTS EN/RU; docs/ai/{DECISIONS,HANDOFF,V3_ARCHITECTURE,V3_ERROR_CODES,V3_DOCUMENTATION_INTEGRATION} EN/RU; docs/roadmap/v3.0.0/PLAN EN/RU — 14 Markdown-файлов. Runtime/tests/dependencies/version/CI не затронуты. Runtime suites/builds/audit/benchmarks для этой задачи не запускались; исторические результаты ниже не являются текущими проверками.
+
+Неразрешённых содержательных конфликтов нет. Далее: проверка интеграции документации владельцем; приёмка V3-02 уже записана. Рекомендовано закрыть PR #29 как заменённый только после приёмки интеграции; в этой задаче его не закрывать. V3-03 требует отдельного разрешения. Разрешены один обычный коммит/push и обновление Draft PR #30, без force push, merge в master или публикации npm.
+
 ## Финализация V3-02 / ODR-01–05 — 2026-10-28
+
+Историческая запись финализации до приёмки на `b041806ee35c56f55c0a0925e7d0de8b533f09bd`. Упоминания ожидаемой приёмки и неинтегрированного PR #29 относятся к 2026-10-28 и заменены записью 2026-10-31 выше; прежние результаты проверок сохранены.
 
 **READY_FOR_OWNER_REVIEW**. Все пять решений владельца утверждены, открытых ODR по этой задаче нет; спецификация ожидает приёмки. Ветка docs/v3-02-specification, исходный HEAD 96a82c8f015ff34115e192b0c3947d50052b2ebf, чистые index/tree; существующий [Draft PR #30](https://github.com/ArhiMEN/AdaptForm/pull/30). [Архитектура](V3_ARCHITECTURE.ru.md), [17-code catalogue](V3_ERROR_CODES.ru.md), [полный legacy ledger/задачи/риски](../roadmap/v3.0.0/PLAN.ru.md) и EN companions согласованы.
 
