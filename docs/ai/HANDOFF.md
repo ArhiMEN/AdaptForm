@@ -2,6 +2,12 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## npm audit maintenance — 2026-10-31
+
+Branch `fix/npm-audit-minimatch`, base master `670c6a0`: GHSA-g3hv-75wg-m249 affects shared dev-only minimatch 10.2.6 through ESLint 10.12.0, @eslint/config-array 0.23.5 and @typescript-eslint/typescript-estree 8.71.2. Current upstream ranges (including latest compatible parent releases) exclude patched major 11. Scoped overrides select 11.0.1 only for these consumers; the lockfile adds @isaacs/nonrecursive-glob-match 1.0.3. Removed minimatch APIs are unused by these consumers; 56,580 differential matching comparisons and identical lint results across 69 files passed. No direct dependency upgrades, runtime/API/version/workflow changes or V3 work.
+
+Local Node 22.23.4/npm 10.9.9: clean `npm ci`, audit (**0 vulnerabilities**), lint, **720 tests / 34 files**, library build, package check (**21 files**), source/test/demo TypeScript and demo build/output all pass. ESM/CJS/declaration output is byte-identical to baseline. Packed core without Luxon and optional Luxon entry points pass ESM/CJS validation smoke checks on Node 16.20.2 and 22.23.4. The library still declares Node >=16; the existing development toolchain requires newer Node. Next: PR CI and owner review, without merge/publication. Override compatibility is limited to the checked consumers; revisit/remove overrides when upstream adopts patched minimatch.
+
 ## HF-015 review — 2026-10-28
 
 PR #28, branch `hf-015-structured-validation-errors`, master/base `b9051dd`, reviewed original head `66fcbd8`. **PASS_WITH_LIMITATIONS**: fix cross-node/key provenance leakage, prototype-named global error publication, and frozen custom-parser bridge results. **720 tests / 34 files**, lint, source/test/demo types, library/demo builds, package integrity, packed strict NodeNext ESM/CJS without Luxon and diff checks pass. Repeated full/paired benchmarks retain measurable collection costs and about 0.3 MiB additional heap; rule/notification counts match master. Audit still blocks CI on dev-only undici 7.29.1; propose separately approved override 7.30.1, no dependencies/workflows changed. [Review, raw data, limitations and exact plan](../roadmap/v2.3.0/ERRORS_REVIEW.md). Next: final-head CI and independent acceptance; resolve audit separately before merge. Version remains 2.2.0; no merge/publication/tag/branch deletion.
