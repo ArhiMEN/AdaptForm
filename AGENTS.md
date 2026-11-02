@@ -30,6 +30,15 @@
 - Preserve existing user-facing validation and error messages and public type names unless the user explicitly authorizes a contract change and migration plan.
 - Add or update regression tests for bug fixes and meaningful behavior changes. Documentation and agent-configuration edits do not need behavior tests.
 
+## Legacy and compatibility escalation
+
+- Before adding a fallback, compatibility bridge, duplicate state, deprecated alias, or workaround, identify the old contract and why it is still needed. Report the finding to the owner **immediately**, with affected API, evidence, alternatives, migration impact, and recommendation.
+- Do **not** silently implement legacy support or a temporary workaround. Stop the affected design/implementation and request an explicit decision: remove, replace, retain with justification, or defer. Continue independent approved work only if safe.
+- A major-version direction is not blanket permission to remove functionality: preserve useful behavior through a designed replacement and document migration. Do not introduce a breaking change outside the approved task scope.
+- For AdaptForm 3.0, prefer one structured error model and one validation contract. Server response normalization is a supported integration boundary, **not** legacy compatibility; keep it configurable and backend-agnostic.
+- Apply the same escalation to a proposed architectural deviation from the accepted V3-02 specification: stop the affected work, report evidence, alternatives, migration impact and a recommendation, and obtain an explicit owner decision before proceeding.
+- [V3-02](docs/ai/V3_ARCHITECTURE.md) at accepted HEAD `b041806ee35c56f55c0a0925e7d0de8b533f09bd`, ODR-01–05 and all 30 legacy-ledger decisions are already approved. They govern the scoped 3.0 migration; do not reopen them or restore bridges/aliases through the general compatibility rules above. Separate implementation authorization is still required; new conflicts or deviations follow this escalation rule.
+
 ## Language and documentation
 
 - Write code comments, test descriptions, and examples in English. Keep English documentation and complete Russian companions (`*.ru.md`) aligned. Preserve user-provided and language-neutral values.
