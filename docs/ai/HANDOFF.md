@@ -2,6 +2,11 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## npm audit maintenance — 2026-10-31
+
+Branch `fix/npm-audit-minimatch`, base master `670c6a0`: GHSA-g3hv-75wg-m249 affects shared dev-only minimatch 10.2.6 through ESLint 10.12.0, @eslint/config-array 0.23.5 and @typescript-eslint/typescript-estree 8.71.2. Current upstream ranges (including latest compatible parent releases) exclude patched major 11. Scoped overrides select 11.0.1 only for these consumers; the lockfile adds @isaacs/nonrecursive-glob-match 1.0.3. Removed minimatch APIs are unused by these consumers; 56,580 differential matching comparisons and identical lint results across 69 files passed. No direct dependency upgrades, runtime/API/version/workflow changes or V3 work.
+
+Local Node 22.23.4/npm 10.9.9: clean `npm ci`, audit (**0 vulnerabilities**), lint, **720 tests / 34 files**, library build, package check (**21 files**), source/test/demo TypeScript and demo build/output all pass. ESM/CJS/declaration output is byte-identical to baseline. Packed core without Luxon and optional Luxon entry points pass ESM/CJS validation smoke checks on Node 16.20.2 and 22.23.4. The library still declares Node >=16; the existing development toolchain requires newer Node. Next: PR CI and owner review, without merge/publication. Override compatibility is limited to the checked consumers; revisit/remove overrides when upstream adopts patched minimatch.
 ## PR #29 documentation integration — 2026-10-31
 
 V3-02: **ACCEPTED** by the owner at `b041806ee35c56f55c0a0925e7d0de8b533f09bd`; ODR-01–05 are final. Integration result: **READY_FOR_OWNER_REVIEW**. Branch `docs/v3-02-specification`; existing [Draft PR #30](https://github.com/ArhiMEN/AdaptForm/pull/30). [Transfer matrix](V3_DOCUMENTATION_INTEGRATION.md) reconciles all six PR #29 files in 33 rows.
