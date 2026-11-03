@@ -1,3 +1,4 @@
+import {replaceNodeErrors} from '../../src/core/state/ErrorNode'
 import {describe, expect, expectTypeOf, it, vi} from 'vitest'
 import {DateTime} from 'luxon'
 import {DateLuxonType} from '../../src/luxon'
@@ -137,7 +138,7 @@ describe('V3 foundational contracts', () => {
     expect(form.tags.getErrors()).toEqual([{code: 'app.rule', source: 'manual', path: [0]}])
     expect(form.getErrors()).toEqual([{code: 'app.rule', source: 'manual', path: ['tags', 0]}])
     expect(Object.isFrozen(form.getErrors()[0].path)).toBe(true)
-    form.setGlobalError('review', 'Review')
+    form.setErrors([{code: 'manual', message: 'Review'}])
     expect(form.getOwnErrors()).toEqual([{code: 'manual', source: 'manual', message: 'Review'}])
     expect(form.getErrors()[form.getErrors().length - 1].path).toEqual([])
   })
@@ -334,7 +335,7 @@ describe('ODR-02 ErrorParams domain', () => {
     failure(() => field.setErrors([{code: 'bad', params: {value: Infinity}}]), 'nonfinite_number')
     class Root extends Form { value = field }
     const root = new Root()
-    failure(() => root.setErrors([{path: ['value'], code: 'bad', params: {value: Infinity}}]), 'nonfinite_number')
+    failure(() => replaceNodeErrors(root.value, 'server', [{code: 'bad', params: {value: Infinity}}]), 'nonfinite_number')
     expect(field.getErrors()).toEqual([])
   })
 })

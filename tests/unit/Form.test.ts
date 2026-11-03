@@ -1,3 +1,4 @@
+import {errorMessages, errorsByPath, ownMessagesByCode} from '../helpers/errorViews'
 import { describe, it, expect, vi } from 'vitest'
 import { Form } from '@core/Form'
 import { Field } from '@core/fields/Field'
@@ -58,14 +59,14 @@ describe('Form', () => {
           sibling = new Field(StringType)
         }
         const form = new CollectionForm()
-        form.values.error = 'stale error'
+        form.values.setErrors([{code: 'manual', message: 'stale error'}])
         isRequired.mockClear()
         validate.mockClear()
 
         form.setFields({ values, sibling: 'ready' }, false)
 
         expect(form.values.itemsValue).toEqual(values)
-        expect(form.values.errors).toEqual([])
+        expect(errorMessages(form.values)).toEqual([])
         expect(form.values.isValid).toBe(false)
         expect(form.isValid).toBe(false)
         expect(isRequired).not.toHaveBeenCalled()
@@ -151,68 +152,69 @@ describe('Form', () => {
     })
   })
 
-  describe('allErrors', () => {
+  describe('aggregate error reading', () => {
     it('should get all errors', () => {
       const form = new TestForm()
       form.fields = { name: 'John', age: 'not a number' }
-      const errors = form.allErrors
+      const errors = errorsByPath(form)
       expect(errors.age).toBeDefined()
       expect(form.age.getErrors()).toEqual([{code: 'invalid_type', params: {expected: 'number'}, source: 'type'}])
     })
 
     it('should include global errors', () => {
       const form = new TestForm()
-      form.setGlobalError('name', 'Server error')
-      const errors = form.allErrors
-      expect(errors.name).toBeDefined()
-      expect(errors.name).toContain('Server error')
+      form.setErrors([...form.getOwnErrors(), {code: 'name', message: 'Server error'}])
+      const errors = errorsByPath(form)
+      expect(errors['']).toBeDefined()
+      expect(errors['']).toContain('Server error')
     })
 
     it('should merge global and field errors', () => {
       const form = new TestForm()
       form.fields = { age: null }
-      form.setGlobalError('name', 'Server error')
-      const errors = form.allErrors
+      form.setErrors([...form.getOwnErrors(), {code: 'name', message: 'Server error'}])
+      const errors = errorsByPath(form)
       expect(errors.age).toBeDefined()
-      expect(errors.name).toBeDefined()
+      expect(errors['']).toBeDefined()
     })
   })
 
-  describe('globalErrors', () => {
+  describe('own global error reading', () => {
     it('should get global errors', () => {
       const form = new TestForm()
-      form.setGlobalError('name', 'Error 1')
-      form.setGlobalError('age', 'Error 2')
-      expect(form.globalErrors).toEqual({ name: 'Error 1', age: 'Error 2' })
+      form.setErrors([...form.getOwnErrors(), {code: 'name', message: 'Error 1'}])
+      form.setErrors([...form.getOwnErrors(), {code: 'age', message: 'Error 2'}])
+      expect(ownMessagesByCode(form)).toEqual({ name: 'Error 1', age: 'Error 2' })
     })
 
     it('should be immutable', () => {
       const form = new TestForm()
-      form.setGlobalError('name', 'Error')
-      const errors = form.globalErrors
+      form.setErrors([...form.getOwnErrors(), {code: 'name', message: 'Error'}])
+      const errors = ownMessagesByCode(form)
       errors['name'] = 'Changed'
-      expect(form.globalErrors['name']).toBe('Error')
+      expect(ownMessagesByCode(form)['name']).toBe('Error')
     })
   })
 
-  describe('errors setter', () => {
+  describe('explicit manual error setters', () => {
     it('should set field errors', () => {
       const form = new TestForm()
-      form.errors = { name: 'Custom error' }
-      expect(form.name.error).toBe('Custom error')
+      form.name.setErrors([{code: 'custom', message: 'Custom error'}])
+      expect((errorMessages(form.name)[0] ?? '')).toBe('Custom error')
     })
 
     it('should set global errors', () => {
       const form = new TestForm()
-      form.errors = { global: 'Global error' }
-      expect(form.globalErrors['global']).toBe('Global error')
+      form.setErrors([{code: 'global', message: 'Global error'}])
+      expect(ownMessagesByCode(form)['global']).toBe('Global error')
     })
 
-    it('should clear previous errors', () => {
+    it('should preserve Form globals when setting field errors', () => {
       const form = new TestForm()
-      form.setGlobalError('name', 'Error 1')
-      form.errors = { name: 'Error 2' }
-      expect(form.name.error).toBe('Error 2')
+      form.setErrors([...form.getOwnErrors(), {code: 'name', message: 'Error 1'}])
+      form.name.setErrors([{code: 'manual', message: 'Error 2'}])
+      expect((errorMessages(form.name)[0] ?? '')).toBe('Error 2')
+      expect(form.errors).toMatchObject([{code: 'name', message: 'Error 1'}])
     })
 
     it('should clear previous errors from nested array forms', () => {
@@ -226,30 +228,30 @@ describe('Form', () => {
 
       const form = new CollectionForm()
       form.fields = { items: [{ name: 'Ada' }] }
-      form.errors = { 'items.0.name': 'Old server error' }
-      expect(form.items.forms[0].allErrors.name).toContain('Old server error')
+      form.items.forms[0].name.setErrors([{code: 'manual', message: 'Old server error'}])
+      expect(errorsByPath(form.items.forms[0]).name).toContain('Old server error')
 
-      form.errors = {}
+      form.clearErrors({sources: ['manual'], recursive: true})
 
-      expect(form.items.forms[0].allErrors).toEqual({})
-      expect(form.items.forms[0].globalErrors).toEqual({})
+      expect(errorsByPath(form.items.forms[0])).toEqual({})
+      expect(ownMessagesByCode(form.items.forms[0])).toEqual({})
     })
   })
 
-  describe('setGlobalError', () => {
+  describe('Form own manual errors', () => {
     it('should add global error', () => {
       const form = new TestForm()
-      form.setGlobalError('auth', 'Authentication failed')
-      expect(form.globalErrors['auth']).toBe('Authentication failed')
+      form.setErrors([...form.getOwnErrors(), {code: 'auth', message: 'Authentication failed'}])
+      expect(ownMessagesByCode(form)['auth']).toBe('Authentication failed')
     })
   })
 
-  describe('clearGlobalErrors', () => {
+  describe('Form own clearing', () => {
     it('should clear all global errors', () => {
       const form = new TestForm()
-      form.setGlobalError('name', 'Error')
-      form.clearGlobalErrors()
-      expect(form.globalErrors).toEqual({})
+      form.setErrors([...form.getOwnErrors(), {code: 'name', message: 'Error'}])
+      form.clearErrors()
+      expect(ownMessagesByCode(form)).toEqual({})
     })
   })
 
@@ -263,9 +265,9 @@ describe('Form', () => {
 
     it('should clear global errors', () => {
       const form = new TestForm()
-      form.setGlobalError('name', 'Error')
+      form.setErrors([...form.getOwnErrors(), {code: 'name', message: 'Error'}])
       form.reset()
-      expect(form.globalErrors).toEqual({})
+      expect(ownMessagesByCode(form)).toEqual({})
     })
   })
 
@@ -299,7 +301,7 @@ describe('Form', () => {
     it('should return false from checkValid when global errors exist', () => {
       const form = new TestForm()
       form.fields = { name: 'John', age: 25 }
-      form.setGlobalError('server', 'Request rejected')
+      form.setErrors([...form.getOwnErrors(), {code: 'server', message: 'Request rejected'}])
 
       expect(form.checkValid()).toBe(false)
       expect(form.isValid).toBe(false)
@@ -307,7 +309,7 @@ describe('Form', () => {
     it('should be false when has global errors', () => {
       const form = new TestForm()
       form.fields = { name: 'John', age: 25 }
-      form.setGlobalError('name', 'Error')
+      form.setErrors([...form.getOwnErrors(), {code: 'name', message: 'Error'}])
       expect(form.isValid).toBe(false)
     })
   })

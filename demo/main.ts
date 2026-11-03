@@ -315,7 +315,7 @@ function renderTags(): void {
       <button type="button" class="icon-button" data-remove-tag="${index}" aria-label="${t('Remove tag')} ${index + 1}" title="${t('Remove tag')}">×</button>
     </div>
   `).join('')
-  $('#tags-error').textContent = tagsInteracted ? tags.errors.map(t).join(' ') : ''
+  $('#tags-error').textContent = tagsInteracted ? tags.errors.map(error => t(displayError(error))).join(' ') : ''
   $('#tags-values').textContent = pretty(tags.itemsValue)
   const addButton = $('#add-tag') as HTMLButtonElement
   addButton.disabled = tags.items.length >= 4
@@ -362,7 +362,7 @@ function renderAddresses(): void {
       <div class="form-field ${form.postalCode.errors.length ? 'has-error' : ''}"><label for="address-postal-${index}">Postal code</label><input id="address-postal-${index}" data-address-postal="${index}" value="${escapeHtml(form.postalCode.rawValue)}" inputmode="numeric" placeholder="12345" /><p class="field-error">${escapeHtml(fieldMessages(form.postalCode).map(t).join(' '))}</p></div>
     </div>
   `).join('')
-  $('#addresses-error').textContent = addressesValidated ? addresses.errors.map(t).join(' ') : ''
+  $('#addresses-error').textContent = addressesValidated ? addresses.errors.map(error => t(displayError(error))).join(' ') : ''
   $('#addresses-values').textContent = pretty(addresses.formsFieldsValue)
   ;($('#add-address') as HTMLButtonElement).disabled = addresses.forms.length >= 3
   translatePage()
@@ -414,19 +414,21 @@ const serverPayload = {
 
 $('#apply-server-errors').addEventListener('click', () => {
   syncProfileFromInputs()
-  profile.errors = serverPayload
+  profile.email.setErrors([{code: 'app.email_taken', message: serverPayload.email}])
+  profile.region.setErrors([{code: 'app.region_unavailable', message: serverPayload.region}])
+  profile.setErrors([{code: 'app.profile', message: serverPayload.profile_id}])
   serverErrorsApplied = true
   renderProfile()
   $('#server-result').className = 'form-result result-error'
-  $('#server-result').textContent = 'Server errors applied to the live form instance.'
+  $('#server-result').textContent = 'Example errors applied to the live form instance.'
   translatePage()
 })
 $('#clear-server-errors').addEventListener('click', () => {
-  profile.errors = {}
+  profile.clearErrors({sources: ['manual'], recursive: true})
   serverErrorsApplied = false
   renderProfile()
   $('#server-result').className = 'form-result result-success'
-  $('#server-result').textContent = 'Server errors cleared. Run validation to refresh field validity.'
+  $('#server-result').textContent = 'Example errors cleared.'
   translatePage()
 })
 

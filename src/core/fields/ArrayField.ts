@@ -1,5 +1,6 @@
-import {ErrorState, customErrors, manualErrorSource, prefixErrors, validationError, type LocatedValidationError, type ValidationError, type ValidationErrorInput, type ValidationErrorSource} from '../ValidationError'
-import {ObservableNode} from "@core/state/ObservableNode"
+import {customErrors, prefixErrors, type LocatedValidationError} from '../ValidationError'
+import {ErrorNode} from '../state/ErrorNode'
+import type {ObservableNode} from "@core/state/ObservableNode"
 import {hasStandardGetters, snapshotValue, type ArrayFieldSnapshot} from "@core/state/snapshot"
 import {copyValue, equalValue} from "@core/state/value"
 import {ArrayFieldOptions} from "@core/options"
@@ -8,33 +9,29 @@ import {Form} from "@core/Form"
 import {collectionItemId} from "@core/fields/collectionIdentity"
 import {isValidArrayIndex} from "@core/fields/arrayUtils"
 
-export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
+export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
   private _snapshot?: ArrayFieldSnapshot
 
   protected captureState(): ArrayFieldSnapshot {
+    this.syncErrorChildren(false, this._items)
     const items = this._items.map(child => child.getSnapshot())
     const itemIds = this._items.map(collectionItemId)
     const isValid = this.isValid, isTouched = this.isTouched, isDirty = this.isDirty
-    const validationErrors = this._errorState.getErrors(this._errors)
+    const errors = this.getOwnErrors()
     const previous = this._snapshot
     if (previous && this.captureState === ArrayField.prototype.captureState &&
       hasStandardGetters(this, ArrayField.prototype, ['itemsValue']) &&
-      previous.validationErrors === validationErrors && previous.isValid === isValid && previous.isTouched === isTouched && previous.isDirty === isDirty &&
+      previous.errors === errors && previous.isValid === isValid && previous.isTouched === isTouched && previous.isDirty === isDirty &&
       previous.items.length === items.length && items.every((child, index) => previous.items[index] === child) &&
       itemIds.every((id, index) => previous.itemIds?.[index] === id) &&
-      previous.errors.length === this._errors.length && previous.errors.every((error, index) => error === this._errors[index]) &&
       this._items.every(child => hasStandardGetters(child, Field.prototype, ['valueClear']))) return previous
     return this._snapshot = {itemsValue: snapshotValue(this.itemsValue) as ArrayFieldSnapshot['itemsValue'],
-      itemIds, items, errors: [...this._errors], validationErrors, isValid, isTouched, isDirty}
+      itemIds, items, errors, isValid, isTouched, isDirty}
   }
 
   protected options: ArrayFieldOptions
   protected _items: Field<T>[] = []
-  protected _errors: string[] = []
-  private readonly _errorState = new ErrorState<ValidationError>(validationError, this._errors)
-
-  /** Own structured errors, without collection descendants. */
-  getOwnErrors(): readonly ValidationError[] { return this._errorState.getErrors(this._errors) }
+  protected clearsOnDescendantChange = true
 
   /** Structured errors relative to this node; collection indexes reflect current order. */
   getErrors(): readonly LocatedValidationError[] {
@@ -42,20 +39,11 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
       ...this._items.flatMap((child, index) => prefixErrors(child.getErrors(), [index]))])
   }
 
-  /** Replace this node's own errors; children are unaffected. */
-  setErrors(errors: readonly ValidationErrorInput[], source: ValidationErrorSource = 'manual'): void {
-    this.update(() => {
-      this._errors = this._errorState.set(errors, source)
-      this._hasValidationResult = errors.length > 0
-    })
-  }
-
   protected stateChildren(): readonly ObservableNode<unknown>[] {
     return this._items
   }
 
   private _baseline: unknown = []
-  private _hasValidationResult = false
 
   private _isTouched: boolean = false
 
@@ -76,6 +64,7 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
       ...options
     } as ArrayFieldOptions
     this._items = initial.map(value => this.factory(value as T))
+    this.syncErrorChildren()
     this.validateAfterMutation(() => this.checkValid())
     this.commitBaseline()
   }
@@ -100,7 +89,8 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
   setItemsValue(items: (T | null)[], validate: boolean = true): void {
     return this.update(() => {
       this._items = []
-      this.error = null
+      this.syncErrorChildren()
+      this.inputChanged()
 
       for (const item of items) {
         this.add(item as T, false)
@@ -135,6 +125,8 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
       const field = this.factory(value)
       this.isTouched = true
       this._items.splice(index, 0, field)
+      this.syncErrorChildren()
+      this.inputChanged()
 
       if (force_check) this.validateAfterMutation(() => this.checkValid())
 
@@ -149,6 +141,8 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
     this.update(() => {
       const [node] = this._items.splice(from, 1)
       this._items.splice(to, 0, node)
+      this.syncErrorChildren()
+      this.inputChanged()
       this.validateAfterMutation(() => this.checkValid())
     })
   }
@@ -158,13 +152,18 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
       if (!isValidArrayIndex(index, this._items.length)) return
 
       this._items.splice(index, 1)
+      this.syncErrorChildren()
+      this.inputChanged()
       this.validateAfterMutation(() => this.checkValid())
       })
   }
 
   clear(): void {
+    if (!this._items.length) return
     return this.update(() => {
       this._items = []
+      this.syncErrorChildren()
+      this.inputChanged()
       this.validateAfterMutation(() => this.checkValid())
       })
   }
@@ -184,24 +183,22 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
 
   checkValid(form?: Form): boolean {
     return this.update(() => {
+      this.clientChecked = false
       if (this.isRequired(form) && this._items.length === 0) {
-        this._errors = this._errorState.set([{code: 'required', message: this.options.messages?.isRequired ??
-          "Добавьте хотя бы один элемент"}], 'type')
-        this._hasValidationResult = true
+        this.completeClientCheck([{code: 'required', message: this.options.messages?.isRequired ??
+          "Добавьте хотя бы один элемент"}])
         return false
       }
 
       if (this.options.minItems != null && this._items.length < this.options.minItems) {
-        this._errors = this._errorState.set([{code: 'min_items', message: this.options.messages?.minItems ??
-          `Значений должно быть не меньше ${this.options.minItems}`, params: {min: this.options.minItems}}], 'type')
-        this._hasValidationResult = true
+        this.completeClientCheck([{code: 'min_items', message: this.options.messages?.minItems ??
+          `Значений должно быть не меньше ${this.options.minItems}`, params: {min: this.options.minItems}}])
         return false
       }
 
       if (this.options.maxItems != null && this._items.length > this.options.maxItems) {
-        this._errors = this._errorState.set([{code: 'max_items', message: this.options.messages?.maxItems ??
-          `Значений должно быть не больше ${this.options.maxItems}`, params: {max: this.options.maxItems}}], 'type')
-        this._hasValidationResult = true
+        this.completeClientCheck([{code: 'max_items', message: this.options.messages?.maxItems ??
+          `Значений должно быть не больше ${this.options.maxItems}`, params: {max: this.options.maxItems}}])
         return false
       }
 
@@ -218,15 +215,13 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
 
         const errors = customErrors(result, this.options.messages?.validate ?? 'Ошибка валидации')
         if (errors.length) {
-          this._errors = this._errorState.set(errors, 'custom')
-          this._hasValidationResult = true
+          this.completeClientCheck([], errors)
           return false
         }
       }
 
-      this._errors = this._errorState.set([], 'manual')
-      this._hasValidationResult = true
-      return valid
+      this.completeClientCheck()
+      return valid && this.isValid
       })
   }
 
@@ -235,37 +230,17 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
   }
 
   get isValid(): boolean {
-    if (!this._hasValidationResult) return false
-    if (this._errorState.getErrors(this._errors).length > 0) return false
+    if (!this.clientChecked) return false
+    if (this.errors.length > 0) return false
 
     return this._items.every(item => item.isValid === true)
-  }
-
-  get error(): string {
-    return this._errors[0] ?? ''
-  }
-
-  set error(message: string | null) {
-    this.update(() => {
-      if (message) {
-        this._errors = this._errorState.set([{code: manualErrorSource(this), message}], manualErrorSource(this))
-        this._hasValidationResult = true
-      } else {
-        this._errors = this._errorState.set([], 'manual')
-        this._hasValidationResult = false
-      }
-      })
-  }
-
-  get errors(): string[] {
-    return this._errors
   }
 
   reset(): void {
     return this.update(() => {
       this._items.forEach(item => item.reset())
-      this._errors = this._errorState.set([], 'manual')
-      this._hasValidationResult = false
+      this.clearErrors()
+      this.clientChecked = false
       this.isTouched = false
       })
   }

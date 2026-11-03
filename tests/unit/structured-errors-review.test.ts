@@ -1,145 +1,104 @@
 import {describe, expect, it, vi} from 'vitest'
-import {ArrayField, ArrayFormField, ErrorsSchema, Field, Form, StringType} from '../../src'
+import {ArrayField, ArrayFormField, ErrorsSchema, Field, Form, StringType, type ValidationErrorInput} from '../../src'
+import {replaceNodeErrors} from '../../src/core/state/ErrorNode'
 
-describe('HF-015 review regressions', () => {
-  it('isolates server provenance from other nodes in a legacy setter callback', () => {
+describe('structured error ownership review regressions', () => {
+  it('keeps incidental manual writes in another node manual', () => {
     const other = new Field(StringType, 'other')
     class Custom extends Field<string> {
-      get error(): string { return super.error }
-      set error(message: string | null) {
-        if (message) other.error = 'manual callback'
-        super.error = message
+      setErrors(errors: readonly ValidationErrorInput[]) {
+        other.setErrors([{code: 'callback'}])
+        super.setErrors(errors)
       }
     }
-    class Root extends Form { value = new Custom(StringType, 'x') }
-    const form = new Root()
-    form.errors = {value: 'remote'}
-    expect(form.value.getErrors()[0].source).toBe('server')
-    expect(other.getErrors()[0].source).toBe('manual')
+    const field = new Custom(StringType, 'x')
+    replaceNodeErrors(field, 'server', [{code: 'remote'}])
+    field.setErrors([{code: 'review'}])
+    expect(field.errors.map(error => error.source)).toEqual(['server', 'manual'])
+    expect(other.errors[0].source).toBe('manual')
   })
 
-  it('isolates global keys and restores nested server setter contexts', () => {
+  it('keeps nested Form manual writes separate from server partitions', () => {
     class Inner extends Form { value = new Field(StringType, 'inner') }
     const inner = new Inner()
     class Root extends Form {
-      setGlobalError(key: string, message: string) {
-        if (key === 'remote') {
-          inner.errors = {value: 'nested'}
-          super.setGlobalError('manual', 'callback')
-        }
-        super.setGlobalError(key, message)
+      setErrors(errors: readonly ValidationErrorInput[]) {
+        inner.setErrors([{code: 'callback'}])
+        super.setErrors(errors)
       }
     }
-    const form = new Root()
-    form.errors = {remote: 'server'}
-    expect(form.getErrors().map(error => [error.path, error.source])).toEqual([
-      [[], 'manual'], [[], 'server'],
-    ])
-    expect(inner.value.getErrors()[0].source).toBe('server')
-    inner.value.error = 'manual'
-    expect(inner.value.getErrors()[0].source).toBe('manual')
+    const root = new Root()
+    replaceNodeErrors(root, 'server', [{code: 'remote'}])
+    root.setErrors([{code: 'review'}])
+    expect(root.errors.map(error => error.source)).toEqual(['server', 'manual'])
+    expect(inner.errors[0].source).toBe('manual')
   })
 
-  it('preserves repeated delegation to the addressed setter through a subclass', () => {
-    const other = new Field(StringType, 'other')
+  it('replaces only manual errors through repeated subclass delegation', () => {
     class Custom extends Field<string> {
-      get error(): string { return super.error }
-      set error(message: string | null) {
-        super.error = message
-        if (message) {
-          expect(this.getErrors()[0].source).toBe('server')
-          super.error = `Again: ${message}`
-          other.error = 'manual'
-        }
+      setErrors(errors: readonly ValidationErrorInput[]) {
+        super.setErrors(errors)
+        super.setErrors(errors.map(error => ({...error, message: 'Again'})))
       }
     }
-    class Root extends Form { value = new Custom(StringType, 'x') }
-    const form = new Root()
-    form.errors = {value: 'remote'}
-    expect(form.value.getErrors()[0]).toMatchObject({source: 'server', message: 'Again: remote'})
-    expect(other.getErrors()[0].source).toBe('manual')
+    const field = new Custom(StringType, 'x')
+    replaceNodeErrors(field, 'server', [{code: 'remote'}])
+    field.setErrors([{code: 'manual'}])
+    expect(field.errors).toEqual([{code: 'remote', source: 'server'}, {code: 'manual', source: 'manual', message: 'Again'}])
   })
 
-  it('isolates incidental writes in collection setter overrides', () => {
-    const other = new Field(StringType, 'other')
+  it('supports independent manual and server partitions on both collection kinds', () => {
     class Row extends Form { value = new Field(StringType, 'x') }
-    class Tags extends ArrayField<string> {
-      get error(): string { return super.error }
-      set error(message: string | null) { if (message) other.error = message; super.error = message }
-    }
-    class Rows extends ArrayFormField<Row> {
-      get error(): string { return super.error }
-      set error(message: string | null) { if (message) other.error = message; super.error = message }
-    }
-    class Root extends Form {
-      tags = new Tags(value => new Field(StringType, value), {}, ['x'])
-      rows = new Rows(Row, {}, [{}])
-    }
-    const form = new Root()
-    for (const key of ['tags', 'rows'] as const) {
-      form.errors = {[key]: 'remote'}
-      expect(form[key].getOwnErrors()[0].source).toBe('server')
-      expect(other.getErrors()[0].source).toBe('manual')
+    const collections = [new ArrayField(value => new Field(StringType, value), {}, ['x']), new ArrayFormField(Row, {}, [{}])]
+    for (const collection of collections) {
+      replaceNodeErrors(collection, 'server', [{code: 'remote'}])
+      collection.setErrors([{code: 'manual'}])
+      collection.checkValid()
+      expect(collection.errors.map(error => error.source)).toEqual(['server', 'manual'])
     }
   })
 
-  it('keeps repeated server imports silent when the final state is equivalent', () => {
-    class Root extends Form { value = new Field(StringType, 'x') }
-    const form = new Root(), notify = vi.fn()
-    form.subscribe(notify)
-    form.setErrors({value: [{code: 'same'}, {code: 'same'}]})
-    const snapshot = form.getSnapshot()
-    form.setErrors({value: [{code: 'same'}, {code: 'same'}]})
-    expect(form.getSnapshot()).toBe(snapshot)
+  it('keeps repeated server source replacement silent when the final state is equivalent', () => {
+    const field = new Field(StringType, 'x'), notify = vi.fn()
+    field.subscribe(notify)
+    replaceNodeErrors(field, 'server', [{code: 'same'}, {code: 'same'}])
+    const snapshot = field.getSnapshot()
+    replaceNodeErrors(field, 'server', [{code: 'same'}, {code: 'same'}])
+    expect(field.getSnapshot()).toBe(snapshot)
     expect(notify).toHaveBeenCalledTimes(1)
   })
 
-  it('runs reentrant subscriber writes with external provenance', () => {
-    class Root extends Form { value = new Field(StringType, 'x') }
-    const form = new Root()
+  it('keeps reentrant subscriber writes manual while retaining server errors', () => {
+    const field = new Field(StringType, 'x')
     let calls = 0
-    form.subscribe(() => { if (++calls === 1) form.value.error = 'subscriber' })
-    form.errors = {value: 'remote'}
-    expect(form.value.getErrors()[0].source).toBe('manual')
+    field.subscribe(() => { if (++calls === 1) field.setErrors([{code: 'subscriber'}]) })
+    replaceNodeErrors(field, 'server', [{code: 'remote'}])
+    expect(field.errors.map(error => error.source)).toEqual(['server', 'manual'])
     expect(calls).toBe(2)
   })
 
-  it('publishes unknown prototype-named paths as ordinary global errors', () => {
+  it('preserves prototype-named codes and safe params as ordinary own errors', () => {
     class Root extends Form {}
-    const form = new Root(), notify = vi.fn()
-    form.subscribe(notify)
-    form.setErrors([
-      {path: ['constructor'], code: 'missing'},
-      {path: ['__proto__'], code: 'missing'},
-      {path: ['toString'], code: 'missing'},
+    const root = new Root(), notify = vi.fn()
+    root.subscribe(notify)
+    root.setErrors(['constructor', '__proto__', 'toString'].map(code => ({code})))
+    expect(root.getErrors().map(error => [error.code, error.path])).toEqual([
+      ['constructor', []], ['__proto__', []], ['toString', []],
     ])
-    expect(Object.keys(form.allErrors)).toEqual(['constructor', '__proto__', 'toString'])
-    expect(form.getErrors()).toEqual(Array.from({length: 3}, () => ({code: 'missing', source: 'server', path: []})))
-    expect(form.getSnapshot().validationErrors).toHaveLength(3)
+    expect(root.getSnapshot().errors).toHaveLength(3)
     expect(notify).toHaveBeenCalledTimes(1)
   })
 
-  it('routes unknown prototype names through the legacy global-error path', () => {
-    class Root extends Form {}
-    const form = new Root()
+  it('retains prototype-name safety in the separately staged parser', () => {
     const previous = Object.getOwnPropertyDescriptor(Object, 'error')
-    try {
-      form.errors = {constructor: 'remote'}
-      expect(form.getErrors()).toMatchObject([{path: [], source: 'server', message: 'remote'}])
-      expect(Object.getOwnPropertyDescriptor(Object, 'error')).toEqual(previous)
-    } finally {
-      if (previous) Object.defineProperty(Object, 'error', previous)
-      else Reflect.deleteProperty(Object, 'error')
-    }
-    const input = Object.fromEntries([['__proto__', 'remote'], ['toString', 'remote']])
+    const input = Object.fromEntries([['constructor', 'remote'], ['__proto__', 'remote'], ['toString', 'remote']])
     const schema = new ErrorsSchema().fallback(key => key)
-    expect(Object.keys(schema.parseErrors(input))).toEqual(['__proto__', 'toString'])
-    expect(Object.keys(schema.parseErrorsDetailed(input))).toEqual(['__proto__', 'toString'])
-    form.errors = input
-    expect(Object.keys(form.allErrors)).toEqual(['__proto__', 'toString'])
+    expect(Object.keys(schema.parseErrors(input))).toEqual(['constructor', '__proto__', 'toString'])
+    expect(Object.keys(schema.parseErrorsDetailed(input))).toEqual(['constructor', '__proto__', 'toString'])
+    expect(Object.getOwnPropertyDescriptor(Object, 'error')).toEqual(previous)
   })
 
-  it('keeps the legacy schema bridge result immutable', () => {
+  it('retains immutable output from the separately staged schema override', () => {
     class Custom extends ErrorsSchema { parseErrors() { return {value: 'remote'} } }
     expect(Object.isFrozen(new Custom().parseValidationErrors({}))).toBe(true)
   })

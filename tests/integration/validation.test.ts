@@ -1,3 +1,4 @@
+import {errorMessages} from '../helpers/errorViews'
 import { describe, it, expect } from 'vitest'
 import { Field } from '@core/fields/Field'
 import { StringType } from '@core/types/StringType'
@@ -172,7 +173,7 @@ describe('Validation Tests', () => {
       })
       
       field.rawValue = 'ab'
-      expect(field.errors).toContain('Must be longer than 3 characters')
+      expect(errorMessages(field)).toContain('Must be longer than 3 characters')
     })
 
     it('can apply an application-owned async result as a server error', async () => {
@@ -180,9 +181,9 @@ describe('Validation Tests', () => {
       field.rawValue = 'taken'
       const checkAvailable = async (value: string | null) => value !== 'taken'
       const available = await checkAvailable(field.valueClear)
-      field.error = available ? null : 'Already taken'
+      field.setErrors(available ? [] : [{code: 'manual', message: 'Already taken'}])
       expect(field.isValid).toBe(false)
-      expect(field.errors).toEqual(['Already taken'])
+      expect(errorMessages(field)).toEqual(['Already taken'])
     })
 
     it('should pass form context to validator', () => {
@@ -249,10 +250,10 @@ describe('Validation Tests', () => {
       const field = new Field(StringType, null, { minLength: 5 })
       
       field.rawValue = 'ab'
-      expect(field.errors.length).toBeGreaterThan(0)
+      expect(errorMessages(field).length).toBeGreaterThan(0)
       
       field.rawValue = 'abcdef'
-      expect(field.errors).toEqual([])
+      expect(errorMessages(field)).toEqual([])
     })
   })
 })

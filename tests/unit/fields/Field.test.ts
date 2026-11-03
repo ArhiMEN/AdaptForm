@@ -1,3 +1,4 @@
+import {errorMessages} from '../../helpers/errorViews'
 import { Form } from '@core/Form'
 import { describe, it, expect, vi } from 'vitest'
 import { Field } from '@core/fields/Field'
@@ -48,10 +49,10 @@ describe('Field', () => {
     it('should reset errors', () => {
       const field = new Field(StringType, null, { minLength: 5 })
       field.rawValue = 'ab' // Invalid
-      expect(field.errors.length).toBeGreaterThan(0)
+      expect(errorMessages(field).length).toBeGreaterThan(0)
       
       field.rawValue = 'hello' // Valid
-      expect(field.errors).toEqual([])
+      expect(errorMessages(field)).toEqual([])
     })
 
     it('should validate on set', () => {
@@ -169,7 +170,7 @@ describe('Field', () => {
         })
         
         field.rawValue = 'user'
-        expect(field.errors).toContain('Must be admin')
+        expect(errorMessages(field)).toContain('Must be admin')
       })
 
       it('should pass form to validator', () => {
@@ -209,9 +210,9 @@ describe('Field', () => {
     it('should clear errors', () => {
       const field = new Field(StringType, null, { minLength: 5 })
       field.rawValue = 'ab'
-      expect(field.errors.length).toBeGreaterThan(0)
+      expect(errorMessages(field).length).toBeGreaterThan(0)
       field.reset()
-      expect(field.errors).toEqual([])
+      expect(errorMessages(field)).toEqual([])
     })
 
     it('should restore defaults without validating until the next explicit check', () => {
@@ -227,7 +228,7 @@ describe('Field', () => {
       expect(field.rawValue).toBe('default')
       expect(field.isTouched).toBe(false)
       expect(field.isValid).toBeNull()
-      expect(field.errors).toEqual([])
+      expect(errorMessages(field)).toEqual([])
       expect(validate).toHaveBeenCalledTimes(2)
     })
   })
@@ -236,20 +237,20 @@ describe('Field', () => {
     it('should have error getter', () => {
       const field = new Field(StringType, null, { minLength: 5 })
       field.rawValue = 'ab'
-      expect(field.error).toBe(field.errors[0])
+      expect((errorMessages(field)[0] ?? '')).toBe(errorMessages(field)[0])
     })
 
     it('should have error setter', () => {
       const field = new Field(StringType)
-      field.error = 'Custom error'
-      expect(field.errors).toEqual(['Custom error'])
+      field.setErrors([{code: 'manual', message: 'Custom error'}])
+      expect(errorMessages(field)).toEqual(['Custom error'])
     })
 
     it('should clear errors when set null', () => {
       const field = new Field(StringType)
-      field.error = 'Error'
-      field.error = null
-      expect(field.errors).toEqual([])
+      field.setErrors([{code: 'manual', message: 'Error'}])
+      field.setErrors([])
+      expect(errorMessages(field)).toEqual([])
     })
   })
 })

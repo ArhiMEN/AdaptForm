@@ -1,4 +1,3 @@
-import {equalValue} from './state/value'
 import {ErrorContractError} from './ErrorContractError'
 import {normalizeErrorParams, type ErrorParams} from './ErrorParams'
 
@@ -28,29 +27,6 @@ export function isValidationError(value: unknown): value is ValidationErrorInput
   if (value === null || typeof value !== 'object') return false
   const descriptor = Object.getOwnPropertyDescriptor(value, 'code')
   return !!descriptor && 'value' in descriptor && typeof descriptor.value === 'string' && descriptor.value.length > 0
-}
-
-interface ErrorSourceContext {
-  readonly target: object
-  readonly key?: string
-  readonly source: ValidationErrorSource
-}
-let manualContext: ErrorSourceContext | undefined
-
-/** Only the addressed legacy setter inherits provenance, not other receivers or keys. */
-export function manualErrorSource(target: object, key?: string): ValidationErrorSource {
-  return manualContext?.target === target && manualContext.key === key ? manualContext.source : 'manual'
-}
-
-/** Preserve synchronous subclass dispatch; nested scopes restore even on exceptions. */
-export function withErrorSource<T>(target: object, source: ValidationErrorSource, callback: () => T, key?: string): T {
-  const previous = manualContext
-  manualContext = {target, source, key}
-  try { return callback() } finally { manualContext = previous }
-}
-
-export function errorMessage(error: ValidationErrorInput): string {
-  return error.message ?? ''
 }
 
 function inputData(input: object, key: string): PropertyDescriptor | undefined {
@@ -100,48 +76,6 @@ export function prefixErrors(errors: readonly ValidationError[], prefix: Validat
   return errors.map(error => Object.freeze({...error, path: Object.freeze([
     ...prefix, ...('path' in error ? (error as LocatedValidationError).path : []),
   ])}))
-}
-
-const noErrors = Object.freeze([])
-
-/** Ordered structured truth with the historical mutable string-array facade. */
-export class ErrorState<E extends ValidationError = ValidationError> {
-  private entries: readonly E[] = noErrors
-
-  constructor(private readonly create: (input: ValidationErrorInput, source: ValidationErrorSource) => E,
-    public messages: string[] = []) {}
-
-  getErrors(messages: string[] = this.messages): readonly E[] {
-    this.messages = messages
-    if (messages.length === 0 && this.entries.length === 0) return this.entries
-    if (messages.length !== this.entries.length ||
-      messages.some((message, index) => message !== errorMessage(this.entries[index]))) {
-      // Discover legacy in-place edits on reads, as with values and collection arrays.
-      const available = new Set(this.entries)
-      this.entries = Object.freeze(messages.map((message, index) => {
-        const candidate = this.entries[index]
-        const retained = candidate && available.has(candidate) && errorMessage(candidate) === message
-          ? candidate : this.entries.find(error => available.has(error) && errorMessage(error) === message)
-        if (retained) { available.delete(retained); return retained }
-        return this.create({code: 'manual', message}, 'manual')
-      }))
-    }
-    return this.entries
-  }
-
-  replace(errors: readonly E[]): string[] {
-    if (!errors.length) this.entries = noErrors
-    else if (!equalValue(this.entries, errors)) this.entries = Object.freeze([...errors])
-    return this.messages = this.entries.map(errorMessage)
-  }
-
-  set(errors: readonly ValidationErrorInput[], source: ValidationErrorSource): string[] {
-    return this.replace(errors.length ? errors.map(error => this.create(error, source)) : noErrors)
-  }
-
-  add(error: ValidationErrorInput, source: ValidationErrorSource): string[] {
-    return this.replace([...this.getErrors(), this.create(error, source)])
-  }
 }
 
 /** Preserve legacy success rules: only false and strings used to fail. */

@@ -1,6 +1,6 @@
 import {ErrorContractError} from '../ErrorContractError'
-import {ErrorState, customErrors, manualErrorSource, validationError, type ValidationError, type ValidationErrorInput, type ValidationErrorSource} from '../ValidationError'
-import {ObservableNode} from "@core/state/ObservableNode"
+import {customErrors, type ValidationError} from '../ValidationError'
+import {ErrorNode} from '../state/ErrorNode'
 import {snapshotValue, type FieldSnapshot} from "@core/state/snapshot"
 import {FieldOptions} from "@core/options"
 import type {FieldTypeContract, FieldTypeConstructor} from "@core/types/FieldType"
@@ -9,36 +9,16 @@ import {copyValue, equalValue} from "@core/state/value"
 
 import {validationCallback} from '@core/state/dependencyScheduling'
 
-export class Field<T = any, O extends object = FieldOptions> extends ObservableNode<FieldSnapshot> {
+export class Field<T = any, O extends object = FieldOptions> extends ErrorNode<FieldSnapshot> {
   protected _rawValue: any = null
   protected _valueClear: T | null = null
   protected fieldType: FieldTypeContract<T, O & FieldOptions>
   protected defaultValue: T | null
   private _baseline: T | null = null
-  protected _errors: string[] = []
-  private readonly _errorState = new ErrorState<ValidationError>(validationError, this._errors)
+  getErrors(): readonly ValidationError[] { return this.getOwnErrors() }
 
-  /** Own structured errors, without collection descendants. */
-  getOwnErrors(): readonly ValidationError[] { return this._errorState.getErrors(this._errors) }
-
-  /** Structured errors relative to this node; collection indexes reflect current order. */
-  getErrors(): readonly ValidationError[] {
-    return this._errorState.getErrors(this._errors)
-  }
-
-  /** Replace this node's own errors; children are unaffected. */
-  setErrors(errors: readonly ValidationErrorInput[], source: ValidationErrorSource = 'manual'): void {
-    this.update(() => {
-      this._errors = this._errorState.set(errors, source)
-      this.isValid = errors.length ? false : null
-    })
-  }
-
-  private _isValid: boolean | null = null
-
-  get isValid(): boolean | null { return this._isValid }
-  set isValid(value: boolean | null) {
-    this.update(() => { this._isValid = value })
+  get isValid(): boolean | null {
+    return this.errors.length ? false : this.clientChecked ? true : null
   }
   private _isTouched: boolean = false
 
@@ -70,7 +50,7 @@ export class Field<T = any, O extends object = FieldOptions> extends ObservableN
       this._rawValue = null
       this._valueClear = null
       // Keep isValid as null until checkValid has been called.
-      this.isValid = null
+      this.clientChecked = false
     }
 
     // Constructor defaults are pristine values, not user edits.
@@ -81,19 +61,18 @@ export class Field<T = any, O extends object = FieldOptions> extends ObservableN
   private _snapshot?: FieldSnapshot
 
   protected captureState(): FieldSnapshot {
-    const validationErrors = this._errorState.getErrors(this._errors)
+    const errors = this.getOwnErrors()
     const previous = this._snapshot
     const isValid = this.isValid, isTouched = this.isTouched, isDirty = this.isDirty
     // Mutable inputs must still be described on public reads (Date, Map, etc.).
     const scalar = (value: unknown) => value === null || typeof value !== 'object' && typeof value !== 'function'
     if (previous && this.captureState === Field.prototype.captureState && scalar(this._rawValue) && scalar(this._valueClear) &&
       Object.is(previous.rawValue, this._rawValue) && Object.is(previous.valueClear, this._valueClear) &&
-      previous.validationErrors === validationErrors && previous.isValid === isValid && previous.isTouched === isTouched && previous.isDirty === isDirty &&
-      previous.errors.length === this._errors.length && previous.errors.every((error, index) => error === this._errors[index])) {
+      previous.errors === errors && previous.isValid === isValid && previous.isTouched === isTouched && previous.isDirty === isDirty) {
       return previous
     }
     return this._snapshot = {rawValue: snapshotValue(this._rawValue), valueClear: snapshotValue(this._valueClear),
-      errors: [...this._errors], validationErrors, isValid, isTouched, isDirty}
+      errors, isValid, isTouched, isDirty}
   }
 
   // ========== Getters and setters ==========
@@ -111,9 +90,13 @@ export class Field<T = any, O extends object = FieldOptions> extends ObservableN
   set options(options: O) {
     this.update(() => {
       const typeId = this.fieldType.typeId
-      const currentOptions = this.fieldType.options
-      this.fieldType.options = Object.assign(currentOptions, options)
-      if (typeId !== this.fieldType.typeId && !this.getOwnErrors().length) this.isValid = null
+      const before = copyValue({...this.fieldType.options})
+      this.fieldType.options = Object.assign(this.fieldType.options, options)
+      const {dependsOn: _previousDependencies, ...oldRules} = before
+      const {dependsOn: _nextDependencies, ...nextRules} = this.fieldType.options
+      if (typeId !== this.fieldType.typeId || !equalValue(oldRules, nextRules)) {
+        this.clearErrors({sources: ['type', 'custom']})
+      }
       })
   }
 
@@ -127,14 +110,13 @@ export class Field<T = any, O extends object = FieldOptions> extends ObservableN
 
   setRawValue(input: any, validate: boolean = true): void {
     return this.update(() => {
+      const raw = copyValue(this._rawValue), clean = copyValue(this._valueClear)
       this.assignRawValue(input)
-      this._errors = this._errorState.set([], 'manual')
+      if (!equalValue(raw, this._rawValue) || !equalValue(clean, this._valueClear)) this.inputChanged()
       this.isTouched = true
 
       if (validate) {
         this.validateAfterMutation(() => this.checkAndSetValid())
-      } else {
-        this.isValid = null
       }
       })
   }
@@ -156,27 +138,9 @@ export class Field<T = any, O extends object = FieldOptions> extends ObservableN
       }
     }
 
+    const cast = this.fieldType.cast(valueClear)
     this._rawValue = rawValue
-    this._valueClear = this.fieldType.cast(valueClear)
-  }
-
-  get errors(): string[] {
-    return this._errors
-  }
-
-  get error(): string {
-    return this._errors[0] ?? ''
-  }
-
-  set error(message: string | null) {
-    this.update(() => {
-      if (message) {
-        this._errors = this._errorState.set([{code: manualErrorSource(this), message}], manualErrorSource(this))
-      } else {
-        this._errors = this._errorState.set([], 'manual')
-      }
-      this.isValid = message ? false : null
-      })
+    this._valueClear = cast
   }
 
   get valueClear(): T | null {
@@ -209,50 +173,27 @@ export class Field<T = any, O extends object = FieldOptions> extends ObservableN
 
   checkValid(form?: Form): boolean {
     return this.update(() => {
-      // 1. Check emptiness and required status.
+      this.clientChecked = false
       if (this.isEmpty) {
-        if (this.isRequired(form)) {
-          this._errors = this._errorState.set([{code: 'required', message: this.options.messages?.isRequired ?? 'Поле обязательно для заполнения'}], 'type')
-          return false
-        }
-        this._errors = this._errorState.set([], 'manual')
-        return true
-      }
-
-      // 2. Check whether the value could be cast to the expected type.
-      if (this._valueClear === null) {
-        this._errors = this._errorState.set([{code: 'invalid_type', params: {expected: this.fieldType.typeId}}], 'type')
-        return false
-      }
-
-      // 3. Run type-specific validation.
-      const typeErrors = validationCallback(() => this.fieldType.validateErrors(this._valueClear as T, form))
-      if (typeErrors.length > 0) {
-        this._errors = this._errorState.replace(typeErrors.map(error => validationError(error, 'type')))
-        return false
-      }
-
-      // 4. Run custom validation.
-      if (this.options.validate) {
-        const result = validationCallback(() => this.options.validate!(this._valueClear, form))
-        const errors = customErrors(result, this.options.messages?.validate ?? 'Значение не прошло валидацию')
-        if (errors.length) {
-          this._errors = this._errorState.set(errors, 'custom')
-          return false
+        this.completeClientCheck(this.isRequired(form)
+          ? [{code: 'required', message: this.options.messages?.isRequired ?? 'Поле обязательно для заполнения'}] : [])
+      } else if (this._valueClear === null) {
+        this.completeClientCheck([{code: 'invalid_type', params: {expected: this.fieldType.typeId}}])
+      } else {
+        const type = validationCallback(() => this.fieldType.validateErrors(this._valueClear as T, form))
+        if (type.length) this.completeClientCheck(type)
+        else {
+          const custom = this.options.validate
+            ? customErrors(validationCallback(() => this.options.validate!(this._valueClear, form)),
+              this.options.messages?.validate ?? 'Значение не прошло валидацию') : []
+          this.completeClientCheck(type, custom)
         }
       }
-
-      this._errors = this._errorState.set([], 'manual')
-      return true
-      })
+      return this.isValid === true
+    })
   }
 
-  checkAndSetValid(form?: Form): boolean {
-    return this.update(() => {
-      this.isValid = this.checkValid(form)
-      return this.isValid
-      })
-  }
+  checkAndSetValid(form?: Form): boolean { return this.checkValid(form) }
 
   get isEmpty(): boolean {
     let isEmpty = false
@@ -266,6 +207,7 @@ export class Field<T = any, O extends object = FieldOptions> extends ObservableN
 
   reset(): void {
     return this.update(() => {
+      const raw = copyValue(this._rawValue), clean = copyValue(this._valueClear)
       if (this.defaultValue !== null && this.defaultValue !== undefined) {
         // Restore the default through the same plugin pipeline without validating it.
         this.assignRawValue(this.defaultValue)
@@ -274,8 +216,9 @@ export class Field<T = any, O extends object = FieldOptions> extends ObservableN
         this._valueClear = null
       }
 
-      this._errors = this._errorState.set([], 'manual')
-      this.isValid = null
+      if (!equalValue(raw, this._rawValue) || !equalValue(clean, this._valueClear)) this.inputChanged()
+      this.clearErrors()
+      this.clientChecked = false
       this.isTouched = false
       })
   }

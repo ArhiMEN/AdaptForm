@@ -1,3 +1,4 @@
+import {errorMessages} from '../../helpers/errorViews'
 import { describe, it, expect, vi } from 'vitest'
 import { ArrayField } from '@core/fields/ArrayField'
 import { Field } from '@core/fields/Field'
@@ -213,15 +214,15 @@ describe('ArrayField', () => {
       )
 
       expect(arrayField.isValid).toBe(false)
-      expect(arrayField.errors).not.toEqual([])
+      expect(errorMessages(arrayField)).not.toEqual([])
 
       arrayField.reset()
 
-      expect(arrayField.errors).toEqual([])
+      expect(errorMessages(arrayField)).toEqual([])
       expect(arrayField.isValid).toBe(false)
 
       expect(arrayField.checkValid()).toBe(false)
-      expect(arrayField.errors).not.toEqual([])
+      expect(errorMessages(arrayField)).not.toEqual([])
     })
   })
 })

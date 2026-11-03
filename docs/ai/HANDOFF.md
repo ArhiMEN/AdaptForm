@@ -2,6 +2,50 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## V3-03.2 source storage and error lifecycle — 2026-11-03
+
+Implementation status: **READY_FOR_OWNER_REVIEW**, not owner acceptance. V3-03.1 at `349e216fc5a0cb32e0997030266a63ce442d9c7e` was accepted for continuation; this is the starting SHA on `feature/v3-runtime`. One separate implementation commit, `feat: implement source-partitioned error lifecycle`, updates existing [Draft PR #32](https://github.com/ArhiMEN/AdaptForm/pull/32). Its final SHA and final-head CI are recorded in the PR/delivery report; this handoff belongs to the same commit. Package/dependencies/workflows and accepted ODR-01–05 are unchanged; version **2.2.0**. No merge, release, tag or npm publication.
+
+Storage and API:
+
+- Internal `ErrorStore` owns four independent immutable partitions, in `type → custom → server → manual` order. Within-source insertion order and repeated codes survive. The cached merged list is a readonly derived view, not another writable source of truth. Every ingress uses the V3-03.1 DTO/JSON params normalizer; client partitions normalize together before either replacement. A failed replacement preserves all installed sources. Caller objects remain unfrozen and detached.
+- Internal `ErrorNode` shares own storage, client-check knowledge, explicit clearing and ownership propagation across Field/Form/collections. `errors` and `getOwnErrors()` expose the same readonly pathless own view. Scalar `getErrors()` reads own errors; Form/collections return flat readonly located errors. Form traverses fields then own globals at `[]`; collections traverse own errors at `[]` then current items. No read validates or formats messages.
+- `setErrors(readonly ValidationErrorInput[])` replaces only own **manual** errors, including on Form. No public source argument or response/path importer remains. `clearErrors({sources?, recursive?})` defaults to all own sources, `recursive:false`; clearing type/custom invalidates client-check knowledge. Clearing only server/manual, or `setErrors([])`, preserves a completed client check.
+- Public server installation depends on the later tokenized `applyServerErrors()` stage. It is deliberately unavailable in this intermediate branch. An internal source writer, absent from package exports, exercises server storage/lifecycle and provides an integration point for Apply; it is not a public importer or compatibility bridge. Existing standalone ErrorsSchema parsers remain unchanged for their separately planned migration.
+
+Lifecycle and validity:
+
+- Client checks replace type/custom together and preserve server/manual. `checkValid()` and `checkAndSetValid()` still return booleans for this stage, now reflecting active errors across every source. No temporary validate result API was added. A thrown check leaves its marker unchecked and does not replace installed errors or claim old success.
+- An actual change compares both post-plugin raw input and cast clean value with the existing supported-value equality policy. It clears own sources and invalidates the check, then optionally validates. Distinct invalid raw inputs sharing clean null and raw formatting changes count; equivalent values preserve server/manual and successful knowledge when validation is disabled. Touch behavior remains.
+- Leaf changes clear/invalidate containing collections, including nested collections, independently of subscriptions. Form globals and unrelated item errors survive. Insert/remove/move clear affected collection own errors; retained node errors, IDs and baselines follow identity and paths use current indexes. Replacement detaches old nodes; no value matching. Snapshot reads reconcile external membership/property edits without retaining obsolete error-parent links.
+- Reset clears all affected sources recursively and leaves checks unknown, with surviving membership/order and constructor reset targets retained. Direct leaf reset propagates an actual value change to containing collections. `commitBaseline()` preserves errors/check knowledge and only captures clean baselines; dirty may become false while errors remain.
+- Field validity is derived: own error → false; no errors + unchecked → null; completed successful current check → true. Containers remain boolean, requiring completed own collection checks and checked/valid descendants. Empty Form distinguishes unchecked from explicitly checked. There is no writable validity boolean.
+- Snapshots now require own structured `errors`; redundant `validationErrors`, string errors, aggregate `allErrors` and keyed `globalErrors` are removed. Collection `itemIds` are required readonly arrays. Errors/params/paths/snapshots are deeply immutable; equal final snapshots retain references and emit nothing. Existing child-before-parent delivery and all-snapshots-before-callback guarantees remain; no ODR-05 transaction redesign.
+
+Removed: ErrorState, mutable `_errors`/string reconciliation, automatic manual errors from text-array edits, `manualErrorSource()`/`withErrorSource()`, scalar/collection `error`, Form `errors=` response routing, source-taking setters, keyed global setters/readers/clearing and writable Field.isValid. Demo installs explicit application/manual errors and renders structured data; it does not impersonate server provenance.
+
+Test migration was analyzed against the accepted ledger: the 30 old Form/schema importer cases become 28 parser-boundary and explicit manual-ownership cases; V2 implicit routing/replacement assertions no longer specify runtime behavior. Mapping priority, transforms, arrays, nesting, fallback, null/unknown inputs, repeated/large responses and value preservation remain covered. Other old string/override/mutation assertions now check readonly structures or test-owned display projections, never a write-back facade. Existing runner callback counts/early exits remain characterized for the later ODR-03 stage. Added **42** source/lifecycle regressions plus negative TypeScript contracts; all V3-03.1 params and type regressions pass.
+
+Verification on Node **24.19.0** / npm **11.9.0**, all PASS:
+
+| Command | Result |
+| --- | --- |
+| `npm ci` | Clean install |
+| `npm audit --audit-level=moderate` | 0 vulnerabilities |
+| `npm run lint` | 0 warnings/errors |
+| `npm test` | 819 tests / 36 files |
+| `npm run build` | ESM, CJS, declarations, optional Luxon |
+| `npm run check:package` | 21 files |
+| `npx tsc --noEmit -p tsconfig.json` | PASS |
+| `npx tsc --noEmit -p tsconfig.test.json` | PASS |
+| `npm run check:demo` | PASS |
+| `npm run build:demo` | PASS |
+| `git diff --check` | PASS |
+
+Fresh packed consumers outside the repository pass ESM/CJS on **Node 16.20.2 and 24.19.0**, first core without installed Luxon, then optional Luxon. Strict `.mts`/`.cts` NodeNext declarations pass with `skipLibCheck:false` and `exactOptionalPropertyTypes:true`, including removed API/readonly/params/required-ID negatives. Node 16 checks the built runtime; modern development dependencies run on Node 24. Scratch packs, consumers and logs are excluded from the commit. Final-head remote CI remains authoritative in PR #32.
+
+Limits/next authorization: **V3-03.3** must finish I18N-01 for required/custom/collection producers and message options; type built-ins/typeId foundations are already implemented. Legacy option-validator result interpretation remains until the scalar runner stage; it is not error storage. New validate()/validateErrors() runner and purity, zero constructor/deferred callbacks and complete ODR-03 traversal, final dependency/snapshot integration, ErrorsMapping/new schema.parse, tokenized server Apply, revision/operation fencing and ODR-05 transactions remain later tasks. Arbitrary external in-place edits are discovered on reads as before, without a universal revision-tracking guarantee. No full-V3 lifecycle, atomic server apply or new performance benchmark claim. Do not start V3-03.3 before owner authorization.
+
 ## V3-03.1 foundational contracts — 2026-11-03
 
 Implementation status: **READY_FOR_OWNER_REVIEW**, not owner acceptance. Branch `feature/v3-runtime`, based on freshly fetched master `9b3c773563228614a755ff859ea6c518e21d9b77` (PR #30 integrated). Delivery is one commit, `feat: implement V3 foundational contracts`; [branch HEAD/history](https://github.com/ArhiMEN/AdaptForm/commits/feature/v3-runtime) and the [Draft PR](https://github.com/ArhiMEN/AdaptForm/pulls?q=is%3Apr+head%3Afeature%2Fv3-runtime) identify its exact SHA. The final SHA is recorded in the PR/delivery report because this handoff belongs to that same commit. Package remains **2.2.0**; no merge, release, tag or publication.
