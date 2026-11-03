@@ -64,7 +64,7 @@ describe('Integration Tests', () => {
       
       form.checkValid()
       expect(form.isValid).toBe(false)
-      expect(form.allErrors.email).toContain('Неверный формат')
+      expect(form.email.getErrors()).toEqual([{code: 'pattern', source: 'type'}])
     })
 
     it('should be invalid with short password', () => {
@@ -172,7 +172,7 @@ describe('Integration Tests', () => {
       
       form.checkValid()
       expect(form.isValid).toBe(false)
-      expect(form.allErrors.total).toContain('Значение должно быть больше 0')
+      expect(form.total.getErrors()).toEqual([{code: 'min_value', params: {min: 0, exclusive: true}, source: 'type'}])
     })
 
     it('should add items dynamically', () => {

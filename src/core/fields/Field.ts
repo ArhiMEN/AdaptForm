@@ -1,23 +1,22 @@
+import {ErrorContractError} from '../ErrorContractError'
 import {ErrorState, customErrors, manualErrorSource, validationError, type ValidationError, type ValidationErrorInput, type ValidationErrorSource} from '../ValidationError'
 import {ObservableNode} from "@core/state/ObservableNode"
 import {snapshotValue, type FieldSnapshot} from "@core/state/snapshot"
 import {FieldOptions} from "@core/options"
-import {FieldType} from "@core/types/FieldType"
+import type {FieldTypeContract, FieldTypeConstructor} from "@core/types/FieldType"
 import {Form} from "@core/Form"
 import {copyValue, equalValue} from "@core/state/value"
 
 import {validationCallback} from '@core/state/dependencyScheduling'
 
-type FieldTypeConstructor<T, O extends FieldOptions = FieldOptions> = new (options: O) => FieldType<T, O>
-
-export class Field<T = any, O extends FieldOptions = FieldOptions> extends ObservableNode<FieldSnapshot> {
+export class Field<T = any, O extends object = FieldOptions> extends ObservableNode<FieldSnapshot> {
   protected _rawValue: any = null
   protected _valueClear: T | null = null
-  protected fieldType: FieldType<T, O>
+  protected fieldType: FieldTypeContract<T, O & FieldOptions>
   protected defaultValue: T | null
   private _baseline: T | null = null
   protected _errors: string[] = []
-  private readonly _errorState = new ErrorState(this._errors)
+  private readonly _errorState = new ErrorState<ValidationError>(validationError, this._errors)
 
   /** Own structured errors, without collection descendants. */
   getOwnErrors(): readonly ValidationError[] { return this._errorState.getErrors(this._errors) }
@@ -28,7 +27,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
   }
 
   /** Replace this node's own errors; children are unaffected. */
-  setErrors(errors: readonly ValidationErrorInput[], source: ValidationErrorSource = 'external'): void {
+  setErrors(errors: readonly ValidationErrorInput[], source: ValidationErrorSource = 'manual'): void {
     this.update(() => {
       this._errors = this._errorState.set(errors, source)
       this.isValid = errors.length ? false : null
@@ -51,10 +50,14 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
   constructor(
     TypeConstructor: FieldTypeConstructor<T, O>,
     defaultValue?: T | null,
-    options?: O | null,
+    options?: (O & FieldOptions) | null,
   ) {
     super()
-    this.fieldType = new TypeConstructor(options ?? {} as O)
+    // Engine options are optional properties; preserve the implementation's options object.
+    this.fieldType = new TypeConstructor({isRequired: true, ...options} as O) as FieldTypeContract<T, O & FieldOptions>
+    if (typeof this.fieldType.typeId !== 'string' || !this.fieldType.typeId.length) {
+      throw new ErrorContractError('invalid_type_id', ['typeId'])
+    }
     this.defaultValue = defaultValue ?? null
 
     for (const plugin of this.options.plugins ?? []) {
@@ -101,14 +104,16 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
     })
   }
 
-  get options() {
+  get options(): O & FieldOptions {
     return this.fieldType.options
   }
 
   set options(options: O) {
     this.update(() => {
+      const typeId = this.fieldType.typeId
       const currentOptions = this.fieldType.options
       this.fieldType.options = Object.assign(currentOptions, options)
+      if (typeId !== this.fieldType.typeId && !this.getOwnErrors().length) this.isValid = null
       })
   }
 
@@ -123,7 +128,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
   setRawValue(input: any, validate: boolean = true): void {
     return this.update(() => {
       this.assignRawValue(input)
-      this._errors = this._errorState.set([], 'external')
+      this._errors = this._errorState.set([], 'manual')
       this.isTouched = true
 
       if (validate) {
@@ -168,7 +173,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
       if (message) {
         this._errors = this._errorState.set([{code: manualErrorSource(this), message}], manualErrorSource(this))
       } else {
-        this._errors = this._errorState.set([], 'external')
+        this._errors = this._errorState.set([], 'manual')
       }
       this.isValid = message ? false : null
       })
@@ -196,7 +201,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
     if (typeof rule === 'function') {
       isRequired = validationCallback(() => rule.call(this.options, form ?? null))
     } else {
-      isRequired = rule ?? false
+      isRequired = rule ?? true
     }
 
     return isRequired
@@ -204,28 +209,26 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
 
   checkValid(form?: Form): boolean {
     return this.update(() => {
-      this._errors = this._errorState.set([], 'external')
-
       // 1. Check emptiness and required status.
       if (this.isEmpty) {
         if (this.isRequired(form)) {
-          this._errors = this._errorState.add({code: 'required', message: this.options.messages?.isRequired ?? 'Поле обязательно для заполнения'}, 'client')
+          this._errors = this._errorState.set([{code: 'required', message: this.options.messages?.isRequired ?? 'Поле обязательно для заполнения'}], 'type')
           return false
         }
+        this._errors = this._errorState.set([], 'manual')
         return true
       }
 
       // 2. Check whether the value could be cast to the expected type.
       if (this._valueClear === null) {
-        this._errors = this._errorState.add({code: 'invalid_type', message: this.options.messages?.type ??
-          `Ожидается ${this.fieldType.getTypeName()}`, params: {expected: this.fieldType.getTypeName()}}, 'client')
+        this._errors = this._errorState.set([{code: 'invalid_type', params: {expected: this.fieldType.typeId}}], 'type')
         return false
       }
 
       // 3. Run type-specific validation.
       const typeErrors = validationCallback(() => this.fieldType.validateErrors(this._valueClear as T, form))
       if (typeErrors.length > 0) {
-        this._errors = this._errorState.replace(typeErrors.map(error => validationError(error, 'client')))
+        this._errors = this._errorState.replace(typeErrors.map(error => validationError(error, 'type')))
         return false
       }
 
@@ -239,6 +242,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
         }
       }
 
+      this._errors = this._errorState.set([], 'manual')
       return true
       })
   }
@@ -270,7 +274,7 @@ export class Field<T = any, O extends FieldOptions = FieldOptions> extends Obser
         this._valueClear = null
       }
 
-      this._errors = this._errorState.set([], 'external')
+      this._errors = this._errorState.set([], 'manual')
       this.isValid = null
       this.isTouched = false
       })

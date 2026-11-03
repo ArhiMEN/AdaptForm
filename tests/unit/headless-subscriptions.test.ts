@@ -81,8 +81,8 @@ describe('HF-008 snapshots and subscriptions', () => {
     expect(snapshot.valueClear).toEqual({kind: 'Date', timestamp: 0})
     class Structured extends FieldType<unknown> {
       cast(value: unknown) { return value }
-      validate() { return [] }
-      getTypeName() { return 'structured' }
+      validateErrors() { return [] }
+      readonly typeId = 'structured'
     }
     const input = {items: [new Map([['key', new Set([1])]])]}
     const structured = new Field(Structured, input)

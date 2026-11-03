@@ -15,7 +15,7 @@ describe('HF-015 review regressions', () => {
     const form = new Root()
     form.errors = {value: 'remote'}
     expect(form.value.getErrors()[0].source).toBe('server')
-    expect(other.getErrors()[0].source).toBe('external')
+    expect(other.getErrors()[0].source).toBe('manual')
   })
 
   it('isolates global keys and restores nested server setter contexts', () => {
@@ -33,11 +33,11 @@ describe('HF-015 review regressions', () => {
     const form = new Root()
     form.errors = {remote: 'server'}
     expect(form.getErrors().map(error => [error.path, error.source])).toEqual([
-      [['manual'], 'external'], [['remote'], 'server'],
+      [[], 'manual'], [[], 'server'],
     ])
     expect(inner.value.getErrors()[0].source).toBe('server')
     inner.value.error = 'manual'
-    expect(inner.value.getErrors()[0].source).toBe('external')
+    expect(inner.value.getErrors()[0].source).toBe('manual')
   })
 
   it('preserves repeated delegation to the addressed setter through a subclass', () => {
@@ -57,7 +57,7 @@ describe('HF-015 review regressions', () => {
     const form = new Root()
     form.errors = {value: 'remote'}
     expect(form.value.getErrors()[0]).toMatchObject({source: 'server', message: 'Again: remote'})
-    expect(other.getErrors()[0].source).toBe('external')
+    expect(other.getErrors()[0].source).toBe('manual')
   })
 
   it('isolates incidental writes in collection setter overrides', () => {
@@ -79,7 +79,7 @@ describe('HF-015 review regressions', () => {
     for (const key of ['tags', 'rows'] as const) {
       form.errors = {[key]: 'remote'}
       expect(form[key].getOwnErrors()[0].source).toBe('server')
-      expect(other.getErrors()[0].source).toBe('external')
+      expect(other.getErrors()[0].source).toBe('manual')
     }
   })
 
@@ -100,7 +100,7 @@ describe('HF-015 review regressions', () => {
     let calls = 0
     form.subscribe(() => { if (++calls === 1) form.value.error = 'subscriber' })
     form.errors = {value: 'remote'}
-    expect(form.value.getErrors()[0].source).toBe('external')
+    expect(form.value.getErrors()[0].source).toBe('manual')
     expect(calls).toBe(2)
   })
 
@@ -114,7 +114,7 @@ describe('HF-015 review regressions', () => {
       {path: ['toString'], code: 'missing'},
     ])
     expect(Object.keys(form.allErrors)).toEqual(['constructor', '__proto__', 'toString'])
-    expect(Object.getOwnPropertyDescriptor(form.allErrors, '__proto__')?.value).toEqual(['missing'])
+    expect(form.getErrors()).toEqual(Array.from({length: 3}, () => ({code: 'missing', source: 'server', path: []})))
     expect(form.getSnapshot().validationErrors).toHaveLength(3)
     expect(notify).toHaveBeenCalledTimes(1)
   })
@@ -125,7 +125,7 @@ describe('HF-015 review regressions', () => {
     const previous = Object.getOwnPropertyDescriptor(Object, 'error')
     try {
       form.errors = {constructor: 'remote'}
-      expect(form.getErrors()).toMatchObject([{path: ['constructor'], source: 'server', message: 'remote'}])
+      expect(form.getErrors()).toMatchObject([{path: [], source: 'server', message: 'remote'}])
       expect(Object.getOwnPropertyDescriptor(Object, 'error')).toEqual(previous)
     } finally {
       if (previous) Object.defineProperty(Object, 'error', previous)

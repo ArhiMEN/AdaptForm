@@ -1,4 +1,4 @@
-import {isValidationError, validationError, type ValidationError} from './ValidationError'
+import {isValidationError, validationError, type LocatedValidationError} from './ValidationError'
 
 type ErrorFieldMapping = string | ((errorValue: any) => string)
 
@@ -183,12 +183,12 @@ export class ErrorsSchema {
    * Lossless server input. Transformers run on each leaf before mapping, as in parseErrors.
    * Legacy parseErrors overrides remain authoritative for custom schemas.
    */
-  parseValidationErrors(errors: Record<string, unknown>, prefix: string = ''): readonly ValidationError[] {
+  parseValidationErrors(errors: Record<string, unknown>, prefix: string = ''): readonly LocatedValidationError[] {
     if (this.parseErrors !== ErrorsSchema.prototype.parseErrors) {
       return Object.freeze(Object.entries(this.parseErrors(errors, prefix)).map(([path, message]) =>
         validationError({code: 'server', message}, 'server', this.errorPath(path))))
     }
-    const result: ValidationError[] = []
+    const result: LocatedValidationError[] = []
     const visit = (data: Record<string, unknown>, parent: string) => {
       for (const [key, value] of Object.entries(data)) {
         if (value === null || value === undefined) continue

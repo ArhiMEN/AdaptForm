@@ -1,4 +1,4 @@
-import {ErrorState, errorMessage, manualErrorSource, withErrorSource, prefixErrors, validationError, type ValidationError, type ValidationErrorInput, type ValidationPath, type ValidationErrorSource} from './ValidationError'
+import {ErrorState, errorMessage, manualErrorSource, withErrorSource, prefixErrors, validationError, type ValidationError, type LocatedValidationError, type ValidationErrorInput, type ValidationPath, type ValidationErrorSource} from './ValidationError'
 import {ObservableNode} from "@core/state/ObservableNode"
 import {hasStandardGetters, snapshotValue, type FormSnapshot} from "@core/state/snapshot"
 import {Field} from "@core/fields/Field"
@@ -82,15 +82,20 @@ export abstract class Form extends ObservableNode<FormSnapshot> {
     return this.batchUpdate(callback, () => this.checkValid())
   }
 
-  private readonly _globalErrorState = new ErrorState()
+  private readonly _globalErrorState = new ErrorState((input, source) => validationError(input, source, []))
   private get _globalErrors(): Record<string, string> {
     return Object.fromEntries(this._globalErrorState.getErrors().map(error => [error.path.join('.'), errorMessage(error)]))
   }
 
+  /** Own Form globals, excluding routing metadata used by the existing server API. */
+  getOwnErrors(): readonly ValidationError[] {
+    return Object.freeze(this._globalErrorState.getErrors().map(({path: _path, ...error}) => Object.freeze(error)))
+  }
+
   /** All errors in field order, then own global errors; paths are relative to this Form. */
-  getErrors(): readonly ValidationError[] {
+  getErrors(): readonly LocatedValidationError[] {
     return Object.freeze([...Object.entries(this._fields).flatMap(([key, field]) =>
-      prefixErrors(field.getErrors(), [key])), ...this._globalErrorState.getErrors()])
+      prefixErrors(field.getErrors(), [key])), ...prefixErrors(this.getOwnErrors(), [])])
   }
 
   /** Replace server errors using the lossless schema parser, or explicit typed paths. */
@@ -128,7 +133,7 @@ export abstract class Form extends ObservableNode<FormSnapshot> {
     this.appendGlobalError(validationError(error, 'server', path))
   }
 
-  private appendGlobalError(error: ValidationError): void {
+  private appendGlobalError(error: LocatedValidationError): void {
     this.update(() => this._globalErrorState.replace([...this._globalErrorState.getErrors(), error]))
   }
   errorsShema: ErrorsSchema = DefaultErrorsSchema

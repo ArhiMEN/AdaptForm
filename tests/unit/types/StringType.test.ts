@@ -29,83 +29,83 @@ describe('StringType', () => {
     })
   })
 
-  describe('validate', () => {
+  describe('validateErrors', () => {
     it('should return empty errors for valid string', () => {
       const type = new StringType({})
-      const errors = type.validate('hello')
+      const errors = type.validateErrors('hello')
       expect(errors).toEqual([])
     })
 
     it('should return error for string too short', () => {
       const type = new StringType({ minLength: 5 })
-      const errors = type.validate('abc')
-      expect(errors).toContain('Минимальная длина 5 символов')
+      const errors = type.validateErrors('abc')
+      expect(errors).toContainEqual({code: 'min_length', params: {min: 5}})
     })
 
-    it('should return custom error for string too short', () => {
+    it('should emit structured data despite legacy message options for string too short', () => {
       const type = new StringType({
         minLength: 5,
         messages: { minLength: 'Too short!' }
       })
-      const errors = type.validate('abc')
-      expect(errors).toContain('Too short!')
+      const errors = type.validateErrors('abc')
+      expect(errors).toContainEqual({code: 'min_length', params: {min: 5}})
     })
 
     it('should return error for string too long', () => {
       const type = new StringType({ maxLength: 5 })
-      const errors = type.validate('abcdef')
-      expect(errors).toContain('Максимальная длина 5 символов')
+      const errors = type.validateErrors('abcdef')
+      expect(errors).toContainEqual({code: 'max_length', params: {max: 5}})
     })
 
-    it('should return custom error for string too long', () => {
+    it('should emit structured data despite legacy message options for string too long', () => {
       const type = new StringType({
         maxLength: 5,
         messages: { maxLength: 'Too long!' }
       })
-      const errors = type.validate('abcdef')
-      expect(errors).toContain('Too long!')
+      const errors = type.validateErrors('abcdef')
+      expect(errors).toContainEqual({code: 'max_length', params: {max: 5}})
     })
 
     it('should return error for pattern mismatch', () => {
       const type = new StringType({ pattern: /^[a-z]+$/ })
-      const errors = type.validate('ABC123')
-      expect(errors).toContain('Неверный формат')
+      const errors = type.validateErrors('ABC123')
+      expect(errors).toContainEqual({code: 'pattern'})
     })
 
     it('should validate global patterns consistently across repeated calls', () => {
       const type = new StringType({ pattern: /^abc$/g })
 
-      expect(type.validate('abc')).toEqual([])
-      expect(type.validate('abc')).toEqual([])
-      expect(type.validate('xabc')).toContain('Неверный формат')
+      expect(type.validateErrors('abc')).toEqual([])
+      expect(type.validateErrors('abc')).toEqual([])
+      expect(type.validateErrors('xabc')).toContainEqual({code: 'pattern'})
     })
-    it('should return custom error for pattern mismatch', () => {
+    it('should emit structured data despite legacy message options for pattern mismatch', () => {
       const type = new StringType({
         pattern: /^[a-z]+$/,
         messages: { pattern: 'Only lowercase letters!' }
       })
-      const errors = type.validate('ABC')
-      expect(errors).toContain('Only lowercase letters!')
+      const errors = type.validateErrors('ABC')
+      expect(errors).toContainEqual({code: 'pattern'})
     })
 
     it('should handle both minLength and maxLength', () => {
       const type = new StringType({ minLength: 3, maxLength: 10 })
       
       // Valid
-      expect(type.validate('hello')).toEqual([])
+      expect(type.validateErrors('hello')).toEqual([])
       
       // Too short
-      expect(type.validate('ab').length).toBe(1)
+      expect(type.validateErrors('ab').length).toBe(1)
       
       // Too long
-      expect(type.validate('this is a very long string').length).toBe(1)
+      expect(type.validateErrors('this is a very long string').length).toBe(1)
     })
   })
 
-  describe('getTypeName', () => {
+  describe('typeId', () => {
     it('should return correct type name', () => {
       const type = new StringType({})
-      expect(type.getTypeName()).toBe('строка')
+      expect(type.typeId).toBe('string')
     })
   })
 })

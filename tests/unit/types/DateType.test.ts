@@ -31,45 +31,45 @@ describe('DateType', () => {
     })
   })
 
-  describe('validate', () => {
+  describe('validateErrors', () => {
     it('should return empty errors for valid date', () => {
       const type = new DateType()
-      const errors = type.validate(new Date('2023-01-01'))
+      const errors = type.validateErrors(new Date('2023-01-01'))
       expect(errors).toEqual([])
     })
 
     it('should return error for invalid date', () => {
       const type = new DateType()
-      const errors = type.validate(new Date('invalid'))
-      expect(errors).toContain('Неверная дата')
+      const errors = type.validateErrors(new Date('invalid'))
+      expect(errors).toContainEqual({code: 'invalid_type', params: {expected: 'date'}})
     })
 
     it('should return error for minDate', () => {
       const type = new DateType({ minDate: new Date('2023-01-01') })
-      const errors = type.validate(new Date('2022-01-01'))
+      const errors = type.validateErrors(new Date('2022-01-01'))
       expect(errors).toBeDefined()
       expect(errors.length).toBeGreaterThan(0)
     })
 
     it('should return error for maxDate', () => {
       const type = new DateType({ maxDate: new Date('2023-01-01') })
-      const errors = type.validate(new Date('2024-01-01'))
+      const errors = type.validateErrors(new Date('2024-01-01'))
       expect(errors).toBeDefined()
       expect(errors.length).toBeGreaterThan(0)
     })
 
-    it('should return custom errors', () => {
+    it('should emit structured data despite legacy message options', () => {
       const type = new DateType({
         minDate: new Date('2023-01-01'),
         messages: { minDate: 'Date must be after 2023' }
       })
-      const errors = type.validate(new Date('2022-01-01'))
-      expect(errors).toContain('Date must be after 2023')
+      const errors = type.validateErrors(new Date('2022-01-01'))
+      expect(errors).toContainEqual({code: 'min_date', params: {min: new Date('2023-01-01').getTime()}})
     })
 
     it('should ignore time when isDatetime is false', () => {
       const type = new DateType({ isDatetime: false })
-      const errors = type.validate(new Date('2023-01-01 12:00:00'))
+      const errors = type.validateErrors(new Date('2023-01-01 12:00:00'))
       expect(errors).toEqual([])
     })
 
@@ -80,20 +80,20 @@ describe('DateType', () => {
       })
       const date1 = new Date('2023-01-01T10:00:00')
       const date2 = new Date('2023-01-01T12:00:00')
-      expect(type.validate(date1).length).toBeGreaterThan(0)
-      expect(type.validate(date2)).toEqual([])
+      expect(type.validateErrors(date1).length).toBeGreaterThan(0)
+      expect(type.validateErrors(date2)).toEqual([])
     })
   })
 
-  describe('getTypeName', () => {
+  describe('typeId', () => {
     it('should return "date" when isDatetime is false', () => {
       const type = new DateType()
-      expect(type.getTypeName()).toBe('дата')
+      expect(type.typeId).toBe('date')
     })
 
     it('should return "datetime" when isDatetime is true', () => {
       const type = new DateType({ isDatetime: true })
-      expect(type.getTypeName()).toBe('дата и время')
+      expect(type.typeId).toBe('datetime')
     })
   })
 })

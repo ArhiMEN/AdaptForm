@@ -3,7 +3,7 @@ import {DateLuxonType} from '../../src/luxon'
 import {describe, expect, expectTypeOf, it, vi} from 'vitest'
 import {ArrayField, ArrayFormField, BooleanType, DateType, DecimalType, ErrorsSchema, Field, FieldType, Form,
   NumberType, StringType, type FieldSnapshot, type ValidationError, type ValidationErrorInput,
-  type ValidationResult} from '../../src'
+  type FieldOptions, type LocatedValidationError} from '../../src'
 
 class Row extends Form {
   name = new Field(StringType, 'name')
@@ -19,7 +19,7 @@ const duplicate = [{code: 'rule', message: 'First', params: {min: 2}}, {code: 'r
 describe('structured validation errors', () => {
   it('retains multiple errors, repeated codes and their order', () => {
     const field = new Field(StringType, 'x', {validate: () => duplicate})
-    expect(field.getErrors()).toEqual(duplicate.map(error => ({...error, source: 'custom', path: []})))
+    expect(field.getErrors()).toEqual(duplicate.map(error => ({...error, source: 'custom'})))
     expect(field.errors).toEqual(['First', 'Second'])
     expect(field.error).toBe('First')
     expect(field.isValid).toBe(false)
@@ -27,8 +27,8 @@ describe('structured validation errors', () => {
 
   it('supports errors without a message independently from their text projection', () => {
     const field = new Field(StringType, 'x', {validate: () => ({code: 'unavailable'})})
-    expect(field.getErrors()).toEqual([{code: 'unavailable', source: 'custom', path: []}])
-    expect(field.errors).toEqual(['unavailable'])
+    expect(field.getErrors()).toEqual([{code: 'unavailable', source: 'custom'}])
+    expect(field.errors).toEqual([''])
     expect(field.isValid).toBe(false)
   })
 
@@ -39,10 +39,10 @@ describe('structured validation errors', () => {
     const error = field.getErrors()[0]
     params.nested.expected.push('b')
     expect(error.params).toEqual({min: 2, nested: {expected: ['a']}})
-    expect(Object.keys(error)).toEqual(['code', 'params', 'path', 'source'])
+    expect(Object.keys(error)).toEqual(['code', 'params', 'source'])
     expect(Object.isFrozen(error)).toBe(true)
     expect(Object.isFrozen(error.params)).toBe(true)
-    expect(Object.isFrozen(error.path)).toBe(true)
+    expect('path' in error).toBe(false)
     expect(JSON.stringify(error)).not.toContain('sensitive')
   })
 
@@ -53,7 +53,7 @@ describe('structured validation errors', () => {
   })
 
   it.each([undefined, null, 0, {}, [], [true]])('preserves other legacy JS success values %j', result => {
-    const field = new Field(StringType, 'x', {validate: (() => result) as () => ValidationResult})
+    const field = new Field(StringType, 'x', {validate: (() => result) as NonNullable<FieldOptions['validate']>})
     expect(field.isValid).toBe(true)
     expect(field.getErrors()).toEqual([])
   })
@@ -63,19 +63,19 @@ describe('structured validation errors', () => {
     const field = new Field(StringType, 'x', {minLength: 2, pattern: /^z$/, validate})
     expect(field.getErrors().map(error => error.code)).toEqual(['min_length', 'pattern'])
     expect(validate).not.toHaveBeenCalled()
-    expect(field.errors).toEqual(['Минимальная длина 2 символов', 'Неверный формат'])
+    expect(field.getErrors().every(error => !('message' in error))).toBe(true)
   })
 
-  it('keeps custom FieldType string validators and built-in subclass overrides working', () => {
+  it('uses explicit custom type IDs and validateErrors overrides without a bridge', () => {
     class Custom extends FieldType<string> {
+      readonly typeId = 'app.custom'
       cast(value: unknown) { return String(value) }
-      validate() { return ['One', 'Two'] }
-      getTypeName() { return 'custom' }
+      validateErrors() { return [{code: 'one', message: 'One'}, {code: 'two', message: 'Two'}] }
     }
-    class CustomString extends StringType { validate() { return ['Override'] } }
+    class CustomString extends StringType { validateErrors() { return [{code: 'app.override'}] } }
     expect(new Field(Custom, 'x').errors).toEqual(['One', 'Two'])
-    expect(new Field(CustomString, 'x', {minLength: 20}).getErrors()).toMatchObject([{message: 'Override'}])
-    expect(new StringType({minLength: 2}).validate('x')).toEqual(['Минимальная длина 2 символов'])
+    expect(new Field(CustomString, 'x', {minLength: 20}).getErrors()).toMatchObject([{code: 'app.override'}])
+    expect(new StringType({minLength: 2}).validateErrors('x')).toEqual([{code: 'min_length', params: {min: 2}}])
   })
 
   it('preserves protected _errors subclass writes and mutable legacy arrays', () => {
@@ -83,7 +83,7 @@ describe('structured validation errors', () => {
       protected _errors: string[] = ['Subclass']
     }
     const field = new CustomField(StringType)
-    expect(field.getErrors()).toMatchObject([{message: 'Subclass', source: 'external'}])
+    expect(field.getErrors()).toMatchObject([{message: 'Subclass', source: 'manual'}])
     field.errors.push('Added')
     expect(field.getSnapshot().validationErrors).toMatchObject([{message: 'Subclass'}, {message: 'Added'}])
     field.errors.splice(0, 1)
@@ -93,19 +93,19 @@ describe('structured validation errors', () => {
   it('keeps duplicate structured entries distinct after legacy array edits', () => {
     const field = new Field(StringType, 'x')
     field.setErrors([{code: 'one', message: 'same'}, {code: 'two', message: 'same'}])
-    field.errors.push('external')
-    expect(field.getErrors().map(error => error.code)).toEqual(['one', 'two', 'external'])
+    field.errors.push('manual')
+    expect(field.getErrors().map(error => error.code)).toEqual(['one', 'two', 'manual'])
     field.errors.reverse()
-    expect(field.getErrors().map(error => error.code)).toEqual(['external', 'two', 'one'])
+    expect(field.getErrors().map(error => error.code)).toEqual(['manual', 'two', 'one'])
   })
 
   it('assigns provenance at the engine boundary', () => {
     const field = new Field(StringType, 'x', {validate: () => ({code: 'rule', source: 'server', path: ['spoofed']})})
-    expect(field.getErrors()).toEqual([{code: 'rule', source: 'custom', path: []}])
+    expect(field.getErrors()).toEqual([{code: 'rule', source: 'custom'}])
     field.error = 'Manual'
-    expect(field.getErrors()[0].source).toBe('external')
+    expect(field.getErrors()[0].source).toBe('manual')
     field.setErrors([{code: 'manual'}])
-    expect(field.getErrors()[0].source).toBe('external')
+    expect(field.getErrors()[0].source).toBe('manual')
   })
 
   it('rejects missing or empty explicit codes atomically', () => {
@@ -117,12 +117,12 @@ describe('structured validation errors', () => {
 
   it('keeps declarations additive and validators contextually typed', () => {
     expectTypeOf<ValidationError['code']>().toEqualTypeOf<string>()
-    expectTypeOf<ValidationError['path']>().toEqualTypeOf<readonly (string | number)[]>()
+    expectTypeOf<LocatedValidationError['path']>().toEqualTypeOf<readonly (string | number)[]>()
     expectTypeOf(new Field(StringType).getErrors()).toEqualTypeOf<readonly ValidationError[]>()
     const oldSnapshot: FieldSnapshot = {rawValue: null, valueClear: null, errors: [], isValid: null, isTouched: false, isDirty: false}
     expect(oldSnapshot.validationErrors).toBeUndefined()
-    const options = {validate: (value: string): ValidationResult => value.length < 2 ? {code: 'min_length', params: {min: 2}} : true}
-    expectTypeOf(options.validate('x')).toEqualTypeOf<ValidationResult>()
+    const options = {validate: (value: string): readonly ValidationErrorInput[] => value.length < 2 ? [{code: 'min_length', params: {min: 2}}] : []}
+    expectTypeOf(options.validate('x')).toEqualTypeOf<readonly ValidationErrorInput[]>()
     expectTypeOf(new Root().fieldsValue.email).toEqualTypeOf<string | null>()
   })
 })
@@ -131,16 +131,16 @@ describe('built-in codes', () => {
   it('provides required and cast-error codes', () => {
     const required = new Field(StringType)
     required.checkAndSetValid()
-    expect(required.getErrors()).toMatchObject([{code: 'required', source: 'client'}])
+    expect(required.getErrors()).toMatchObject([{code: 'required', source: 'type'}])
     expect(new Field(NumberType, 'bad' as unknown as number).getErrors()).toMatchObject([{code: 'invalid_type'}])
   })
 
-  it('provides stable codes with custom messages and multiple identical codes', () => {
+  it('provides stable codes and multiple identical codes without generated messages', () => {
     const field = new Field(NumberType, 1.5, {gt: 5, ge: 6, lt: 0, le: 1, messages: {gt: 'Same', ge: 'Same'}})
     expect(field.getErrors().map(error => error.code)).toEqual(['integer', 'min_value', 'min_value', 'max_value', 'max_value'])
     expect(field.getErrors()[1].params).toEqual({min: 5, exclusive: true})
     expect(field.getErrors()[2].params).toEqual({min: 6, exclusive: false})
-    expect(field.errors.slice(1, 3)).toEqual(['Same', 'Same'])
+    expect(field.getErrors().slice(1, 3).every(error => !('message' in error))).toBe(true)
     expect(new Field(StringType, 'abc', {maxLength: 2}).getErrors()[0].code).toBe('max_length')
   })
 
@@ -192,10 +192,10 @@ describe('server schemas and compatibility', () => {
   it('imports strings and structured arrays without collapsing duplicate codes', () => {
     const form = new Root()
     form.setErrors({email: [...duplicate, {code: 'unavailable'}]})
-    expect(form.email.errors).toEqual(['First', 'Second', 'unavailable'])
+    expect(form.email.errors).toEqual(['First', 'Second', ''])
     expect(form.getErrors().map(error => error.path)).toEqual([['email'], ['email'], ['email']])
     expect(form.getErrors().every(error => error.source === 'server')).toBe(true)
-    expect(form.allErrors).toEqual({email: ['First', 'Second', 'unavailable']})
+    expect(form.allErrors).toEqual({email: ['First', 'Second', '']})
     form.setErrors({email: ['first', 'second']})
     expect(form.email.errors).toEqual(['first', 'second'])
   })
@@ -246,14 +246,14 @@ describe('server schemas and compatibility', () => {
     form.errorsShema = new ErrorsSchema().fallback(key => key)
     form.setErrors({rows: [{name: duplicate}, {name: {code: 'remote'}}]})
     expect(form.rows.forms[0].name.errors).toEqual(['First', 'Second'])
-    expect(form.rows.forms[1].name.errors).toEqual(['remote'])
+    expect(form.rows.forms[1].name.getErrors()).toEqual([{code: 'remote', source: 'server'}])
   })
 
   it('supports scalar collection item paths and explicit typed paths', () => {
     const form = new Root()
     form.setErrors([{path: ['tags', 1], code: 'taken'}, {path: ['tags', 1], code: 'taken', message: 'Again'}])
     expect(form.tags.items[1].getErrors()).toEqual([
-      {code: 'taken', path: [], source: 'server'}, {code: 'taken', message: 'Again', path: [], source: 'server'},
+      {code: 'taken', source: 'server'}, {code: 'taken', message: 'Again', source: 'server'},
     ])
     expect(form.tags.getErrors().map(error => error.path)).toEqual([[1], [1]])
     expect(form.getErrors().map(error => error.path)).toEqual([['tags', 1], ['tags', 1]])
@@ -264,8 +264,8 @@ describe('server schemas and compatibility', () => {
     const form = new Root()
     form.setErrors({'unknown': duplicate, 'rows.99.name': {code: 'missing'}, 'rows.0.remote': {code: 'unknown'}})
     expect(form.getErrors()).toMatchObject([
-      {path: ['rows', 0, 'remote'], code: 'unknown'},
-      {path: ['unknown'], code: 'rule'}, {path: ['unknown'], code: 'rule'}, {path: ['rows', 99, 'name'], code: 'missing'},
+      {path: ['rows', 0], code: 'unknown'},
+      {path: [], code: 'rule'}, {path: [], code: 'rule'}, {path: [], code: 'missing'},
     ])
     expect(form.allErrors.unknown).toEqual(['First', 'Second'])
     expect(form.globalErrors.unknown).toBe('Second')
@@ -488,7 +488,7 @@ describe('legacy extension and path boundaries', () => {
     expect(form.globalErrors).toEqual({unknown: 'Global: Remote'})
     expect(form.getErrors().every(error => error.source === 'server')).toBe(true)
     form.value.error = 'Manual'
-    expect(form.value.getErrors()[0].source).toBe('external')
+    expect(form.value.getErrors()[0].source).toBe('manual')
   })
 
   it('replaces all duplicates at a global key while retaining its original position', () => {
@@ -497,7 +497,7 @@ describe('legacy extension and path boundaries', () => {
     form.setGlobalError('auth', 'Replacement')
     expect(form.globalErrors.auth).toBe('Replacement')
     expect(form.allErrors.auth).toEqual(['Replacement'])
-    expect(form.getErrors().map(error => error.path)).toEqual([['first'], ['auth'], ['last']])
+    expect(form.getErrors().map(error => error.path)).toEqual([[], [], []])
   })
 
   it('resolves explicit literal keys without confusing them with collection paths', () => {
@@ -524,7 +524,7 @@ describe('legacy extension and path boundaries', () => {
   it('keeps unknown prototype names global in the new path importer', () => {
     const form = new Root()
     form.setErrors([{path: ['constructor'], code: 'unknown'}])
-    expect(form.getErrors()).toMatchObject([{path: ['constructor'], code: 'unknown'}])
+    expect(form.getErrors()).toMatchObject([{path: [], code: 'unknown'}])
   })
 })
 
@@ -548,7 +548,7 @@ describe('error-only batch boundaries', () => {
     })
     expect(validate).not.toHaveBeenCalled()
     expect(notify).toHaveBeenCalledTimes(1)
-    expect(form.target.getErrors()).toEqual([{code: 'final', source: 'server', path: []}])
+    expect(form.target.getErrors()).toEqual([{code: 'final', source: 'server'}])
     expect(form.isTouched).toBe(false)
     expect(form.isDirty).toBe(false)
   })
@@ -566,6 +566,6 @@ describe('error-only batch boundaries', () => {
     expect(() => { form.errors = {value: 'remote'} }).toThrow('setter failure')
     const field = new Field(StringType, 'x')
     field.error = 'manual'
-    expect(field.getErrors()[0].source).toBe('external')
+    expect(field.getErrors()[0].source).toBe('manual')
   })
 })

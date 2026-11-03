@@ -13,8 +13,8 @@ class Root extends Form {
 }
 class Structured extends FieldType<unknown> {
   cast(value: unknown) { return value }
-  validate() { return [] }
-  getTypeName() { return 'structured' }
+  validateErrors() { return [] }
+  readonly typeId = 'structured'
 }
 
 describe('PERF-01 snapshot cache regressions', () => {

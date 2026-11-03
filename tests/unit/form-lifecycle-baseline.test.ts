@@ -291,7 +291,7 @@ describe('HF-001 form lifecycle baseline', () => {
       expect(form.amount.isValid).toBe(false)
       expect(form.isValid).toBe(false)
       expect(form.checkValid()).toBe(false)
-      expect(form.amount.errors).toEqual(['После точки должен быть минимум 1 знак'])
+      expect(form.amount.getErrors()).toEqual([{code: 'pattern', source: 'type'}])
 
       form.setFields({ amount: '123.5' })
       expect(form.amount.rawValue).toBe('123.5')
@@ -310,7 +310,7 @@ describe('HF-001 form lifecycle baseline', () => {
       expect(field.errors).toEqual([])
       expect(field.checkAndSetValid()).toBe(false)
       expect(field.isValid).toBe(false)
-      expect(field.errors).toEqual(['После точки должен быть минимум 1 знак'])
+      expect(field.getErrors()).toEqual([{code: 'pattern', source: 'type'}])
     })
 
     it('serializes deferred values without validation; applications must check before submission', () => {
@@ -336,7 +336,7 @@ describe('HF-001 form lifecycle baseline', () => {
       // Serialization does not authorize submission; the application must run this final check.
       expect(form.checkValid()).toBe(false)
       expect(form.amount.isValid).toBe(false)
-      expect(form.amount.errors).toEqual(['После точки должен быть минимум 1 знак'])
+      expect(form.amount.getErrors()).toEqual([{code: 'pattern', source: 'type'}])
       expect(form.toJSON()).toEqual({ amount: '123.' })
       expect(checkField).toHaveBeenCalledTimes(1)
     })

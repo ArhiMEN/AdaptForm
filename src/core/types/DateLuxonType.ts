@@ -1,5 +1,5 @@
 import type {ValidationErrorInput} from '../ValidationError'
-import type {Form} from '../Form'
+import type {BuiltinValidationErrorInput} from '../BuiltinValidationError'
 import {DateTime} from "luxon"
 import {FieldType} from "@core/types/FieldType"
 import {FieldOptions, messagesOptions} from "@core/options"
@@ -13,13 +13,16 @@ export interface DateLuxonOptions extends FieldOptions {
   minDate?: DateTime
   maxDate?: DateTime
   inputFormat?: string
-  outputFormat?: string
   isDatetime?: boolean
   messages?: messagesDateLuxonOptions
 }
 
 export class DateLuxonType extends FieldType<DateTime, DateLuxonOptions> {
-  cast(rawValue: any): DateTime | null {
+  get typeId(): 'luxon_date' | 'luxon_datetime' {
+    return this.options.isDatetime ? 'luxon_datetime' : 'luxon_date'
+  }
+
+  cast(rawValue: unknown): DateTime | null {
     if (rawValue === null || rawValue === undefined) return null
 
     if (rawValue instanceof DateTime) {
@@ -82,22 +85,11 @@ export class DateLuxonType extends FieldType<DateTime, DateLuxonOptions> {
     return normalize_dt
   }
 
-  validate(value: DateTime): string[] {
-    return this.validateRules(value).map(error => error.message!)
-  }
-
-  validateErrors(value: DateTime, form?: Form): readonly ValidationErrorInput[] {
-    // Preserve subclasses that override the historical string validator.
-    return this.validate === DateLuxonType.prototype.validate
-      ? this.validateRules(value) : super.validateErrors(value, form)
-  }
-
-  private validateRules(value: DateTime): ValidationErrorInput[] {
-    const errors: ValidationErrorInput[] = []
+  validateErrors(value: DateTime): ValidationErrorInput[] {
+    const errors: BuiltinValidationErrorInput[] = []
 
     if (!value.isValid) {
-      errors.push({code: 'invalid_type', message: this.options.messages?.invalid ??
-        `Неверная дата: ${value.invalidExplanation}`, params: {expected: 'date'}})
+      errors.push({code: 'invalid_type', params: {expected: this.typeId}})
       return errors
     }
 
@@ -106,8 +98,7 @@ export class DateLuxonType extends FieldType<DateTime, DateLuxonOptions> {
       const compareValue = this.normalizeForComparison(value)
 
       if (compareValue < minDate) {
-        errors.push({code: 'min_date', message: this.options.messages?.minDate ??
-          `Дата должна быть не ранее ${this.formatDateTime(this.options.minDate)}`, params: {min: this.options.minDate.toMillis()}})
+        errors.push({code: 'min_date', params: {min: this.options.minDate.toMillis()}})
       }
     }
 
@@ -116,22 +107,18 @@ export class DateLuxonType extends FieldType<DateTime, DateLuxonOptions> {
       const compareValue = this.normalizeForComparison(value)
 
       if (compareValue > maxDate) {
-        errors.push({code: 'max_date', message: this.options.messages?.maxDate ??
-          `Дата должна быть не позднее ${this.formatDateTime(this.options.maxDate)}`, params: {max: this.options.maxDate.toMillis()}})
+        errors.push({code: 'max_date', params: {max: this.options.maxDate.toMillis()}})
       }
     }
 
     const year = value.year
     if (year < 1900 || year > 2100) {
-      errors.push({code: 'invalid_year', message: this.options.messages?.invalid ?? 'Некорректный год', params: {min: 1900, max: 2100}})
+      errors.push({code: 'invalid_year', params: {min: 1900, max: 2100}})
     }
 
     return errors
   }
 
-  getTypeName(): string {
-    return this.options.isDatetime ? 'дата и время' : 'дата'
-  }
 
   private normalizeForComparison(dt: DateTime): DateTime {
     if (this.options.isDatetime) {
@@ -140,15 +127,4 @@ export class DateLuxonType extends FieldType<DateTime, DateLuxonOptions> {
     return dt.startOf('day')
   }
 
-  private formatDateTime(dt: DateTime): string {
-    if (this.options.outputFormat) {
-      return dt.toFormat(this.options.outputFormat)
-    }
-
-    if (this.options.isDatetime) {
-      return dt.toFormat('dd.MM.yyyy HH:mm')
-    }
-
-    return dt.toFormat('dd.MM.yyyy')
-  }
 }

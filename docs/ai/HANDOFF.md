@@ -2,6 +2,39 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## V3-03.1 foundational contracts — 2026-11-03
+
+Implementation status: **READY_FOR_OWNER_REVIEW**, not owner acceptance. Branch `feature/v3-runtime`, based on freshly fetched master `9b3c773563228614a755ff859ea6c518e21d9b77` (PR #30 integrated). Delivery is one commit, `feat: implement V3 foundational contracts`; [branch HEAD/history](https://github.com/ArhiMEN/AdaptForm/commits/feature/v3-runtime) and the [Draft PR](https://github.com/ArhiMEN/AdaptForm/pulls?q=is%3Apr+head%3Afeature%2Fv3-runtime) identify its exact SHA. The final SHA is recorded in the PR/delivery report because this handoff belongs to that same commit. Package remains **2.2.0**; no merge, release, tag or publication.
+
+Available contracts:
+
+- `FieldTypeContract<T,O extends object>` / `FieldTypeConstructor`; optional `FieldType` base, required readonly nonempty `typeId`, structural implementations with custom options and unchanged clean-value inference. Options objects produced by implementations retain their identity/prototype. Six built-ins expose eight stable IDs, including readonly effective-mode getters for Date/Luxon. Failed casts and defensive invalid-type checks use the same IDs; no constructor-name inference, getTypeName alias, old type validate bridge or override detection. Built-in type rules emit code/params only; message-only Luxon outputFormat is removed. A supported semantic mode change invalidates a successful check.
+- Pathless `ValidationError`, `ValidationErrorInput`, `LocatedValidationError`, `ValidationErrorSource` (`type/custom/server/manual`) and `ValidationPath`; local Field/collection own errors have no path. Aggregation adds relative paths; own Form globals aggregate at `[]`. Repeated codes/order and absent/empty messages survive. `BuiltinTypeId`, `BuiltinErrorParams`, `BuiltinValidationErrorInput` check catalogue producers without closing application codes.
+- `JsonValue`, `JsonObject`, `ErrorParams`, runtime `ErrorContractError` with stable reason/frozen diagnostic path. One internal normalizer handles existing error ingress before own-store replacement: exact JSON domain, finite numbers, -0→0, descriptor/prototype/cycle validation, safe null-prototype output records, detached recursive copy/freeze. Dense arrays only; no getters/toJSON/coercion. Shared acyclic references are copied/charged per occurrence. Exact limits: root depth 0/max 32; 10000 visited nodes; 1048576 logical UTF-8 bytes; 65536 UTF-16 units per string/key. Rich values require explicit application DTO conversion. Proxies are unsupported, as specified.
+- Final readonly `ValidationResult {valid:boolean}` type only. Existing node validation methods are deliberately not switched to it. No temporary exported result alias, normalizer API or replacement validation entry point is added.
+
+Minimal integration adjusts existing error readers/stores/parser types to the new DTOs and sources, delays own-store writes until DTO normalization succeeds, and moves affected demo rendering to application code. Existing tests asserting removed type methods/messages, client/external sources, local path:[] or keyed aggregate globals now assert accepted V3 structures. All previous test cases remain; callback counts, deferred hydration, subscriptions, dependencies and value serialization retain coverage.
+
+Next authorization: **V3-03.2**, source-partitioned storage/client-check knowledge and manual/server preservation/clearing. Existing ErrorState string reconciliation, source-taking setters, keyed global internals, mutable validity, legacy option validator results and snapshot string facades still await their planned replacements; no new bridge was introduced. Required/collection/custom legacy text generation remains for V3-03.3; the demo currently uses its existing message options as application display data. Scalar validate/purity, ODR-03 traversal, dependency/snapshot integration, ErrorsMapping, schema.parse, atomic Apply and revision/operation fencing remain later tasks. This stage makes no full-V3 lifecycle/atomic server-apply/performance claim. Accepted architecture/decisions are unchanged; no unresolved specification conflict or deviation was found.
+
+Verification on Node **24.19.0** / npm **11.9.0**, all PASS:
+
+| Command | Result |
+| --- | --- |
+| `npm ci` | Clean install |
+| `npm audit --audit-level=moderate` | 0 vulnerabilities |
+| `npm run lint` | 0 warnings/errors |
+| `npm test` | 779 tests / 35 files; 59 new foundation tests |
+| `npm run build` | ESM, CJS, declarations, optional Luxon |
+| `npm run check:package` | 21 files |
+| `npx tsc --noEmit -p tsconfig.json` | PASS |
+| `npx tsc --noEmit -p tsconfig.test.json` | PASS |
+| `npm run check:demo` | PASS |
+| `npm run build:demo` | PASS |
+| `git diff --check` | PASS |
+
+Fresh packed consumers outside the repository pass ESM/CJS on **Node 16.20.2 and 24.19.0**, first core without installed Luxon, then the optional Luxon entry point. Strict `.mts`/`.cts` NodeNext declaration consumers pass with `skipLibCheck:false` and `exactOptionalPropertyTypes:true`, including negative public-contract cases. Node 16 is a built-library runtime check; modern development dependencies are tested on Node 24. Security regressions cover nested arrays/objects, cycles/aliases, dangerous keys, accessors/non-enumerable descriptors, prototypes/classes/sparse arrays, unsupported values, complete deep detachment/immutability and exact depth/node/string/UTF-8 byte boundaries. Temporary packs/consumer fixtures/logs are outside the commit. Inspect final-head PR CI and obtain independent owner review before any later stage.
+
 ## npm audit maintenance — 2026-10-31
 
 Branch `fix/npm-audit-minimatch`, base master `670c6a0`: GHSA-g3hv-75wg-m249 affects shared dev-only minimatch 10.2.6 through ESLint 10.12.0, @eslint/config-array 0.23.5 and @typescript-eslint/typescript-estree 8.71.2. Current upstream ranges (including latest compatible parent releases) exclude patched major 11. Scoped overrides select 11.0.1 only for these consumers; the lockfile adds @isaacs/nonrecursive-glob-match 1.0.3. Removed minimatch APIs are unused by these consumers; 56,580 differential matching comparisons and identical lint results across 69 files passed. No direct dependency upgrades, runtime/API/version/workflow changes or V3 work.

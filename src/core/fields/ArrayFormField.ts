@@ -1,4 +1,4 @@
-import {ErrorState, customErrors, manualErrorSource, prefixErrors, type ValidationError, type ValidationErrorInput, type ValidationErrorSource} from '../ValidationError'
+import {ErrorState, customErrors, manualErrorSource, prefixErrors, validationError, type LocatedValidationError, type ValidationError, type ValidationErrorInput, type ValidationErrorSource} from '../ValidationError'
 import {ObservableNode} from "@core/state/ObservableNode"
 import {hasStandardGetters, snapshotValue, type ArrayFormSnapshot} from "@core/state/snapshot"
 import {copyValue, equalValue} from "@core/state/value"
@@ -28,19 +28,19 @@ export class ArrayFormField<T extends Form = Form> extends ObservableNode<ArrayF
 
   private _forms: T[] = []
   private _errors: string[] = []
-  private readonly _errorState = new ErrorState(this._errors)
+  private readonly _errorState = new ErrorState<ValidationError>(validationError, this._errors)
 
   /** Own structured errors, without collection descendants. */
   getOwnErrors(): readonly ValidationError[] { return this._errorState.getErrors(this._errors) }
 
   /** Structured errors relative to this node; collection indexes reflect current order. */
-  getErrors(): readonly ValidationError[] {
-    return Object.freeze([...this._errorState.getErrors(this._errors),
+  getErrors(): readonly LocatedValidationError[] {
+    return Object.freeze([...prefixErrors(this.getOwnErrors(), []),
       ...this._forms.flatMap((child, index) => prefixErrors(child.getErrors(), [index]))])
   }
 
   /** Replace this node's own errors; children are unaffected. */
-  setErrors(errors: readonly ValidationErrorInput[], source: ValidationErrorSource = 'external'): void {
+  setErrors(errors: readonly ValidationErrorInput[], source: ValidationErrorSource = 'manual'): void {
     this.update(() => {
       this._errors = this._errorState.set(errors, source)
       this._hasValidationResult = errors.length > 0
@@ -173,7 +173,7 @@ export class ArrayFormField<T extends Form = Form> extends ObservableNode<ArrayF
   reset(): void {
     return this.update(() => {
       this._forms.forEach(form => form.reset())
-      this._errors = this._errorState.set([], 'external')
+      this._errors = this._errorState.set([], 'manual')
       this._hasValidationResult = false
       this.isTouched = false
       })
@@ -194,24 +194,24 @@ export class ArrayFormField<T extends Form = Form> extends ObservableNode<ArrayF
 
   checkValid(form?: Form): boolean {
     return this.update(() => {
-      this._hasValidationResult = true
-      this._errors = this._errorState.set([], 'external')
-
       if (this.isRequired(form) && this._forms.length === 0) {
-        this._errors = this._errorState.add({code: 'required', message: this.options.messages?.isRequired ??
-          "Добавьте хотя бы один элемент"}, 'client')
+        this._errors = this._errorState.set([{code: 'required', message: this.options.messages?.isRequired ??
+          "Добавьте хотя бы один элемент"}], 'type')
+        this._hasValidationResult = true
         return false
       }
 
       if (this.options.minForms != null && this._forms.length < this.options.minForms) {
-        this._errors = this._errorState.add({code: 'min_items', message: this.options.messages?.minForms ??
-          `Значений должно быть не меньше ${this.options.minForms}`, params: {min: this.options.minForms}}, 'client')
+        this._errors = this._errorState.set([{code: 'min_items', message: this.options.messages?.minForms ??
+          `Значений должно быть не меньше ${this.options.minForms}`, params: {min: this.options.minForms}}], 'type')
+        this._hasValidationResult = true
         return false
       }
 
       if (this.options.maxForms != null && this._forms.length > this.options.maxForms) {
-        this._errors = this._errorState.add({code: 'max_items', message: this.options.messages?.maxForms ??
-          `Значений должно быть не больше ${this.options.maxForms}`, params: {max: this.options.maxForms}}, 'client')
+        this._errors = this._errorState.set([{code: 'max_items', message: this.options.messages?.maxForms ??
+          `Значений должно быть не больше ${this.options.maxForms}`, params: {max: this.options.maxForms}}], 'type')
+        this._hasValidationResult = true
         return false
       }
 
@@ -228,11 +228,14 @@ export class ArrayFormField<T extends Form = Form> extends ObservableNode<ArrayF
         const errors = customErrors(result, this.options.messages?.validate ?? 'Ошибка валидации')
         if (errors.length) {
           this._errors = this._errorState.set(errors, 'custom')
+          this._hasValidationResult = true
           return false
         }
       }
 
-      return valid && this._errors.length === 0
+      this._errors = this._errorState.set([], 'manual')
+      this._hasValidationResult = true
+      return valid
       })
   }
 
@@ -261,7 +264,7 @@ export class ArrayFormField<T extends Form = Form> extends ObservableNode<ArrayF
         this._errors = this._errorState.set([{code: manualErrorSource(this), message}], manualErrorSource(this))
         this._hasValidationResult = true
       } else {
-        this._errors = this._errorState.set([], 'external')
+        this._errors = this._errorState.set([], 'manual')
         this._hasValidationResult = false
       }
       })

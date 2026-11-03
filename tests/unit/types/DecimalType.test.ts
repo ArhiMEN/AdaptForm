@@ -39,63 +39,63 @@ describe('DecimalType', () => {
     })
   })
 
-  describe('validate', () => {
+  describe('validateErrors', () => {
     it('should return empty errors for valid decimal', () => {
       const type = new DecimalType()
-      const errors = type.validate('123.45')
+      const errors = type.validateErrors('123.45')
       expect(errors).toEqual([])
     })
 
     it('should return error for invalid format', () => {
       const type = new DecimalType()
-      const errors = type.validate('abc')
-      expect(errors).toContain('Пример: 1.00')
+      const errors = type.validateErrors('abc')
+      expect(errors).toContainEqual({code: 'pattern'})
     })
 
     it('should reject numeric values with excess decimal places instead of rounding them', () => {
       const type = new DecimalType({ decimalPlaces: 2 })
-      expect(type.validate(1.234)).toContain('Максимальное количество знаков после запятой 2')
+      expect(type.validateErrors(1.234)).toContainEqual({code: 'decimal_places', params: {max: 2}})
     })
 
     it('should respect zero decimal places', () => {
       const type = new DecimalType({ decimalPlaces: 0, maxDigits: 3 })
-      expect(type.validate('123')).toEqual([])
-      expect(type.validate('1.2')).toContain('Максимальное количество знаков после запятой 0')
+      expect(type.validateErrors('123')).toEqual([])
+      expect(type.validateErrors('1.2')).toContainEqual({code: 'decimal_places', params: {max: 0}})
     })
     it('should return error for too many decimal places', () => {
       const type = new DecimalType({ decimalPlaces: 2 })
-      const errors = type.validate('123.456')
-      expect(errors).toContain('Максимальное количество знаков после запятой 2')
+      const errors = type.validateErrors('123.456')
+      expect(errors).toContainEqual({code: 'decimal_places', params: {max: 2}})
     })
 
     it('should return error for too many digits', () => {
       const type = new DecimalType({ maxDigits: 5 })
-      const errors = type.validate('12345.67')
-      expect(errors).toContain('Максимальное количество знаков 5')
+      const errors = type.validateErrors('12345.67')
+      expect(errors).toContainEqual({code: 'max_digits', params: {max: 5, scope: 'total'}})
     })
 
     it('should return error for gt', () => {
       const type = new DecimalType({ gt: 10 })
-      const errors = type.validate('5.00')
-      expect(errors).toContain('Значение должно быть больше 10')
+      const errors = type.validateErrors('5.00')
+      expect(errors).toContainEqual({code: 'min_value', params: {min: 10, exclusive: true}})
     })
 
     it('should return error for lt', () => {
       const type = new DecimalType({ lt: 10 })
-      const errors = type.validate('15.00')
-      expect(errors).toContain('Значение должно быть меньше 10')
+      const errors = type.validateErrors('15.00')
+      expect(errors).toContainEqual({code: 'max_value', params: {max: 10, exclusive: true}})
     })
 
     it.each(['123.', '0.', '-123.'])('should retain %s for editing but reject it on validation', (input) => {
       const type = new DecimalType()
       expect(type.cast(input)).toBe(input)
-      expect(type.validate(input)).toEqual(['После точки должен быть минимум 1 знак'])
+      expect(type.validateErrors(input)).toEqual([{code: 'pattern'}])
     })
 
     it('should normalize incomplete comma input without completing it', () => {
       const type = new DecimalType()
       expect(type.cast('123,')).toBe('123.')
-      expect(type.validate(type.cast('123,')!)).toEqual(['После точки должен быть минимум 1 знак'])
+      expect(type.validateErrors(type.cast('123,')!)).toEqual([{code: 'pattern'}])
     })
 
     it.each([
@@ -104,7 +104,7 @@ describe('DecimalType', () => {
     ])(
       'should reject incomplete input as a format error with bounds %j', (options) => {
         const type = new DecimalType(options)
-        expect(type.validate('123.')).toEqual(['После точки должен быть минимум 1 знак'])
+        expect(type.validateErrors('123.')).toEqual([{code: 'pattern'}])
       },
     )
 
@@ -117,14 +117,14 @@ describe('DecimalType', () => {
       [{ lt: -1 }, '-1', false], [{ le: -1 }, '-1', true],
     ] as const)('should enforce bounds %j for %s with validity %s', (options, input, valid) => {
       const type = new DecimalType(options)
-      expect(type.validate(input).length === 0).toBe(valid)
-      expect(type.validate(Number(input)).length === 0).toBe(valid)
+      expect(type.validateErrors(input).length === 0).toBe(valid)
+      expect(type.validateErrors(Number(input)).length === 0).toBe(valid)
     })
 
     it.each(['123', '123.0', '123.45', '-123.45', '0', 123, 123.45, -123.45, 0])(
       'should accept complete input %j within bounds', (input) => {
         const type = new DecimalType({ ge: -123.45, le: 123.45 })
-        expect(type.validate(input)).toEqual([])
+        expect(type.validateErrors(input)).toEqual([])
       },
     )
 
@@ -132,79 +132,82 @@ describe('DecimalType', () => {
       const type = new DecimalType({ gt: 123, le: 123.5 })
       const value = type.cast('123,5')
       expect(value).toBe('123.5')
-      expect(type.validate(value!)).toEqual([])
-      expect(type.validate(type.cast('123,51')!)).toEqual(['Значение должно быть не более 123.5'])
+      expect(type.validateErrors(value!)).toEqual([])
+      expect(type.validateErrors(type.cast('123,51')!)).toEqual([{code: 'max_value', params: {max: 123.5, exclusive: false}}])
     })
 
     it.each(['abc', '.5', '-.', '1.2.3', '1,2,3', '12x', '1e2', ''])('should reject malformed input %j', (input) => {
       const type = new DecimalType()
       expect(type.cast(input)).toBeNull()
-      expect(type.validate(input)).toEqual(['Пример: 1.00'])
+      expect(type.validateErrors(input)).toEqual([{code: 'pattern'}])
     })
 
     it('should preserve integer, total digit, and precision limits without rounding', () => {
       const type = new DecimalType({ maxDigits: 5, decimalPlaces: 2 })
-      expect(type.validate('-123.45')).toEqual([])
-      expect(type.validate('-1234')).toEqual(['Максимальное количество знаков перед запятой 3'])
-      expect(type.validate('-1234.56')).toContain('Максимальное количество знаков 5')
-      expect(type.validate('1234.')).toEqual([
-        'Максимальное количество знаков перед запятой 3', 'После точки должен быть минимум 1 знак',
+      expect(type.validateErrors('-123.45')).toEqual([])
+      expect(type.validateErrors('-1234')).toEqual([{code: 'max_digits', params: {max: 3, scope: 'integer'}}])
+      expect(type.validateErrors('-1234.56')).toContainEqual({code: 'max_digits', params: {max: 5, scope: 'total'}})
+      expect(type.validateErrors('1234.')).toEqual([
+        {code: 'max_digits', params: {max: 3, scope: 'integer'}}, {code: 'pattern'},
       ])
       expect(type.cast(1.234)).toBe(1.234)
-      expect(type.validate(1.234)).toEqual(['Максимальное количество знаков после запятой 2'])
+      expect(type.validateErrors(1.234)).toEqual([{code: 'decimal_places', params: {max: 2}}])
     })
 
     it.each(['1.0', '1.', '-1.', 1.2])('should reject fractional or incomplete input %j with zero decimal places', (input) => {
       const type = new DecimalType({ decimalPlaces: 0, maxDigits: 3 })
-      expect(type.validate(input)).not.toEqual([])
-      expect(type.validate(-123)).toEqual([])
-      expect(type.validate('1234')).toEqual(['Максимальное количество знаков перед запятой 3'])
+      expect(type.validateErrors(input)).not.toEqual([])
+      expect(type.validateErrors(-123)).toEqual([])
+      expect(type.validateErrors('1234')).toEqual([{code: 'max_digits', params: {max: 3, scope: 'integer'}}])
     })
 
-    it('should use custom format and digit messages', () => {
+    it('should emit format and digit codes without messages', () => {
       const type = new DecimalType({
         maxDigits: 5,
         messages: { invalid: 'Complete the number', maxDigits: 'Too many digits' },
       })
-      expect(type.validate('123.')).toEqual(['Complete the number'])
-      expect(type.validate('abc')).toEqual(['Complete the number'])
-      expect(type.validate('1234')).toEqual(['Too many digits'])
+      expect(type.validateErrors('123.')).toEqual([{code: 'pattern'}])
+      expect(type.validateErrors('abc')).toEqual([{code: 'pattern'}])
+      expect(type.validateErrors('1234')).toEqual([{code: 'max_digits', params: {max: 3, scope: 'integer'}}])
     })
 
     it.each([
-      [{ gt: 0 }, 'gt'], [{ ge: 1 }, 'ge'], [{ lt: 0 }, 'lt'], [{ le: -1 }, 'le'],
-    ] as const)('should preserve custom bound messages for %j', (options, key) => {
+      [{gt: 0}, 'gt', {code: 'min_value', params: {min: 0, exclusive: true}}],
+      [{ge: 1}, 'ge', {code: 'min_value', params: {min: 1, exclusive: false}}],
+      [{lt: 0}, 'lt', {code: 'max_value', params: {max: 0, exclusive: true}}],
+      [{le: -1}, 'le', {code: 'max_value', params: {max: -1, exclusive: false}}],
+    ] as const)('should emit bound codes without messages for %j', (options, key, expected) => {
       const type = new DecimalType({ ...options, messages: { [key]: 'Outside the allowed range' } })
-      expect(type.validate('0')).toEqual(['Outside the allowed range'])
+      expect(type.validateErrors('0')).toEqual([expected])
     })
 
-    it('should return custom errors', () => {
+    it('should emit structured data despite legacy message options', () => {
       const type = new DecimalType({
         decimalPlaces: 2,
         messages: { decimalPlaces: 'Only 2 decimal places!' }
       })
-      const errors = type.validate('123.456')
-      expect(errors).toContain('Only 2 decimal places!')
+      const errors = type.validateErrors('123.456')
+      expect(errors).toContainEqual({code: 'decimal_places', params: {max: 2}})
     })
 
     it('should handle min/max conditions', () => {
       const type = new DecimalType({ gt: 0, lt: 1000 })
       
       // Valid
-      expect(type.validate('500.00')).toEqual([])
+      expect(type.validateErrors('500.00')).toEqual([])
       
       // Less than min
-      expect(type.validate('-5.00').length).toBe(1)
+      expect(type.validateErrors('-5.00').length).toBe(1)
       
       // Greater than max
-      expect(type.validate('1500.00').length).toBe(1)
+      expect(type.validateErrors('1500.00').length).toBe(1)
     })
   })
 
-  describe('getTypeName', () => {
+  describe('typeId', () => {
     it('should return correct type name', () => {
       const type = new DecimalType()
-      expect(type.getTypeName()).toBe('десятичное число')
+      expect(type.typeId).toBe('decimal')
     })
   })
 })

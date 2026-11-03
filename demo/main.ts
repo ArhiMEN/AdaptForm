@@ -11,6 +11,7 @@ import {
   MaskPlugin,
   NumberType,
   StringType,
+  type ValidationError,
 } from '../src/index'
 
 type ProfileKey = 'name' | 'email' | 'age' | 'birthDate' | 'country' | 'region' | 'terms'
@@ -153,11 +154,37 @@ let activeSerializationTab: 'json' | 'formdata' = 'json'
 const profileKeys: ProfileKey[] = ['name', 'email', 'age', 'birthDate', 'country', 'region', 'terms']
 
 const getField = (key: ProfileKey) => profile[key]
-const formFieldError = (key: ProfileKey): string[] => getField(key).errors
+// Application-owned display: the library supplies structured data, never translations.
+interface DisplayField {
+  getErrors(): readonly ValidationError[]
+  readonly options: {messages?: object}
+}
+function displayError(error: ValidationError, field?: DisplayField): string {
+  const keys: Record<string, string> = {
+    required: 'isRequired', min_length: 'minLength', max_length: 'maxLength', pattern: 'pattern',
+    invalid_type: 'invalid', integer: 'invalid', must_be_true: 'mustBeTrue', must_be_false: 'mustBeFalse',
+    min_date: 'minDate', max_date: 'maxDate',
+    min_value: error.params?.exclusive ? 'gt' : 'ge', max_value: error.params?.exclusive ? 'lt' : 'le',
+  }
+  const messages = field?.options.messages as Record<string, string | undefined> | undefined
+  const key = Object.prototype.hasOwnProperty.call(keys, error.code) ? keys[error.code] : undefined
+  return error.message ?? (key ? messages?.[key] : undefined) ?? error.code
+}
+const fieldMessages = (field: DisplayField): string[] => field.getErrors().map(error => displayError(error, field))
+const formFieldError = (key: ProfileKey): string[] => fieldMessages(getField(key))
+function profileErrors(): Record<string, string[]> {
+  const entries = new Map<string, string[]>()
+  for (const error of profile.getErrors()) {
+    const key = error.path.join('.')
+    const field = profileKeys.includes(key as ProfileKey) ? getField(key as ProfileKey) : undefined
+    entries.set(key, [...(entries.get(key) ?? []), displayError(error, field)])
+  }
+  return Object.fromEntries(entries)
+}
 
 function updateProfileInspector(): void {
   $('#profile-values').textContent = pretty(profile.fieldsValue)
-  $('#profile-errors').textContent = pretty(Object.fromEntries(Object.entries(profile.allErrors).map(([key, messages]) => [key, messages.map(t)])))
+  $('#profile-errors').textContent = pretty(Object.fromEntries(Object.entries(profileErrors()).map(([key, messages]) => [key, messages.map(t)])))
 
   const valid = profile.isValid
   const status = $('#profile-status')
@@ -284,7 +311,7 @@ function renderTags(): void {
   $('#tags-list').innerHTML = tags.items.map((item, index) => `
     <div class="dynamic-item ${item.errors.length ? 'has-error' : ''}">
       <span class="item-index">${String(index + 1).padStart(2, '0')}</span>
-      <div class="dynamic-input-wrap"><input aria-label="${t('Tag')} ${index + 1}" data-tag-index="${index}" value="${escapeHtml(item.rawValue)}" placeholder="Enter a tag" /><small class="inline-error">${escapeHtml(item.errors.map(t).join(' '))}</small></div>
+      <div class="dynamic-input-wrap"><input aria-label="${t('Tag')} ${index + 1}" data-tag-index="${index}" value="${escapeHtml(item.rawValue)}" placeholder="Enter a tag" /><small class="inline-error">${escapeHtml(fieldMessages(item).map(t).join(' '))}</small></div>
       <button type="button" class="icon-button" data-remove-tag="${index}" aria-label="${t('Remove tag')} ${index + 1}" title="${t('Remove tag')}">×</button>
     </div>
   `).join('')
@@ -331,8 +358,8 @@ function renderAddresses(): void {
   $('#addresses-list').innerHTML = addresses.forms.map((form, index) => `
     <div class="nested-form">
       <div class="nested-form-heading"><strong>${t('Address')} ${index + 1}</strong><button type="button" class="text-button" data-remove-address="${index}">Remove</button></div>
-      <div class="form-field ${form.city.errors.length ? 'has-error' : ''}"><label for="address-city-${index}">City</label><input id="address-city-${index}" data-address-city="${index}" value="${escapeHtml(form.city.rawValue)}" placeholder="e.g. Berlin" /><p class="field-error">${escapeHtml(form.city.errors.map(t).join(' '))}</p></div>
-      <div class="form-field ${form.postalCode.errors.length ? 'has-error' : ''}"><label for="address-postal-${index}">Postal code</label><input id="address-postal-${index}" data-address-postal="${index}" value="${escapeHtml(form.postalCode.rawValue)}" inputmode="numeric" placeholder="12345" /><p class="field-error">${escapeHtml(form.postalCode.errors.map(t).join(' '))}</p></div>
+      <div class="form-field ${form.city.errors.length ? 'has-error' : ''}"><label for="address-city-${index}">City</label><input id="address-city-${index}" data-address-city="${index}" value="${escapeHtml(form.city.rawValue)}" placeholder="e.g. Berlin" /><p class="field-error">${escapeHtml(fieldMessages(form.city).map(t).join(' '))}</p></div>
+      <div class="form-field ${form.postalCode.errors.length ? 'has-error' : ''}"><label for="address-postal-${index}">Postal code</label><input id="address-postal-${index}" data-address-postal="${index}" value="${escapeHtml(form.postalCode.rawValue)}" inputmode="numeric" placeholder="12345" /><p class="field-error">${escapeHtml(fieldMessages(form.postalCode).map(t).join(' '))}</p></div>
     </div>
   `).join('')
   $('#addresses-error').textContent = addressesValidated ? addresses.errors.map(t).join(' ') : ''
@@ -405,7 +432,7 @@ $('#clear-server-errors').addEventListener('click', () => {
 
 function renderMappedErrors(): void {
   const container = $('#mapped-errors')
-  const errors = profile.allErrors
+  const errors = profileErrors()
   const entries = Object.entries(errors).filter(([, messages]) => messages.length > 0)
   if (!serverErrorsApplied || entries.length === 0) {
     container.innerHTML = '<div class="empty-state">Apply the example payload to see mapped field and global errors.</div>'

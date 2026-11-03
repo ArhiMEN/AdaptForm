@@ -157,7 +157,7 @@ describe('Form', () => {
       form.fields = { name: 'John', age: 'not a number' }
       const errors = form.allErrors
       expect(errors.age).toBeDefined()
-      expect(errors.age).toContain('Ожидается число')
+      expect(form.age.getErrors()).toEqual([{code: 'invalid_type', params: {expected: 'number'}, source: 'type'}])
     })
 
     it('should include global errors', () => {
@@ -361,13 +361,11 @@ describe('Form', () => {
           return null
         }
 
-        validate(): string[] {
+        validateErrors() {
           return []
         }
 
-        getTypeName(): string {
-          return 'metadata'
-        }
+        readonly typeId = 'metadata'
       }
 
       class MetadataForm extends Form {
@@ -452,13 +450,11 @@ describe('Form', () => {
           return rawValue instanceof Blob ? rawValue : null
         }
 
-        validate(): string[] {
+        validateErrors() {
           return []
         }
 
-        getTypeName(): string {
-          return 'blob'
-        }
+        readonly typeId = 'blob'
       }
 
       class AttachmentForm extends Form {
@@ -481,13 +477,11 @@ describe('Form', () => {
           return rawValue instanceof File ? rawValue : null
         }
 
-        validate(): string[] {
+        validateErrors() {
           return []
         }
 
-        getTypeName(): string {
-          return 'file'
-        }
+        readonly typeId = 'file'
       }
 
       class UploadForm extends Form {

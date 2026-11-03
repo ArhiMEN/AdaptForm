@@ -453,9 +453,9 @@ describe('HF-013 dependent validation', () => {
 
   it('guards custom FieldType validation before it can mutate another node', () => {
     class MutatingType extends StringType {
-      validate(value: string, form?: Form): string[] {
+      validateErrors(value: string, form?: Form) {
         form?.setGlobalError('forbidden', 'mutation')
-        return super.validate(value)
+        return super.validateErrors(value)
       }
     }
     class Example extends Form {

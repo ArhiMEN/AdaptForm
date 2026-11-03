@@ -11,7 +11,7 @@ describe('Validation Tests', () => {
       
       field.rawValue = 'abc'
       expect(field.isValid).toBe(false)
-      expect(field.errors).toContain('Минимальная длина 5 символов')
+      expect(field.getErrors()).toEqual([{code: 'min_length', params: {min: 5}, source: 'type'}])
       
       field.rawValue = 'abcde'
       expect(field.isValid).toBe(true)
@@ -199,8 +199,8 @@ describe('Validation Tests', () => {
     })
   })
 
-  describe('Validation Messages', () => {
-    it('should support custom validation messages', () => {
+  describe('Structured type errors', () => {
+    it('should emit code/params despite legacy message options', () => {
       const field = new Field(StringType, null, {
         minLength: 5,
         maxLength: 10,
@@ -211,17 +211,17 @@ describe('Validation Tests', () => {
       })
       
       field.rawValue = 'ab'
-      expect(field.errors).toContain('Too short!')
+      expect(field.getErrors()).toEqual([{code: 'min_length', params: {min: 5}, source: 'type'}])
       
       field.rawValue = 'this is a very long string'
-      expect(field.errors).toContain('Too long!')
+      expect(field.getErrors()).toEqual([{code: 'max_length', params: {max: 10}, source: 'type'}])
     })
 
-    it('should use default messages when no custom', () => {
+    it('should emit the same code/params without message options', () => {
       const field = new Field(StringType, null, { minLength: 5 })
       
       field.rawValue = 'ab'
-      expect(field.errors).toContain('Минимальная длина 5 символов')
+      expect(field.getErrors()).toEqual([{code: 'min_length', params: {min: 5}, source: 'type'}])
     })
   })
 

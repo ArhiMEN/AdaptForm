@@ -10,8 +10,8 @@ import {DateTime} from 'luxon'
 
 class StructuredType extends FieldType<unknown> {
   cast(value: unknown) { return value }
-  validate() { return [] }
-  getTypeName() { return 'structured' }
+  validateErrors() { return [] }
+  readonly typeId = 'structured'
 }
 
 describe('HF-006 Field baseline', () => {
