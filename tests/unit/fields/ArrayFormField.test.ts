@@ -1,3 +1,4 @@
+import {errorMessages} from '../../helpers/errorViews'
 import { describe, it, expect, vi } from 'vitest'
 import { ArrayFormField } from '@core/fields/ArrayFormField'
 import { Form } from '@core/Form'
@@ -197,15 +198,15 @@ describe('ArrayFormField', () => {
       const arrayFormField = new ArrayFormField(TestForm, { minForms: 1 })
 
       expect(arrayFormField.isValid).toBe(false)
-      expect(arrayFormField.errors).not.toEqual([])
+      expect(errorMessages(arrayFormField)).not.toEqual([])
 
       arrayFormField.reset()
 
-      expect(arrayFormField.errors).toEqual([])
+      expect(errorMessages(arrayFormField)).toEqual([])
       expect(arrayFormField.isValid).toBe(false)
 
       expect(arrayFormField.checkValid()).toBe(false)
-      expect(arrayFormField.errors).not.toEqual([])
+      expect(errorMessages(arrayFormField)).not.toEqual([])
     })
   })
 })

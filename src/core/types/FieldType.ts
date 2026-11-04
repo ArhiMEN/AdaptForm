@@ -1,26 +1,25 @@
 import type {ValidationErrorInput} from '../ValidationError'
-import {FieldOptions} from "@core/options"
-import {Form} from "@core/Form"
+import type {FieldOptions} from '../options'
+import type {Form} from '../Form'
 
-export abstract class FieldType<T, O extends FieldOptions = FieldOptions> {
+export interface FieldTypeContract<T, O extends object> {
+  readonly typeId: string
+  options: O
+  cast(rawValue: unknown): T | null
+  validateErrors(value: T, form?: Form): readonly ValidationErrorInput[]
+}
+
+export type FieldTypeConstructor<T, O extends object> = new (options: O) => FieldTypeContract<T, O>
+
+/** Optional base class; structural implementations use the same contract. */
+export abstract class FieldType<T, O extends object = FieldOptions> implements FieldTypeContract<T, O> {
+  abstract readonly typeId: string
   options: O
 
   constructor(options: O) {
-    this.options = {
-      isRequired: true,
-      messages: {},
-      ...options
-    } as O
+    this.options = {isRequired: true, ...options}
   }
 
-  abstract cast(rawValue: any): T | null
-
-  abstract validate(value: T, form?: Form): string[]
-
-  /** Compatibility bridge for existing custom FieldType implementations. */
-  validateErrors(value: T, form?: Form): readonly ValidationErrorInput[] {
-    return this.validate(value, form).map(message => ({code: 'custom', message}))
-  }
-
-  abstract getTypeName(): string
+  abstract cast(rawValue: unknown): T | null
+  abstract validateErrors(value: T, form?: Form): readonly ValidationErrorInput[]
 }

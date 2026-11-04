@@ -9,4 +9,8 @@ export type {SnapshotValue, NodeSnapshot, FieldSnapshot, FormSnapshot, ArrayFiel
 
 export {DependencyConfigurationError, ValidationMutationError} from './state/dependencyScheduling'
 
-export type {ValidationError, ValidationErrorInput, ValidationErrorSource, ValidationPath, ValidationResult} from './ValidationError'
+export type {ValidationError, LocatedValidationError, ValidationErrorInput, ValidationErrorSource, ValidationPath, ValidationResult} from './ValidationError'
+
+export {ErrorContractError} from './ErrorContractError'
+export type {ErrorParams, JsonValue, JsonObject} from './ErrorParams'
+export type {BuiltinTypeId, BuiltinErrorParams, BuiltinValidationErrorInput} from './BuiltinValidationError'

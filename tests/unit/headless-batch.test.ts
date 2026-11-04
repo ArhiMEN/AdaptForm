@@ -15,8 +15,8 @@ describe('HF-009 synchronous batch', () => {
     form.subscribe(listener)
     form.name.subscribe(fieldListener)
     const result = form.batch(() => {
-      form.setGlobalError('server', 'error')
-      form.clearGlobalErrors()
+      form.setErrors([...form.getOwnErrors(), {code: 'server', message: 'error'}])
+      form.clearErrors()
       form.name.rawValue = 'Alex'
       expect(form.getSnapshot()).toBe(before)
       expect(form.name.getSnapshot().valueClear).toBeNull()

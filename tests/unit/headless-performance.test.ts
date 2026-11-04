@@ -1,3 +1,4 @@
+import {errorMessages} from '../helpers/errorViews'
 import {describe, expect, it, vi} from 'vitest'
 import {ArrayField, ArrayFormField, DateType, Field, Form, StringType} from '../../src'
 import * as snapshots from '@core/state/snapshot'
@@ -13,8 +14,8 @@ class Root extends Form {
 }
 class Structured extends FieldType<unknown> {
   cast(value: unknown) { return value }
-  validate() { return [] }
-  getTypeName() { return 'structured' }
+  validateErrors() { return [] }
+  readonly typeId = 'structured'
 }
 
 describe('PERF-01 snapshot cache regressions', () => {
@@ -82,7 +83,7 @@ describe('PERF-01 snapshot cache regressions', () => {
     expect(listener).toHaveBeenCalledTimes(1)
   })
 
-  it('refreshes mutable dates, cyclic values and externally mutated error arrays on reads', () => {
+  it('refreshes mutable values and keeps display projections detached', () => {
     const date = new Date(0)
     const field = new Field(DateType, date)
     const before = field.getSnapshot()
@@ -98,21 +99,21 @@ describe('PERF-01 snapshot cache regressions', () => {
     expect(changed).not.toBe(initial)
     expect(changed.isDirty).toBe(true)
     expect(structured.getSnapshot()).toBe(changed)
-    field.errors.push('external')
-    expect(field.getSnapshot().errors).toEqual(['external'])
-    expect(before.errors).toEqual([])
+    errorMessages(field).push('external')
+    expect(field.getSnapshot().errors).toEqual([])
+    expect(errorMessages(before)).toEqual([])
   })
 
-  it('refreshes externally edited siblings at the next library mutation', () => {
+  it('preserves sibling manual errors through the next value mutation', () => {
     const row = new Row()
     const observed: unknown[] = []
     row.subscribe(() => observed.push(row.getSnapshot()))
-    row.sibling.errors.push('external')
+    row.sibling.setErrors([{code: 'manual', message: 'external'}])
+    observed.length = 0
     row.value.rawValue = 'changed'
     expect(observed).toHaveLength(1)
     expect(observed[0]).toMatchObject({
-      allErrors: {sibling: ['external']},
-      fields: {sibling: {errors: ['external']}},
+      fields: {sibling: {errors: [{code: 'manual', message: 'external', source: 'manual'}]}},
     })
   })
 
@@ -121,6 +122,8 @@ describe('PERF-01 snapshot cache regressions', () => {
     const row = root.rows.forms[0]
     const validate = vi.fn(() => true)
     row.value.options = {validate}
+    root.checkValid()
+    validate.mockClear()
     const listener = vi.fn()
     root.subscribe(listener)
     const before = root.getSnapshot()
@@ -167,9 +170,9 @@ describe('PERF-01 snapshot cache regressions', () => {
     const listener = vi.fn()
     root.subscribe(listener)
     const before = root.getSnapshot()
-    row.value.error = 'server'
-    expect(root.getSnapshot().allErrors.rows).toEqual(['Форма 1, value: server'])
-    row.value.isValid = true
+    row.value.setErrors([{code: 'manual', message: 'server'}])
+    expect(root.rows.getSnapshot().forms[0].fields.value.errors).toMatchObject([{message: 'server'}])
+    row.value.clearErrors({sources: ['manual']})
     row.value.isTouched = false
     row.value.rawValue = 'changed'
     root.commitBaseline()
@@ -188,13 +191,13 @@ describe('PERF-01 snapshot cache regressions', () => {
     let external = 'one'
     class Custom extends Row {
       get fieldsValue() { return {...super.fieldsValue, value: external} }
-      get allErrors() { return {value: [external]} }
+      getOwnErrors() { return Object.freeze([Object.freeze({code: 'derived', message: external, source: 'manual' as const})]) }
     }
     const custom = new Custom()
     custom.getSnapshot()
     external = 'two'
     expect(custom.getSnapshot().fieldsValue.value).toBe('two')
-    expect(custom.getSnapshot().allErrors.value).toEqual(['two'])
+    expect(custom.getSnapshot().errors).toMatchObject([{message: 'two'}])
     class Captured extends Field<string> {
       protected captureState() {
         const snapshot = super.captureState()
@@ -231,7 +234,7 @@ describe('PERF-01 snapshot cache regressions', () => {
     let external = 'one'
     class CustomField extends Field<string> {
       get valueClear() { return external }
-      get errors() { return [external] }
+      getOwnErrors() { return Object.freeze([Object.freeze({code: 'derived', message: external, source: 'manual' as const})]) }
     }
     class CustomRow extends Form { value = new CustomField(StringType, 'initial') }
     const row = new CustomRow()
@@ -240,7 +243,7 @@ describe('PERF-01 snapshot cache regressions', () => {
     tags.getSnapshot()
     external = 'two'
     expect(row.getSnapshot().fieldsValue.value).toBe('two')
-    expect(row.getSnapshot().allErrors.value).toEqual(['two'])
+    expect(row.getSnapshot().fields.value.errors).toMatchObject([{message: 'two'}])
     expect(tags.getSnapshot().itemsValue).toEqual(['two'])
   })
 

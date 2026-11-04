@@ -1,3 +1,4 @@
+import {errorMessages} from '../../helpers/errorViews'
 import {describe, expect, it, vi} from 'vitest'
 import {Field} from '@core/fields/Field'
 import {StringType} from '@core/types/StringType'
@@ -10,8 +11,8 @@ import {DateTime} from 'luxon'
 
 class StructuredType extends FieldType<unknown> {
   cast(value: unknown) { return value }
-  validate() { return [] }
-  getTypeName() { return 'structured' }
+  validateErrors() { return [] }
+  readonly typeId = 'structured'
 }
 
 describe('HF-006 Field baseline', () => {
@@ -41,11 +42,11 @@ describe('HF-006 Field baseline', () => {
   it('commits independently of touched, errors, validity and reset target', () => {
     const field = new Field(NumberType, 1)
     field.rawValue = 2
-    field.error = 'server'
+    field.setErrors([{code: 'manual', message: 'server'}])
     field.commitBaseline()
     expect(field.isDirty).toBe(false)
     expect(field.isTouched).toBe(true)
-    expect(field.errors).toEqual(['server'])
+    expect(errorMessages(field)).toEqual(['server'])
     expect(field.isValid).toBe(false)
     field.reset()
     expect(field.valueClear).toBe(1)

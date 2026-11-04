@@ -1,3 +1,4 @@
+import {errorMessages} from './errorViews'
 import { expect } from 'vitest'
 import type { Field } from '@core/fields/Field'
 import type { Form } from '@core/Form'
@@ -9,8 +10,8 @@ export function expectValid(field: Field, form?: Form) {
   const isValid = field.checkAndSetValid(form)
   expect(isValid).toBe(true)
   expect(field.isValid).toBe(true)
-  expect(field.errors).toEqual([])
-  expect(field.error).toBe('')
+  expect(errorMessages(field)).toEqual([])
+  expect((errorMessages(field)[0] ?? '')).toBe('')
 }
 
 /**
@@ -20,7 +21,7 @@ export function expectInvalid(field: Field, expectedErrors: string[] = [], form?
   const isValid = field.checkAndSetValid(form)
   expect(isValid).toBe(false)
   expect(field.isValid).toBe(false)
-  expect(field.errors).toEqual(expectedErrors)
+  expect(errorMessages(field)).toEqual(expectedErrors)
 }
 
 /**
@@ -44,7 +45,7 @@ export function expectReset(field: Field, defaultValue?: any) {
   field.reset()
   expect(field.isTouched).toBe(false)
   expect(field.isValid).toBe(null)
-  expect(field.errors).toEqual([])
+  expect(errorMessages(field)).toEqual([])
   if (defaultValue !== undefined) {
     expect(field.rawValue).toBe(defaultValue)
   }

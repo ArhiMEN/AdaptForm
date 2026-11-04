@@ -1,3 +1,4 @@
+import {ownMessagesByCode} from '../helpers/errorViews'
 import {describe, expect, it} from 'vitest'
 import {Form} from '@core/Form'
 import {Field} from '@core/fields/Field'
@@ -87,13 +88,13 @@ describe('HF-007 aggregate dirty state', () => {
     form.setFields({first: 'programmatic'}, false)
     expect(form.first.isTouched).toBe(true)
     expect(form.isDirty).toBe(true)
-    form.setGlobalError('server', 'error')
+    form.setErrors([...form.getOwnErrors(), {code: 'server', message: 'error'}])
     form.commitBaseline()
     expect(form.isDirty).toBe(false)
     expect(form.checkValid()).toBe(false)
     expect(form.isDirty).toBe(false)
-    expect(form.globalErrors).toEqual({server: 'error'})
-    form.clearGlobalErrors()
+    expect(ownMessagesByCode(form)).toEqual({server: 'error'})
+    form.clearErrors()
     expect(form.isValid).toBe(true)
   })
 

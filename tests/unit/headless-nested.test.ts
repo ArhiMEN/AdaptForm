@@ -1,3 +1,4 @@
+import {errorMessages} from '../helpers/errorViews'
 import {describe, expect, it, vi} from 'vitest'
 import {Form, Field, StringType, ArrayField, ArrayFormField} from '../../src'
 
@@ -98,15 +99,15 @@ describe('HF-010 nested propagation and ownership', () => {
     expect(listener).toHaveBeenCalledTimes(afterFormsClear)
   })
 
-  it('propagates reset, baseline, errors and writable validity without validation reads', () => {
+  it('propagates reset, baseline, errors and explicit clearing without validation reads', () => {
     const form = new Root()
     const leaf = form.branches.forms[0].leaves.forms[0]
     const listener = vi.fn()
     form.subscribe(listener)
-    leaf.name.error = 'server'
+    leaf.name.setErrors([{code: 'manual', message: 'server'}])
     expect(listener).toHaveBeenCalledTimes(1)
     expect(form.isValid).toBe(false)
-    leaf.name.isValid = true
+    leaf.name.clearErrors({sources: ['manual']})
     expect(listener).toHaveBeenCalledTimes(2)
     leaf.name.isTouched = false
     expect(listener).toHaveBeenCalledTimes(3)
@@ -119,7 +120,7 @@ describe('HF-010 nested propagation and ownership', () => {
     expect(listener).toHaveBeenCalledTimes(6)
     expect(form.isDirty).toBe(true)
     const before = form.getSnapshot()
-    form.errors = {branches: {'0': {leaves: {'0': {name: 'remote'}}}}}
+    leaf.name.setErrors([{code: 'manual', message: 'remote'}])
     expect(listener).toHaveBeenCalledTimes(7)
     expect(form.getSnapshot()).not.toBe(before)
     form.checkValid()
@@ -139,8 +140,8 @@ describe('HF-010 nested propagation and ownership', () => {
       return listener
     })
     form.batch(() => {
-      form.setGlobalError('server', 'error')
-      form.clearGlobalErrors()
+      form.setErrors([...form.getOwnErrors(), {code: 'server', message: 'error'}])
+      form.clearErrors()
       form.name.rawValue = 'changed'
       branch.batch(() => {
         leaf.name.rawValue = 'one'
@@ -230,20 +231,22 @@ describe('HF-010 nested propagation and ownership', () => {
     expect(form.getSnapshot().fieldsValue.name).toBe('two')
   })
 
-  it('copies aggregated errors without freezing or mutating the live errors', () => {
+  it('keeps old structured snapshots detached from later manual replacements', () => {
     const form = new Root()
-    form.name.error = 'local'
-    form.setGlobalError('name', 'global')
+    form.name.setErrors([{code: 'manual', message: 'local'}])
+    form.setErrors([...form.getOwnErrors(), {code: 'name', message: 'global'}])
     const snapshot = form.getSnapshot()
-    expect(snapshot.allErrors.name).toEqual(['local', 'global'])
-    expect(Object.isFrozen(form.name.errors)).toBe(false)
-    expect(form.name.errors).toEqual(['local'])
+    expect(snapshot.fields.name.errors).toMatchObject([{message: 'local'}])
+    expect(snapshot.errors).toMatchObject([{message: 'global'}])
+    expect(Object.isFrozen(errorMessages(form.name))).toBe(false)
+    expect(errorMessages(form.name)).toEqual(['local'])
     expect(form.getSnapshot()).toBe(snapshot)
-    form.name.error = 'new'
-    expect(snapshot.allErrors.name).toEqual(['local', 'global'])
+    form.name.setErrors([{code: 'manual', message: 'new'}])
+    expect(snapshot.fields.name.errors).toMatchObject([{message: 'local'}])
+    expect(snapshot.errors).toMatchObject([{message: 'global'}])
   })
 
-  it('notifies an empty nested form when parent error assignment clears its global errors', () => {
+  it('notifies an empty nested form during explicit recursive manual clearing', () => {
     class Empty extends Form {}
     class Parent extends Form { children = new ArrayFormField(Empty, {}, [{}]) }
     const form = new Parent()
@@ -252,13 +255,13 @@ describe('HF-010 nested propagation and ownership', () => {
     const childListener = vi.fn()
     form.subscribe(parentListener)
     child.subscribe(childListener)
-    child.setGlobalError('server', 'error')
+    child.setErrors([...child.getOwnErrors(), {code: 'server', message: 'error'}])
     expect(parentListener).toHaveBeenCalledTimes(1)
     expect(childListener).toHaveBeenCalledTimes(1)
-    form.errors = {}
+    form.clearErrors({sources: ['manual'], recursive: true})
     expect(parentListener).toHaveBeenCalledTimes(2)
     expect(childListener).toHaveBeenCalledTimes(2)
-    expect(child.getSnapshot().globalErrors).toEqual({})
+    expect(child.getSnapshot().errors).toEqual([])
     expect(child.getSnapshot().isValid).toBe(true)
   })
 

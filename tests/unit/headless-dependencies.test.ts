@@ -1,3 +1,4 @@
+import {errorMessages, ownMessagesByCode} from '../helpers/errorViews'
 import {describe, expect, it, vi} from 'vitest'
 import {
   ArrayField, ArrayFormField, DependencyConfigurationError, Field, Form, NumberType, StringType,
@@ -42,7 +43,7 @@ describe('HF-013 dependent validation', () => {
     expect(form.enableDependencies()).toBe(disable)
     const unrelated = vi.spyOn(form.unrelated, 'checkAndSetValid')
     form.password.rawValue = 'new'
-    expect(form.confirmation.error).toBe('Passwords differ')
+    expect((errorMessages(form.confirmation)[0] ?? '')).toBe('Passwords differ')
     expect(form.confirmation.isTouched).toBe(false)
     expect(form.confirmation.isDirty).toBe(false)
     expect(unrelated).not.toHaveBeenCalled()
@@ -61,7 +62,7 @@ describe('HF-013 dependent validation', () => {
     const form = new Address()
     form.enableDependencies()
     form.country.rawValue = 'US'
-    expect(form.postal.error).toBe('Use five digits')
+    expect((errorMessages(form.postal)[0] ?? '')).toBe('Use five digits')
     form.batch(() => { form.country.rawValue = 'CA'; form.country.rawValue = 'US'; form.postal.rawValue = '12345' })
     expect(form.postal.isValid).toBe(true)
   })
@@ -154,7 +155,7 @@ describe('HF-013 dependent validation', () => {
     form.a.rawValue = 'changed'
     expect(calls).toEqual(['a', 'b', 'c', 'd'])
     expect(form.a.isValid).toBe(false)
-    expect(form.b.error).toBe('invalid')
+    expect((errorMessages(form.b)[0] ?? '')).toBe('invalid')
   })
 
   it('treats dependencies as covering required rules too, including empty targets', () => {
@@ -425,20 +426,20 @@ describe('HF-013 dependent validation', () => {
     const actions: Record<string, () => void> = {
       raw: () => { form.unrelated.rawValue = 'changed' },
       options: () => { form.unrelated.options = {isRequired: true} },
-      error: () => { form.unrelated.error = 'changed' },
+      error: () => { form.unrelated.setErrors([{code: 'manual', message: 'changed'}]) },
       touched: () => { form.unrelated.isTouched = true },
       baseline: () => { form.password.commitBaseline() },
       reset: () => { form.reset() },
-      form: () => { form.setGlobalError('server', 'changed') },
+      form: () => { form.setErrors([...form.getOwnErrors(), {code: 'server', message: 'changed'}]) },
       activation: () => { form.enableDependencies() },
       disposal: disable,
     }
     form.confirmation.options = {validate: () => { actions[kind](); return true }}
     expect(() => { form.password.rawValue = 'new' }).toThrow(ValidationMutationError)
     expect(form.unrelated.valueClear).toBe('untouched')
-    expect(form.unrelated.error).toBe('')
+    expect((errorMessages(form.unrelated)[0] ?? '')).toBe('')
     expect(form.unrelated.isTouched).toBe(false)
-    expect(form.globalErrors).toEqual({})
+    expect(ownMessagesByCode(form)).toEqual({})
     expect(form.password.isDirty).toBe(true)
   })
 
@@ -453,9 +454,9 @@ describe('HF-013 dependent validation', () => {
 
   it('guards custom FieldType validation before it can mutate another node', () => {
     class MutatingType extends StringType {
-      validate(value: string, form?: Form): string[] {
-        form?.setGlobalError('forbidden', 'mutation')
-        return super.validate(value)
+      validateErrors(value: string, form?: Form) {
+        form?.setErrors([{code: 'forbidden', message: 'mutation'}])
+        return super.validateErrors(value)
       }
     }
     class Example extends Form {
@@ -465,7 +466,7 @@ describe('HF-013 dependent validation', () => {
     const form = new Example()
     form.enableDependencies()
     expect(() => { form.source.rawValue = 'changed' }).toThrow(ValidationMutationError)
-    expect(form.globalErrors).toEqual({})
+    expect(ownMessagesByCode(form)).toEqual({})
   })
 
   it('continues dependent validation when a source cannot be cast', () => {
@@ -485,18 +486,18 @@ describe('HF-013 dependent validation', () => {
     form.source.rawValue = 'invalid number'
     expect(form.source.valueClear).toBeNull()
     expect(form.source.isValid).toBe(false)
-    expect(form.target.error).toBe('Invalid source')
+    expect((errorMessages(form.target)[0] ?? '')).toBe('Invalid source')
     expect(observed).toEqual([null])
   })
 
   it('preserves the legacy options receiver of required rule methods', () => {
     const options = {
-      messages: {isRequired: 'required'},
-      isRequired() { return this.messages.isRequired === 'required' },
+      requiredEnabled: true,
+      isRequired() { return this.requiredEnabled },
     }
     const field = new Field(StringType, null, options)
     expect(field.checkAndSetValid()).toBe(false)
-    expect(field.error).toBe('required')
+    expect(field.errors).toEqual([{code: 'required', source: 'type'}])
   })
 
   it('commits all snapshots before notification and separates reentrant transactions', () => {

@@ -251,6 +251,9 @@ export abstract class ObservableNode<TSnapshot> {
     return this._stateStore.read() as TSnapshot
   }
 
+  /** Queue this node before propagating a value change to containing nodes. */
+  protected markStateChanged(): void { this._stateStore.changed() }
+
   protected update<TResult>(callback: () => TResult): TResult {
     assertValidationMutationAllowed()
     noteDependencyMutation(this)

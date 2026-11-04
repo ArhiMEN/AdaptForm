@@ -1,3 +1,4 @@
+import {errorMessages, ownMessagesByCode} from '../helpers/errorViews'
 import { describe, expect, it, vi } from 'vitest'
 import { Form } from '@core/Form'
 import { Field } from '@core/fields/Field'
@@ -15,7 +16,7 @@ describe('HF-001 form lifecycle baseline', () => {
       const field = new Field(NumberType, null, { validate })
       field.rawValue = 1
       expect(field.isValid).toBe(false)
-      expect(field.errors).not.toEqual([])
+      expect(errorMessages(field)).not.toEqual([])
       validate.mockClear()
 
       field.setRawValue('42', false)
@@ -23,7 +24,7 @@ describe('HF-001 form lifecycle baseline', () => {
       expect(field.rawValue).toBe('42')
       expect(field.valueClear).toBe(42)
       expect(field.isTouched).toBe(true)
-      expect(field.errors).toEqual([])
+      expect(errorMessages(field)).toEqual([])
       expect(field.isValid).toBeNull()
       expect(validate).not.toHaveBeenCalled()
       expect(field.checkAndSetValid()).toBe(false)
@@ -36,9 +37,9 @@ describe('HF-001 form lifecycle baseline', () => {
         field.setRawValue(input, false)
         expect(field.valueClear).toBeNull()
         expect(field.isValid).toBeNull()
-        expect(field.errors).toEqual([])
+        expect(errorMessages(field)).toEqual([])
         expect(field.checkAndSetValid()).toBe(false)
-        expect(field.errors).toHaveLength(1)
+        expect(errorMessages(field)).toHaveLength(1)
       }
     })
 
@@ -49,22 +50,22 @@ describe('HF-001 form lifecycle baseline', () => {
         omitted = new Field(StringType, 'default')
       }
       const form = new Example()
-      form.value.error = 'previous error'
-      form.setGlobalError('server', 'server error')
+      form.value.setErrors([{code: 'manual', message: 'previous error'}])
+      form.setErrors([...form.getOwnErrors(), {code: 'server', message: 'server error'}])
       form.setFields({ value: '42', unknown: 'ignored' }, false)
 
       expect(form.toJSON()).toEqual({ value: 42, omitted: 'default' })
-      expect(form.value.errors).toEqual([])
+      expect(errorMessages(form.value)).toEqual([])
       expect(form.value.isValid).toBeNull()
       expect(form.omitted.isValid).toBe(true)
       expect(form.omitted.isTouched).toBe(false)
       expect(form.isTouched).toBe(true)
       expect(form.isValid).toBe(false)
-      expect(form.globalErrors).toEqual({ server: 'server error' })
+      expect(ownMessagesByCode(form)).toEqual({ server: 'server error' })
       expect(validate).not.toHaveBeenCalled()
       expect(form.checkValid()).toBe(false)
       expect(validate).toHaveBeenCalledExactlyOnceWith(42, form)
-      form.clearGlobalErrors()
+      form.clearErrors()
       expect(form.isValid).toBe(true)
       expect(validate).toHaveBeenCalledTimes(1)
     })
@@ -215,12 +216,12 @@ describe('HF-001 form lifecycle baseline', () => {
       const added = field.add('added')
       first.rawValue = 'edited first'
       added.rawValue = 'edited added'
-      field.error = 'server error'
+      field.setErrors([{code: 'manual', message: 'server error'}])
       validate.mockClear()
       field.reset()
       expect(field.items).toEqual([first, added])
       expect(field.itemsValue).toEqual(['first', 'added'])
-      expect(field.errors).toEqual([])
+      expect(errorMessages(field)).toEqual([])
       expect(field.isTouched).toBe(false)
       expect(field.isValid).toBe(false)
       expect(field.items.map(item => [item.isTouched, item.isValid])).toEqual([[false, null], [false, null]])
@@ -240,16 +241,16 @@ describe('HF-001 form lifecycle baseline', () => {
       field.remove(1)
       const added = field.add({ name: 'added' })
       first.name.rawValue = 'edited'
-      added.setGlobalError('server', 'server error')
-      field.error = 'collection error'
+      added.setErrors([...added.getOwnErrors(), {code: 'server', message: 'server error'}])
+      field.setErrors([{code: 'manual', message: 'collection error'}])
       validate.mockClear()
       field.reset()
       expect(field.forms).toEqual([first, added])
       expect(field.formsFieldsValue).toEqual([
         { name: 'class default', optional: null }, { name: 'class default', optional: null },
       ])
-      expect(field.errors).toEqual([])
-      expect(added.globalErrors).toEqual({})
+      expect(errorMessages(field)).toEqual([])
+      expect(ownMessagesByCode(added)).toEqual({})
       expect(field.isTouched).toBe(false)
       expect(field.isValid).toBe(false)
       expect(field.forms.map(form => [form.isTouched, form.name.isValid])).toEqual([[false, null], [false, null]])
@@ -291,12 +292,12 @@ describe('HF-001 form lifecycle baseline', () => {
       expect(form.amount.isValid).toBe(false)
       expect(form.isValid).toBe(false)
       expect(form.checkValid()).toBe(false)
-      expect(form.amount.errors).toEqual(['После точки должен быть минимум 1 знак'])
+      expect(form.amount.getErrors()).toEqual([{code: 'pattern', source: 'type'}])
 
       form.setFields({ amount: '123.5' })
       expect(form.amount.rawValue).toBe('123.5')
       expect(form.amount.valueClear).toBe('123.5')
-      expect(form.amount.errors).toEqual([])
+      expect(errorMessages(form.amount)).toEqual([])
       expect(form.isValid).toBe(true)
       expect(form.checkValid()).toBe(true)
     })
@@ -307,10 +308,10 @@ describe('HF-001 form lifecycle baseline', () => {
       expect(field.rawValue).toBe('123.')
       expect(field.valueClear).toBe('123.')
       expect(field.isValid).toBeNull()
-      expect(field.errors).toEqual([])
+      expect(errorMessages(field)).toEqual([])
       expect(field.checkAndSetValid()).toBe(false)
       expect(field.isValid).toBe(false)
-      expect(field.errors).toEqual(['После точки должен быть минимум 1 знак'])
+      expect(field.getErrors()).toEqual([{code: 'pattern', source: 'type'}])
     })
 
     it('serializes deferred values without validation; applications must check before submission', () => {
@@ -326,17 +327,17 @@ describe('HF-001 form lifecycle baseline', () => {
       expect(form.amount.rawValue).toBe('123,')
       expect(form.amount.valueClear).toBe('123.')
       expect(form.amount.isValid).toBeNull()
-      expect(form.amount.errors).toEqual([])
+      expect(errorMessages(form.amount)).toEqual([])
       expect(form.isValid).toBe(false)
       expect(form.toJSON()).toEqual({ amount: '123.' })
       expect(checkField).not.toHaveBeenCalled()
       expect(form.amount.isValid).toBeNull()
-      expect(form.amount.errors).toEqual([])
+      expect(errorMessages(form.amount)).toEqual([])
 
       // Serialization does not authorize submission; the application must run this final check.
       expect(form.checkValid()).toBe(false)
       expect(form.amount.isValid).toBe(false)
-      expect(form.amount.errors).toEqual(['После точки должен быть минимум 1 знак'])
+      expect(form.amount.getErrors()).toEqual([{code: 'pattern', source: 'type'}])
       expect(form.toJSON()).toEqual({ amount: '123.' })
       expect(checkField).toHaveBeenCalledTimes(1)
     })
@@ -352,7 +353,7 @@ describe('HF-001 form lifecycle baseline', () => {
       expect(field.rawValue).toBe(input)
       expect(field.valueClear).toBe(clean)
       expect(field.isValid).toBe(valid)
-      expect(field.errors.length > 0).toBe(!valid)
+      expect(errorMessages(field).length > 0).toBe(!valid)
     })
 
     it.each([123, '123'])('accepts inclusive bounds and rejects exclusive bounds for %j', (input) => {
@@ -362,7 +363,7 @@ describe('HF-001 form lifecycle baseline', () => {
       exclusive.setRawValue(input)
       expect(inclusive.isValid).toBe(true)
       expect(exclusive.isValid).toBe(false)
-      expect(exclusive.errors).toHaveLength(2)
+      expect(errorMessages(exclusive)).toHaveLength(2)
     })
   })
 })

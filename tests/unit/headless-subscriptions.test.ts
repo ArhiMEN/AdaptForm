@@ -1,3 +1,4 @@
+import {errorMessages} from '../helpers/errorViews'
 import {describe, expect, it, vi, expectTypeOf} from 'vitest'
 import {Field, Form, StringType, DateType, ArrayField, type FormSnapshot, type FieldSnapshot} from '../../src'
 import {FieldType} from '@core/types/FieldType'
@@ -35,16 +36,16 @@ describe('HF-008 snapshots and subscriptions', () => {
     field.isTouched = true
     field.isTouched = true
     expect(listener).toHaveBeenCalledTimes(1)
-    field.error = 'server'
+    field.setErrors([{code: 'manual', message: 'server'}])
     expect(listener).toHaveBeenCalledTimes(2)
     const previous = field.getSnapshot()
     field.checkValid()
     expect(listener).toHaveBeenCalledTimes(3)
     expect(field.isValid).toBe(false) // checkValid retains legacy validity assignment semantics.
-    expect(previous.errors).toEqual(['server'])
+    expect(errorMessages(previous)).toEqual(['server'])
     field.checkAndSetValid()
     expect(listener).toHaveBeenCalledTimes(3)
-    field.isValid = true
+    field.clearErrors({sources: ['manual']})
     expect(listener).toHaveBeenCalledTimes(4)
     field.rawValue = 'changed'
     field.commitBaseline()
@@ -81,8 +82,8 @@ describe('HF-008 snapshots and subscriptions', () => {
     expect(snapshot.valueClear).toEqual({kind: 'Date', timestamp: 0})
     class Structured extends FieldType<unknown> {
       cast(value: unknown) { return value }
-      validate() { return [] }
-      getTypeName() { return 'structured' }
+      validateErrors() { return [] }
+      readonly typeId = 'structured'
     }
     const input = {items: [new Map([['key', new Set([1])]])]}
     const structured = new Field(Structured, input)
@@ -132,14 +133,14 @@ describe('HF-008 snapshots and subscriptions', () => {
     const form = new Example()
     const listener = vi.fn()
     form.subscribe(listener)
-    form.setGlobalError('server', 'failed')
+    form.setErrors([{code: 'server', message: 'failed'}])
     const snapshot = form.getSnapshot()
-    expect(snapshot.globalErrors).toEqual({server: 'failed'})
+    expect(snapshot.errors).toEqual([{code: 'server', message: 'failed', source: 'manual'}])
     expect(snapshot.isDirty).toBe(false)
-    form.setGlobalError('server', 'failed')
+    form.setErrors([{code: 'server', message: 'failed'}])
     expect(listener).toHaveBeenCalledTimes(1)
-    form.clearGlobalErrors()
+    form.clearErrors()
     expect(listener).toHaveBeenCalledTimes(2)
-    expect(snapshot.globalErrors).toEqual({server: 'failed'})
+    expect(snapshot.errors).toEqual([{code: 'server', message: 'failed', source: 'manual'}])
   })
 })
