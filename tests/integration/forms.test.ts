@@ -161,7 +161,7 @@ describe('Integration Tests', () => {
       const form = new OrderForm()
       form.checkValid()
       expect(form.isValid).toBe(false)
-      expect(errorsByPath(form).items).toContain('Добавьте хотя бы один элемент')
+      expect(form.items.errors).toEqual([{code: 'required', source: 'type'}])
     })
 
     it('should be invalid with negative total', () => {

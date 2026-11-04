@@ -2,19 +2,13 @@ import type {ValidationErrorInput} from '../ValidationError'
 import type {BuiltinValidationErrorInput} from '../BuiltinValidationError'
 import {DateTime} from "luxon"
 import {FieldType} from "@core/types/FieldType"
-import {FieldOptions, messagesOptions} from "@core/options"
-
-export interface messagesDateLuxonOptions extends messagesOptions {
-  minDate?: string
-  maxDate?: string
-}
+import {FieldOptions} from "@core/options"
 
 export interface DateLuxonOptions extends FieldOptions {
   minDate?: DateTime
   maxDate?: DateTime
   inputFormat?: string
   isDatetime?: boolean
-  messages?: messagesDateLuxonOptions
 }
 
 export class DateLuxonType extends FieldType<DateTime, DateLuxonOptions> {

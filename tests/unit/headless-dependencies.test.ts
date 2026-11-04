@@ -492,12 +492,12 @@ describe('HF-013 dependent validation', () => {
 
   it('preserves the legacy options receiver of required rule methods', () => {
     const options = {
-      messages: {isRequired: 'required'},
-      isRequired() { return this.messages.isRequired === 'required' },
+      requiredEnabled: true,
+      isRequired() { return this.requiredEnabled },
     }
     const field = new Field(StringType, null, options)
     expect(field.checkAndSetValid()).toBe(false)
-    expect((errorMessages(field)[0] ?? '')).toBe('required')
+    expect(field.errors).toEqual([{code: 'required', source: 'type'}])
   })
 
   it('commits all snapshots before notification and separates reentrant transactions', () => {

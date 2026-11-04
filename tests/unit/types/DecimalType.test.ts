@@ -164,7 +164,6 @@ describe('DecimalType', () => {
     it('should emit format and digit codes without messages', () => {
       const type = new DecimalType({
         maxDigits: 5,
-        messages: { invalid: 'Complete the number', maxDigits: 'Too many digits' },
       })
       expect(type.validateErrors('123.')).toEqual([{code: 'pattern'}])
       expect(type.validateErrors('abc')).toEqual([{code: 'pattern'}])
@@ -172,19 +171,18 @@ describe('DecimalType', () => {
     })
 
     it.each([
-      [{gt: 0}, 'gt', {code: 'min_value', params: {min: 0, exclusive: true}}],
-      [{ge: 1}, 'ge', {code: 'min_value', params: {min: 1, exclusive: false}}],
-      [{lt: 0}, 'lt', {code: 'max_value', params: {max: 0, exclusive: true}}],
-      [{le: -1}, 'le', {code: 'max_value', params: {max: -1, exclusive: false}}],
-    ] as const)('should emit bound codes without messages for %j', (options, key, expected) => {
-      const type = new DecimalType({ ...options, messages: { [key]: 'Outside the allowed range' } })
+      [{gt: 0}, {code: 'min_value', params: {min: 0, exclusive: true}}],
+      [{ge: 1}, {code: 'min_value', params: {min: 1, exclusive: false}}],
+      [{lt: 0}, {code: 'max_value', params: {max: 0, exclusive: true}}],
+      [{le: -1}, {code: 'max_value', params: {max: -1, exclusive: false}}],
+    ] as const)('should emit bound codes without messages for %j', (options, expected) => {
+      const type = new DecimalType({ ...options })
       expect(type.validateErrors('0')).toEqual([expected])
     })
 
-    it('should emit structured data despite legacy message options', () => {
+    it('should emit structured data without generated messages', () => {
       const type = new DecimalType({
         decimalPlaces: 2,
-        messages: { decimalPlaces: 'Only 2 decimal places!' }
       })
       const errors = type.validateErrors('123.456')
       expect(errors).toContainEqual({code: 'decimal_places', params: {max: 2}})

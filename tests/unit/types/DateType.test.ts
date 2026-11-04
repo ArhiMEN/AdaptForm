@@ -58,10 +58,9 @@ describe('DateType', () => {
       expect(errors.length).toBeGreaterThan(0)
     })
 
-    it('should emit structured data despite legacy message options', () => {
+    it('should emit structured data without generated messages', () => {
       const type = new DateType({
         minDate: new Date('2023-01-01'),
-        messages: { minDate: 'Date must be after 2023' }
       })
       const errors = type.validateErrors(new Date('2022-01-01'))
       expect(errors).toContainEqual({code: 'min_date', params: {min: new Date('2023-01-01').getTime()}})

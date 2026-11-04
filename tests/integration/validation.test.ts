@@ -201,14 +201,10 @@ describe('Validation Tests', () => {
   })
 
   describe('Structured type errors', () => {
-    it('should emit code/params despite legacy message options', () => {
+    it('should emit code/params without generated messages', () => {
       const field = new Field(StringType, null, {
         minLength: 5,
         maxLength: 10,
-        messages: {
-          minLength: 'Too short!',
-          maxLength: 'Too long!'
-        }
       })
       
       field.rawValue = 'ab'

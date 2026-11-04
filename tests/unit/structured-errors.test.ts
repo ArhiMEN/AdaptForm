@@ -48,9 +48,9 @@ describe('structured validation errors', () => {
   })
 
   it.each([true, false, '', 'Specific failure'] as const)('preserves legacy validator result %j', result => {
-    const field = new Field(StringType, 'x', {validate: () => result, messages: {validate: 'Configured'}})
+    const field = new Field(StringType, 'x', {validate: () => result})
     expect(field.isValid).toBe(result === true)
-    expect(field.errors.map(error => error.message)).toEqual(result === true ? [] : [result === false ? 'Configured' : result])
+    expect(field.errors.map(error => error.message)).toEqual(result === true ? [] : [result === false ? undefined : result])
   })
 
   it.each([undefined, null, 0, {}, [], [true]])('preserves other legacy JS success values %j', result => {
@@ -132,7 +132,7 @@ describe('built-in codes', () => {
   })
 
   it('provides stable codes and multiple identical codes without generated messages', () => {
-    const field = new Field(NumberType, 1.5, {gt: 5, ge: 6, lt: 0, le: 1, messages: {gt: 'Same', ge: 'Same'}})
+    const field = new Field(NumberType, 1.5, {gt: 5, ge: 6, lt: 0, le: 1})
     expect(field.getErrors().map(error => error.code)).toEqual(['integer', 'min_value', 'min_value', 'max_value', 'max_value'])
     expect(field.getErrors()[1].params).toEqual({min: 5, exclusive: true})
     expect(field.getErrors()[2].params).toEqual({min: 6, exclusive: false})
@@ -140,7 +140,7 @@ describe('built-in codes', () => {
     expect(new Field(StringType, 'abc', {maxLength: 2}).getErrors()[0].code).toBe('max_length')
   })
 
-  it('covers decimal format, precision and digit constraints without changing messages', () => {
+  it('covers decimal format, precision and digit constraints without generated messages', () => {
     expect(new Field(DecimalType, '123.').getErrors()[0].code).toBe('pattern')
     const decimal = new Field(DecimalType, '12345.678', {maxDigits: 6, decimalPlaces: 2})
     expect(decimal.getErrors().map(error => error.code)).toEqual(['max_digits', 'max_digits', 'decimal_places'])
@@ -406,7 +406,7 @@ describe('snapshots, ownership and scheduling', () => {
 
 
 describe('optional Luxon error codes', () => {
-  it('retains optional date constraints and messages', () => {
+  it('retains optional date constraints', () => {
     const date = DateTime.fromISO('2020-01-01')
     expect(new Field(DateLuxonType, date, {minDate: DateTime.fromISO('2021-01-01')}).getErrors()).toMatchObject([{code: 'min_date'}])
     expect(new Field(DateLuxonType, date, {maxDate: DateTime.fromISO('2019-01-01')}).getErrors()).toMatchObject([{code: 'max_date'}])

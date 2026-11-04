@@ -60,7 +60,6 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
     super()
     this.options = {
       isRequired: true,
-      messages: {},
       ...options
     } as ArrayFieldOptions
     this._items = initial.map(value => this.factory(value as T))
@@ -185,20 +184,17 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
     return this.update(() => {
       this.clientChecked = false
       if (this.isRequired(form) && this._items.length === 0) {
-        this.completeClientCheck([{code: 'required', message: this.options.messages?.isRequired ??
-          "Добавьте хотя бы один элемент"}])
+        this.completeClientCheck([{code: 'required'}])
         return false
       }
 
       if (this.options.minItems != null && this._items.length < this.options.minItems) {
-        this.completeClientCheck([{code: 'min_items', message: this.options.messages?.minItems ??
-          `Значений должно быть не меньше ${this.options.minItems}`, params: {min: this.options.minItems}}])
+        this.completeClientCheck([{code: 'min_items', params: {min: this.options.minItems}}])
         return false
       }
 
       if (this.options.maxItems != null && this._items.length > this.options.maxItems) {
-        this.completeClientCheck([{code: 'max_items', message: this.options.messages?.maxItems ??
-          `Значений должно быть не больше ${this.options.maxItems}`, params: {max: this.options.maxItems}}])
+        this.completeClientCheck([{code: 'max_items', params: {max: this.options.maxItems}}])
         return false
       }
 
@@ -213,7 +209,7 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
         const values = this._items.map(item => item.valueClear)
         const result = this.options.validate(values, form)
 
-        const errors = customErrors(result, this.options.messages?.validate ?? 'Ошибка валидации')
+        const errors = customErrors(result)
         if (errors.length) {
           this.completeClientCheck([], errors)
           return false

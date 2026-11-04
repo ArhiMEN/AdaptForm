@@ -2,6 +2,48 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## V3-03.3 I18N-01 — 2026-11-04
+
+Статус: **PASS_WITH_RISKS**, готово к проверке владельцем, не приёмка этапа. V3-03.1 и V3-03.2 приняты для продолжения. Исходный HEAD: `17e8f5708372eb50c2bad6c8f3457e1b0405af27`; чистое дерево, существующая `feature/v3-runtime`, существующий [Draft PR #32](https://github.com/ArhiMEN/AdaptForm/pull/32). Среда первоначально открылась на `work` с master `9b3c773`; до реализации получена и открыта существующая удалённая ветка задачи. Этот handoff входит в отдельный коммит `feat: remove core validation message generation`; его SHA и CI итогового HEAD указаны в PR/отчёте. Версия остаётся **2.2.0**; зависимости, workflow, архитектура не менялись, merge, release, tag и npm publication не выполнялись.
+
+Реализация и миграция:
+
+- Required в Field и required/min_items/max_items коллекций возвращают только код/параметры каталога. Ошибка приведения сохраняет машинный invalid_type.expected. Встроенные типы уже возвращали ошибки каталога без сообщений. Значения required по умолчанию, empty/optional/cast gates, порядок type→custom, ранние выходы/обход коллекций, хранение источников, атомарная нормализация клиентских ошибок и валидность сохранены.
+- Удалён messages из FieldOptions, StringOptions, NumberOptions, BooleanOptions, DateOptions, DecimalOptions, ArrayFieldOptions, ArrayFormFieldOptions и DateLuxonOptions. Удалены все девять экспортируемых интерфейсов: messagesOptions, messagesStringOptions, messagesNumberOptions, messagesBooleanOptions, messagesDateOptions, messagesDecimalOptions, messagesArrayFieldOptions, messagesArrayFormFieldOptions и messagesDateLuxonOptions. Нет aliases/заменяющих options. Логические настройки, включая Luxon inputFormat, сохранены. outputFormat/getTypeName ранее удалены в V3-03.1.
+- Удалены русские defaults/templates и чтение message options из Field/коллекций; удалён аргумент fallback-message внутреннего customErrors. Legacy false по-прежнему даёт код custom, но без созданного сообщения. Новых интерпретаций результатов или bridges нет.
+- ValidationErrorInput.message остаётся optional. Неизменённый нормализатор DTO сохраняет явные сообщения, включая `''`, не добавляет отсутствующий message, отделяет/замораживает ошибки и параметры и не создаёт display fallback. Server/manual сообщения сохраняются при клиентской проверке. Ошибка нормализации не приводит к частичной замене клиентских источников.
+- Словари demo находятся в прикладном WeakMap, связанном с экземплярами полей/контейнеров, вне библиотечных options. Прикладной displayError использует code/params и эти словари; сохранены EN/RU переводы, индивидуальные тексты полей, сообщения коллекций и UI-взаимодействия. Форматтер не находится в src и не экспортируется; UI не повторяет правила валидации.
+- Примеры (own-ошибки включают source): required изменён с `{code:'required',message:'Поле обязательно для заполнения',source:'type'}` на `{code:'required',source:'type'}`; минимум коллекции — с `{code:'min_items',message:'Значений должно быть не меньше 2',params:{min:2},source:'type'}` на `{code:'min_items',params:{min:2},source:'type'}`. Явный `{code:'app.rule',message:''}` сохраняется, добавляется только источник.
+
+Тесты: **15 новых runtime-кейсов** (14 в `tests/unit/i18n-01.test.ts`, один regression demo); **22 существующих развёрнутых кейса / 16 объявлений тестов** адаптированы, включая уточнение только названия. Кейсы не удалялись: **834 / 37 файлов**, ранее 819 / 36. Новые негативные TypeScript-проверки охватывают удалённые экспорты (все девять), object literals Field/обеих коллекций/Luxon и отсутствие messages во всех options-интерфейсах. Сохранены зелёные проверки каталога, жизненного цикла V3-03.1/02, JSON budgets/security, числа вызовов callbacks и явных пользовательских сообщений.
+
+Фактические локальные проверки на Node **24.19.0** / npm **11.9.0**:
+
+| Команда | Результат |
+| --- | --- |
+| `npm ci` | PASS |
+| `npm audit --audit-level=moderate` | PASS, 0 уязвимостей |
+| `npm run lint` | PASS, 0 warnings/errors |
+| `npm test` | PASS, 834 теста / 37 файлов |
+| `npm run build` | PASS, ESM/CJS/declarations, оба entry |
+| `npm run check:package` | PASS, 21 файл |
+| `npx tsc --noEmit -p tsconfig.json` | PASS |
+| `npx tsc --noEmit -p tsconfig.test.json` | PASS |
+| `npm run check:demo` | PASS |
+| `npm run build:demo` | PASS |
+| `git diff --check` | PASS |
+
+Изолированные consumers упакованного пакета вне репозитория проходят ESM/CJS ядра **без установленного Luxon**, затем оба optional Luxon loaders, на **Node 16.20.2 и 24.19.0**. Строгие NodeNext `.mts`/`.cts` consumers проходят с `skipLibCheck:false` и `exactOptionalPropertyTypes:true`, включая negatives удалённых message options. Публичные declarations не содержат messages options/интерфейсов. Node 16 проверяет собранный runtime, а не современные devDependencies. Временные скрипты/пакеты/consumers/логи не входят в коммит. CI итогового HEAD отдельно фиксируется в PR #32.
+
+Оставшиеся совпадения поиска в src и ограничения:
+
+- `BuiltinValidationError.ts`: message?:never запрещает текст встроенных ошибок. `ValidationError.ts`: optional message и проверки/копирование descriptor/type сохраняют ввод приложения; строковая ветка customErrors переносит явно возвращённый приложением текст, включая пустую строку. Во встроенных producers и публичных options нет formatter/locale/dictionary/code-to-text fallback.
+- Legacy-контракт валидаторов остаётся ровно в `options.ts`: FieldOptions.validate, ArrayFieldOptions.validate и ArrayFormFieldOptions.validate. `ValidationError.ts::customErrors` всё ещё преобразует false→ошибка custom, string→custom с явным текстом, одиночный coded object→одна запись, непустой массив только coded objects→записи, прочие результаты→успех (включая неподдерживаемые JS Promise/некорректные массивы). Три точки вызова: `Field.checkValid`, `ArrayField.checkValid`, `ArrayFormField.checkValid`. Окончательная синхронная array-only валидация, отказ от legacy/Promise, purity и compute/commit относятся к V3-03.4 и последующей работе с коллекциями; новый runner не должен использовать этот helper.
+- `ErrorsShema.ts`: ParsedError.message/комментарии, перенос строк в parseValidationErrors и legacy JSON.stringify нестроковых значений внешнего ответа в parseErrors/parseValidationErrors/parseErrorsDetailed не менялись. Это старые контракты parser внешних ответов, а не сообщения встроенных правил; новый parser явно исключён из задачи. **Риск:** буквальное утверждение об отсутствии любой генерации текста во всей библиотеке пока неверно из-за этой legacy-сериализации parser. Она устраняется в принятом V3-04 parser/cleanup, без нового fallback здесь.
+- `dependencyScheduling.ts` / `DependencyGraph.ts`: аргументы message и англоязычные исключения — developer diagnostics конфигурации/мутаций, а не отображаемые ValidationError. Комментарии DecimalType о format описывают грамматику чисел; custom formats ErrorsShema описывают синтаксис путей. В src не найдены состояние локали, переводы, шаблоны сообщений или message options.
+
+Далее требуется отдельное разрешение владельца: scalar runner V3-03.4, затем жизненный цикл коллекций/ODR-03, зависимости и последующие этапы parser/Apply. Удалена зависимость runner от message options; не реализованы validate():ValidationResult, полный обход/purity, ErrorsMapping/new parse, server Apply, revisions/operations или ODR-05. Следующий этап не начат; архитектурные решения не пересматриваются.
+
 ## V3-03.2: хранение по источникам и жизненный цикл ошибок — 2026-11-03
 
 Статус реализации: **READY_FOR_OWNER_REVIEW**, не приёмка владельцем. V3-03.1 на `349e216fc5a0cb32e0997030266a63ce442d9c7e` принят для продолжения; это исходный SHA в `feature/v3-runtime`. Один отдельный коммит реализации `feat: implement source-partitioned error lifecycle` обновляет существующий [Draft PR #32](https://github.com/ArhiMEN/AdaptForm/pull/32). Итоговый SHA и CI итогового HEAD указаны в PR/отчёте поставки; этот handoff входит в тот же коммит. Пакет/зависимости/workflows и принятые ODR-01–05 не изменены; версия **2.2.0**. Merge, release, tag и публикация npm не выполнялись.
@@ -121,7 +163,6 @@ PR #28, ветка `hf-015-structured-validation-errors`, master/base `b9051dd`,
 Финальные локальные проверки: **711 тестов / 33 файла** (51 новая регрессия), lint, TypeScript исходников/тестов/демо, сборки библиотеки/демо, пакет (21 файл), свежие упакованные ESM/CJS и строгие NodeNext declarations без установленного Luxon, ссылки/EN-RU примеры и diff — PASS. **npm audit FAIL**: существующая high-уязвимость undici 7.29.1 воспроизводится на нетронутом master с тем же lockfile; production-only audit сообщает 0. [Полные проверки, сырые бенчмарки и цена модели](../roadmap/v2.3.0/ERRORS_VERIFICATION.ru.md): парное сравнение на 1000 узлах показывает около 9% цены неизменённого snapshot и 8–10% операций коллекций; полный harness содержит большие колебания. Измерения не доказывают отсутствия замедления/утечек; дополнительные метаданные требуют памяти.
 
 Следующий шаг: приёмка PR в master и независимое review, проверка CI с учётом существующего audit-блокера. Новый серверный вход включается явно; глобальные ошибки сохраняются при изменении значений, старый allErrors не начинает объединять ошибки scalar-элементов. Изменяемые legacy-массивы согласуются при чтении и не получают Proxy/автоматических уведомлений. HF-014/016/017 не реализованы. Без merge, публикации, изменения версии, тега или удаления веток. Записи ниже исторические и не означают, что HF-011/013 ещё не объединены.
-
 
 ## HF-013 — 2026-10-21
 

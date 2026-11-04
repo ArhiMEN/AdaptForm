@@ -78,9 +78,9 @@ export function prefixErrors(errors: readonly ValidationError[], prefix: Validat
   ])}))
 }
 
-/** Preserve legacy success rules: only false and strings used to fail. */
-export function customErrors(result: unknown, message: string): readonly ValidationErrorInput[] {
-  if (result === false) return [{code: 'custom', message}]
+/** Retain legacy result interpretation until the array-only runner; never supply display text. */
+export function customErrors(result: unknown): readonly ValidationErrorInput[] {
+  if (result === false) return [{code: 'custom'}]
   if (typeof result === 'string') return [{code: 'custom', message: result}]
   if (isValidationError(result)) return [result]
   if (Array.isArray(result) && result.length > 0 && result.every(isValidationError)) return result

@@ -196,20 +196,17 @@ export class ArrayFormField<T extends Form = Form> extends ErrorNode<ArrayFormSn
     return this.update(() => {
       this.clientChecked = false
       if (this.isRequired(form) && this._forms.length === 0) {
-        this.completeClientCheck([{code: 'required', message: this.options.messages?.isRequired ??
-          "Добавьте хотя бы один элемент"}])
+        this.completeClientCheck([{code: 'required'}])
         return false
       }
 
       if (this.options.minForms != null && this._forms.length < this.options.minForms) {
-        this.completeClientCheck([{code: 'min_items', message: this.options.messages?.minForms ??
-          `Значений должно быть не меньше ${this.options.minForms}`, params: {min: this.options.minForms}}])
+        this.completeClientCheck([{code: 'min_items', params: {min: this.options.minForms}}])
         return false
       }
 
       if (this.options.maxForms != null && this._forms.length > this.options.maxForms) {
-        this.completeClientCheck([{code: 'max_items', message: this.options.messages?.maxForms ??
-          `Значений должно быть не больше ${this.options.maxForms}`, params: {max: this.options.maxForms}}])
+        this.completeClientCheck([{code: 'max_items', params: {max: this.options.maxForms}}])
         return false
       }
 
@@ -223,7 +220,7 @@ export class ArrayFormField<T extends Form = Form> extends ErrorNode<ArrayFormSn
       if (this.options.validate) {
         const result = this.options.validate(this._forms, form)
 
-        const errors = customErrors(result, this.options.messages?.validate ?? 'Ошибка валидации')
+        const errors = customErrors(result)
         if (errors.length) {
           this.completeClientCheck([], errors)
           return false

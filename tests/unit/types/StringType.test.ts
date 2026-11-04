@@ -42,10 +42,9 @@ describe('StringType', () => {
       expect(errors).toContainEqual({code: 'min_length', params: {min: 5}})
     })
 
-    it('should emit structured data despite legacy message options for string too short', () => {
+    it('should emit structured data without generated messages for string too short', () => {
       const type = new StringType({
         minLength: 5,
-        messages: { minLength: 'Too short!' }
       })
       const errors = type.validateErrors('abc')
       expect(errors).toContainEqual({code: 'min_length', params: {min: 5}})
@@ -57,10 +56,9 @@ describe('StringType', () => {
       expect(errors).toContainEqual({code: 'max_length', params: {max: 5}})
     })
 
-    it('should emit structured data despite legacy message options for string too long', () => {
+    it('should emit structured data without generated messages for string too long', () => {
       const type = new StringType({
         maxLength: 5,
-        messages: { maxLength: 'Too long!' }
       })
       const errors = type.validateErrors('abcdef')
       expect(errors).toContainEqual({code: 'max_length', params: {max: 5}})
@@ -79,10 +77,9 @@ describe('StringType', () => {
       expect(type.validateErrors('abc')).toEqual([])
       expect(type.validateErrors('xabc')).toContainEqual({code: 'pattern'})
     })
-    it('should emit structured data despite legacy message options for pattern mismatch', () => {
+    it('should emit structured data without generated messages for pattern mismatch', () => {
       const type = new StringType({
         pattern: /^[a-z]+$/,
-        messages: { pattern: 'Only lowercase letters!' }
       })
       const errors = type.validateErrors('ABC')
       expect(errors).toContainEqual({code: 'pattern'})

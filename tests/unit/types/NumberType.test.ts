@@ -84,10 +84,9 @@ describe('NumberType', () => {
       expect(errors).toContainEqual({code: 'max_value', params: {max: 10, exclusive: false}})
     })
 
-    it('should emit structured data despite legacy message options', () => {
+    it('should emit structured data without generated messages', () => {
       const type = new NumberType({
         gt: 10,
-        messages: { gt: 'Must be greater than 10' }
       })
       const errors = type.validateErrors(5)
       expect(errors).toContainEqual({code: 'min_value', params: {min: 10, exclusive: true}})

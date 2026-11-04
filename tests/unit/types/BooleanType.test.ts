@@ -84,10 +84,9 @@ describe('BooleanType', () => {
       expect(errors).toContainEqual({code: 'must_be_false'})
     })
 
-    it('should emit structured data despite legacy message options', () => {
+    it('should emit structured data without generated messages', () => {
       const type = new BooleanType({
         mustBeTrue: true,
-        messages: { mustBeTrue: 'Must agree!' }
       })
       const errors = type.validateErrors(false)
       expect(errors).toContainEqual({code: 'must_be_true'})

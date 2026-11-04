@@ -14,72 +14,71 @@ import {
   type ValidationError,
 } from '../src/index'
 
+// Display configuration belongs to this application, outside engine options.
+const displayMessages = new WeakMap<object, Readonly<Record<string, string>>>()
+function withDisplay<T extends object>(field: T, messages: Readonly<Record<string, string>>): T {
+  displayMessages.set(field, messages)
+  return field
+}
+
 type ProfileKey = 'name' | 'email' | 'age' | 'birthDate' | 'country' | 'region' | 'terms'
 
 class ProfileForm extends Form {
-  name = new Field(StringType, null, {
+  name = withDisplay(new Field(StringType, null, {
     isRequired: true,
     minLength: 3,
     maxLength: 40,
-    messages: {
-      isRequired: 'Enter your full name.',
-      minLength: 'Use at least 3 characters.',
-      maxLength: 'Use no more than 40 characters.',
-    },
+  }), {
+    isRequired: 'Enter your full name.',
+    minLength: 'Use at least 3 characters.',
+    maxLength: 'Use no more than 40 characters.',
   })
 
-  email = new Field(StringType, null, {
+  email = withDisplay(new Field(StringType, null, {
     isRequired: true,
     pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    messages: {
-      isRequired: 'Enter your email address.',
-      pattern: 'Enter a valid email address.',
-    },
+  }), {
+    isRequired: 'Enter your email address.',
+    pattern: 'Enter a valid email address.',
   })
 
-  age = new Field(NumberType, null, {
+  age = withDisplay(new Field(NumberType, null, {
     isRequired: true,
     ge: 18,
     le: 120,
-    messages: {
-      isRequired: 'Enter your age.',
-      invalid: 'Enter a whole number.',
-      ge: 'You must be at least 18.',
-      le: 'Enter an age of 120 or less.',
-    },
+  }), {
+    isRequired: 'Enter your age.',
+    invalid: 'Enter a whole number.',
+    ge: 'You must be at least 18.',
+    le: 'Enter an age of 120 or less.',
   })
 
-  birthDate = new Field(DateType, null, {
+  birthDate = withDisplay(new Field(DateType, null, {
     isDatetime: false,
     maxDate: new Date(),
-    messages: { maxDate: 'The date of birth cannot be in the future.' },
-  })
+  }), { maxDate: 'The date of birth cannot be in the future.' })
 
   country = new Field(StringType, 'US', { isRequired: true })
 
-  region = new Field(StringType, null, {
+  region = withDisplay(new Field(StringType, null, {
     isRequired: (form?: ProfileForm) => form?.country.valueClear === 'US',
-    messages: { isRequired: 'Enter a state or region when the country is United States.' },
-  })
+  }), { isRequired: 'Enter a state or region when the country is United States.' })
 
-  terms = new Field(BooleanType, false, {
+  terms = withDisplay(new Field(BooleanType, false, {
     mustBeTrue: true,
-    messages: { mustBeTrue: 'You must accept the terms to continue.' },
-  })
+  }), { mustBeTrue: 'You must accept the terms to continue.' })
 }
 
 class AddressForm extends Form {
-  city = new Field(StringType, null, {
+  city = withDisplay(new Field(StringType, null, {
     isRequired: true,
     minLength: 2,
-    messages: { isRequired: 'Enter a city.', minLength: 'Use at least 2 characters.' },
-  })
+  }), { isRequired: 'Enter a city.', minLength: 'Use at least 2 characters.' })
 
-  postalCode = new Field(StringType, null, {
+  postalCode = withDisplay(new Field(StringType, null, {
     isRequired: true,
     pattern: /^\d{5}$/,
-    messages: { isRequired: 'Enter a postal code.', pattern: 'Use exactly 5 digits.' },
-  })
+  }), { isRequired: 'Enter a postal code.', pattern: 'Use exactly 5 digits.' })
 }
 
 const $ = <T extends HTMLElement>(selector: string): T => {
@@ -99,36 +98,29 @@ const escapeHtml = (value: unknown): string =>
 
 const pretty = (value: unknown): string => JSON.stringify(value, null, 2)
 const profile = new ProfileForm()
-const tags = new ArrayField(
-  (value?: string) => new Field(StringType, value ?? null, {
+const tags = withDisplay(new ArrayField(
+  (value?: string) => withDisplay(new Field(StringType, value ?? null, {
     isRequired: true,
     minLength: 2,
-    messages: {
-      isRequired: 'A tag cannot be empty.',
-      minLength: 'Each tag needs at least 2 characters.',
-    },
+  }), {
+    isRequired: 'A tag cannot be empty.',
+    minLength: 'Each tag needs at least 2 characters.',
   }),
-  {
-    isRequired: true,
-    minItems: 1,
-    maxItems: 4,
-    messages: {
-      isRequired: 'Add at least one tag.',
-      minItems: 'Add at least one tag.',
-      maxItems: 'Use no more than 4 tags.',
-    },
-  },
+  {isRequired: true, minItems: 1, maxItems: 4},
   ['typescript', 'forms'],
-)
-const addresses = new ArrayFormField(AddressForm, {
+), {
+  isRequired: 'Add at least one tag.',
+  minItems: 'Add at least one tag.',
+  maxItems: 'Use no more than 4 tags.',
+})
+const addresses = withDisplay(new ArrayFormField(AddressForm, {
   isRequired: true,
   minForms: 1,
   maxForms: 3,
-  messages: {
-    isRequired: 'Add at least one address.',
-    minForms: 'Add at least one address.',
-    maxForms: 'Use no more than 3 addresses.',
-  },
+}), {
+  isRequired: 'Add at least one address.',
+  minForms: 'Add at least one address.',
+  maxForms: 'Use no more than 3 addresses.',
 })
 const phone = new Field(StringType, null, {
   plugins: [new MaskPlugin({
@@ -157,16 +149,17 @@ const getField = (key: ProfileKey) => profile[key]
 // Application-owned display: the library supplies structured data, never translations.
 interface DisplayField {
   getErrors(): readonly ValidationError[]
-  readonly options: {messages?: object}
 }
 function displayError(error: ValidationError, field?: DisplayField): string {
   const keys: Record<string, string> = {
     required: 'isRequired', min_length: 'minLength', max_length: 'maxLength', pattern: 'pattern',
     invalid_type: 'invalid', integer: 'invalid', must_be_true: 'mustBeTrue', must_be_false: 'mustBeFalse',
     min_date: 'minDate', max_date: 'maxDate',
+    min_items: field === addresses ? 'minForms' : 'minItems',
+    max_items: field === addresses ? 'maxForms' : 'maxItems',
     min_value: error.params?.exclusive ? 'gt' : 'ge', max_value: error.params?.exclusive ? 'lt' : 'le',
   }
-  const messages = field?.options.messages as Record<string, string | undefined> | undefined
+  const messages = field ? displayMessages.get(field) : undefined
   const key = Object.prototype.hasOwnProperty.call(keys, error.code) ? keys[error.code] : undefined
   return error.message ?? (key ? messages?.[key] : undefined) ?? error.code
 }
@@ -315,7 +308,7 @@ function renderTags(): void {
       <button type="button" class="icon-button" data-remove-tag="${index}" aria-label="${t('Remove tag')} ${index + 1}" title="${t('Remove tag')}">×</button>
     </div>
   `).join('')
-  $('#tags-error').textContent = tagsInteracted ? tags.errors.map(error => t(displayError(error))).join(' ') : ''
+  $('#tags-error').textContent = tagsInteracted ? tags.errors.map(error => t(displayError(error, tags))).join(' ') : ''
   $('#tags-values').textContent = pretty(tags.itemsValue)
   const addButton = $('#add-tag') as HTMLButtonElement
   addButton.disabled = tags.items.length >= 4
@@ -362,7 +355,7 @@ function renderAddresses(): void {
       <div class="form-field ${form.postalCode.errors.length ? 'has-error' : ''}"><label for="address-postal-${index}">Postal code</label><input id="address-postal-${index}" data-address-postal="${index}" value="${escapeHtml(form.postalCode.rawValue)}" inputmode="numeric" placeholder="12345" /><p class="field-error">${escapeHtml(fieldMessages(form.postalCode).map(t).join(' '))}</p></div>
     </div>
   `).join('')
-  $('#addresses-error').textContent = addressesValidated ? addresses.errors.map(error => t(displayError(error))).join(' ') : ''
+  $('#addresses-error').textContent = addressesValidated ? addresses.errors.map(error => t(displayError(error, addresses))).join(' ') : ''
   $('#addresses-values').textContent = pretty(addresses.formsFieldsValue)
   ;($('#add-address') as HTMLButtonElement).disabled = addresses.forms.length >= 3
   translatePage()

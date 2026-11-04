@@ -261,3 +261,16 @@ it('updates shareable language links without dropping unrelated URL state', asyn
   const {translate} = await import('../../demo/i18n')
   expect(translate('constructor')).toBe('constructor')
 })
+
+it('renders application translations while engine errors remain message-free', async () => {
+  await boot()
+  const {Field} = await import('../../src/index')
+  const ownErrors = vi.spyOn(Field.prototype, 'getOwnErrors')
+  submit()
+  expect(element('#error-name').textContent).toBe('Enter your full name.')
+  switchLanguage('ru')
+  expect(element('#error-name').textContent).toBe('Введите полное имя.')
+  const errors = ownErrors.mock.results.flatMap(result => result.type === 'return' ? result.value : [])
+  expect(errors.some(error => error.code === 'required')).toBe(true)
+  expect(errors.every(error => !Object.prototype.hasOwnProperty.call(error, 'message'))).toBe(true)
+})

@@ -2,6 +2,48 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## V3-03.3 I18N-01 — 2026-11-04
+
+Status: **PASS_WITH_RISKS**, ready for owner review, not owner acceptance. V3-03.1 and V3-03.2 are accepted for continuation. Starting HEAD: `17e8f5708372eb50c2bad6c8f3457e1b0405af27`; clean tree, existing `feature/v3-runtime`, existing [Draft PR #32](https://github.com/ArhiMEN/AdaptForm/pull/32). The environment initially checked out `work` at master `9b3c773`; the existing remote task branch was fetched and checked out before implementation. This handoff belongs to the separate `feat: remove core validation message generation` commit; its SHA and final-head CI are recorded in the PR/delivery report. Version remains **2.2.0**; no dependency, workflow, architecture, merge, release, tag or npm publication changes.
+
+Implemented and migration:
+
+- Field required and collection required/min_items/max_items now emit only catalogue code/params. Failed casts retain machine `invalid_type.expected`. Existing built-in types already produced message-free catalogue errors. Required defaults, empty/optional/cast gates, type-before-custom order, collection early exits/traversal, source storage, atomic client normalization and validity semantics are unchanged.
+- Removed `messages` from FieldOptions, StringOptions, NumberOptions, BooleanOptions, DateOptions, DecimalOptions, ArrayFieldOptions, ArrayFormFieldOptions and DateLuxonOptions. Removed all nine exported interfaces: messagesOptions, messagesStringOptions, messagesNumberOptions, messagesBooleanOptions, messagesDateOptions, messagesDecimalOptions, messagesArrayFieldOptions, messagesArrayFormFieldOptions and messagesDateLuxonOptions. No aliases/replacement options. Logic options, including Luxon inputFormat, remain. outputFormat/getTypeName were already removed by V3-03.1.
+- Removed RU defaults/templates and message-option lookups from Field/collections; removed the fallback-message argument of internal customErrors. Legacy false still emits code custom but no generated message. No new result interpretation or bridge was added.
+- ValidationErrorInput.message remains optional. The unchanged DTO normalizer preserves explicitly supplied messages, including `''`, omits absent message, detaches/freezes errors and params and never supplies display fallback. Server/manual messages survive client validation. Failed normalization cannot partially replace client sources.
+- Demo display dictionaries now live in an application WeakMap associated with field/container instances, outside library options. Application displayError uses code/params and these dictionaries; existing EN/RU translations, field-specific wording, collection messages and UI interactions remain. The formatter is neither in src nor exported; UI does not repeat validation rules.
+- Examples (own output includes source): required changed from `{code:'required',message:'Поле обязательно для заполнения',source:'type'}` to `{code:'required',source:'type'}`; collection minimum from `{code:'min_items',message:'Значений должно быть не меньше 2',params:{min:2},source:'type'}` to `{code:'min_items',params:{min:2},source:'type'}`. Explicit `{code:'app.rule',message:''}` remains unchanged apart from assigned source.
+
+Tests: **15 new runtime cases** (14 in `tests/unit/i18n-01.test.ts`, one demo regression); **22 existing expanded cases / 16 test declarations** migrated, including title-only clarification. No cases removed: **834 / 37 files**, previously 819 / 36. New negative TypeScript checks cover removed exports (all nine), Field/both collections/Luxon object literals and absence of messages in every options interface. Existing catalogue, V3-03.1/02 lifecycle, JSON budgets/security, callback counts and explicit user-message coverage remain green.
+
+Actual local checks on Node **24.19.0** / npm **11.9.0**:
+
+| Command | Result |
+| --- | --- |
+| `npm ci` | PASS |
+| `npm audit --audit-level=moderate` | PASS, 0 vulnerabilities |
+| `npm run lint` | PASS, 0 warnings/errors |
+| `npm test` | PASS, 834 tests / 37 files |
+| `npm run build` | PASS, ESM/CJS/declarations, both entries |
+| `npm run check:package` | PASS, 21 files |
+| `npx tsc --noEmit -p tsconfig.json` | PASS |
+| `npx tsc --noEmit -p tsconfig.test.json` | PASS |
+| `npm run check:demo` | PASS |
+| `npm run build:demo` | PASS |
+| `git diff --check` | PASS |
+
+Packed isolated consumers outside the repository pass ESM/CJS core **without installed Luxon**, then both optional Luxon loaders, on **Node 16.20.2 and 24.19.0**. Strict NodeNext `.mts`/`.cts` consumers pass with `skipLibCheck:false` and `exactOptionalPropertyTypes:true`, including removed message-option negatives. Published declarations contain no messages options/interfaces. Node 16 verifies built runtime, not modern development dependencies. Scratch scripts/packs/consumers/logs are excluded from the commit. Final-head remote CI is recorded separately in PR #32.
+
+Remaining source-search matches and limits:
+
+- `BuiltinValidationError.ts`: message?:never prohibits built-in text. `ValidationError.ts`: optional message declaration and descriptor/type checking/copying preserve application input; the string branch of customErrors transfers explicitly returned application text, including empty strings. No formatter/locale/dictionary/code-to-text fallback remains in built-in producers or public options.
+- Legacy validator contract remains exactly at `options.ts` FieldOptions.validate, ArrayFieldOptions.validate and ArrayFormFieldOptions.validate. `ValidationError.ts::customErrors` still maps false→custom error, string→custom with explicit text, single coded object→one entry, nonempty all-coded array→entries, other results→success (including unsupported JS Promise/malformed arrays). Its three call sites are `Field.checkValid`, `ArrayField.checkValid`, `ArrayFormField.checkValid`. Final array-only synchronous validation, rejection of legacy/Promise outputs, purity and compute/commit belong to V3-03.4 and subsequent collection work; do not reuse this helper for the new runner.
+- `ErrorsShema.ts`: ParsedError.message/comments, parseValidationErrors string transfers and legacy parseErrors/parseValidationErrors/parseErrorsDetailed JSON.stringify conversions of nonstring external response values remain unchanged. These are old external-response parser contracts, not built-in rule messages, and the new parser is explicitly outside this task. **Risk:** a literal library-wide claim of zero text generation is not yet true for that legacy parser serialization. Resolve it through the accepted V3-04 parser/cleanup, with no new fallback here.
+- `dependencyScheduling.ts` / `DependencyGraph.ts`: message arguments and English thrown strings are developer configuration/mutation diagnostics, not ValidationError display. DecimalType format comments describe numeric input grammar; ErrorsShema custom formats describe path syntax. No locale state, translations, message templates or message options were found in src.
+
+Next requires separate owner authorization: V3-03.4 scalar runner, then collection lifecycle/ODR-03, dependencies and later parser/Apply stages. This change removes the runner's message-option dependency; it does not implement validate():ValidationResult, complete traversal/purity, ErrorsMapping/new parse, server Apply, revisions/operations or ODR-05. No next stage has started and no architecture decision is reopened.
+
 ## V3-03.2 source storage and error lifecycle — 2026-11-03
 
 Implementation status: **READY_FOR_OWNER_REVIEW**, not owner acceptance. V3-03.1 at `349e216fc5a0cb32e0997030266a63ce442d9c7e` was accepted for continuation; this is the starting SHA on `feature/v3-runtime`. One separate implementation commit, `feat: implement source-partitioned error lifecycle`, updates existing [Draft PR #32](https://github.com/ArhiMEN/AdaptForm/pull/32). Its final SHA and final-head CI are recorded in the PR/delivery report; this handoff belongs to the same commit. Package/dependencies/workflows and accepted ODR-01–05 are unchanged; version **2.2.0**. No merge, release, tag or npm publication.
@@ -121,7 +163,6 @@ Branch `hf-015-structured-validation-errors` from current master `b9051dd`; sour
 Final local checks: **711 tests / 33 files** (51 new regressions), lint, source/test/demo TypeScript, library/demo builds, package (21 files), fresh packed ESM/CJS and strict NodeNext declarations without installed Luxon, links/EN-RU examples and diff — PASS. **npm audit FAIL**: existing high-severity undici 7.29.1 findings reproduce on untouched master with the same lockfile; production-only audit reports 0. [Full checks, raw benchmarks and model costs](../roadmap/v2.3.0/ERRORS_VERIFICATION.md): the paired 1000-node comparison shows about 9% unchanged-snapshot cost and 8–10% collection cost; the full harness has larger fluctuations. Measurements do not establish zero slowdown/leaks; extra metadata costs memory.
 
 Next: PR acceptance into master and independent review, inspect CI accounting for the existing audit blocker. New server ingestion is explicit; global errors survive value changes, and legacy allErrors does not start flattening scalar item errors. Mutable legacy arrays reconcile on reads without Proxy/automatic notifications. HF-014/016/017 are not implemented. No merge, publication, version bump, tag or branch deletion. Entries below are historical and do not imply HF-011/013 are still unmerged.
-
 
 ## HF-013 — 2026-10-21
 
