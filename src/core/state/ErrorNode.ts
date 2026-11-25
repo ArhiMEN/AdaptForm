@@ -74,8 +74,9 @@ export abstract class ErrorNode<TSnapshot> extends ObservableNode<TSnapshot> {
     if (structural) refreshChildPositions(this.errorChildren, next)
     for (const child of this.errorChildren) if (!next.has(child)) child.errorParents.delete(this)
     for (const child of next) {
-      child.errorParents.add(this)
-      if (recursive) child.syncErrorChildren()
+      const attached = this.errorChildren.has(child)
+      if (!attached) child.errorParents.add(this)
+      if (recursive && (!structural || !attached)) child.syncErrorChildren()
     }
     this.errorChildren = next
   }

@@ -43,13 +43,20 @@ export function positionChangedSince(node: ServerNode, position: bigint): boolea
 }
 
 export function refreshChildPositions(previous: ReadonlySet<ServerNode>, next: ReadonlySet<ServerNode>): void {
-  const indexes = new Map([...next].map((node, index) => [node, index]))
+  const tracked = new Map<ServerNode, number>()
   let index = 0
   for (const node of previous) {
-    if (indexes.get(node) !== index) advanceServerRevision(node, 'position')
+    if (revisions.has(node)) tracked.set(node, index)
     index++
   }
-  for (const node of next) if (!previous.has(node)) advanceServerRevision(node, 'position')
+  index = 0
+  for (const node of next) {
+    // Only captured routing edges need a revision. Others have no outstanding owner.
+    if (revisions.has(node) && tracked.get(node) !== index) advanceServerRevision(node, 'position')
+    tracked.delete(node)
+    index++
+  }
+  for (const node of tracked.keys()) advanceServerRevision(node, 'position')
 }
 
 export function advanceServerRevision(node: ServerNode, kind: keyof Revisions): void {
@@ -109,8 +116,7 @@ export function* walkTargets(target: Target): IterableIterator<Target> {
   for (const child of target.children.values()) yield* walkTargets(child)
 }
 
-export function ancestors(node: ServerNode): Set<ServerNode> {
-  const found = new Set<ServerNode>()
+export function ancestors(node: ServerNode, found = new Set<ServerNode>()): Set<ServerNode> {
   const visit = (current: ServerNode) => {
     if (found.has(current)) return
     found.add(current)

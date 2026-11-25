@@ -15,6 +15,10 @@ let publishing = false
 let captureDepth = 0
 let pullEpoch = 0
 let pulling = false
+
+export function snapshotDiscoveryEpoch(): number | undefined {
+  return pulling && !staging ? pullEpoch : undefined
+}
 type Node = ObservableNode<unknown>
 type FullCheck = (form?: Form) => unknown
 type OwnCheck = (form: Form | undefined, visitChildren: () => void) => unknown
@@ -28,17 +32,6 @@ interface ValidationRequest {
 const validations = new Map<Node, ValidationRequest>()
 const batchRoots = new Map<Node, FullCheck>()
 const pending = new Set<SnapshotStore>()
-const snapshotOwners = new WeakMap<Node, SnapshotStore>()
-
-function snapshotPaths(paths: ReadonlyMap<Node, ValidationPath>): readonly (readonly [SnapshotStore, ValidationPath])[] {
-  const entries: Array<readonly [SnapshotStore, ValidationPath]> = []
-  for (const [node, path] of paths) {
-    const store = snapshotOwners.get(node)
-    if (store) entries.push([store, path])
-  }
-  return entries
-}
-
 type SnapshotWave = ReadonlyMap<SnapshotStore, unknown>
 let staging: Map<SnapshotStore, unknown> | undefined
 
@@ -46,7 +39,8 @@ interface ServerSnapshotPlan {
   readonly stores: ReadonlySet<SnapshotStore>
   readonly candidates: SnapshotWave
   readonly paths: ReadonlyMap<SnapshotStore, ValidationPath>
-  readonly pathReaders: ReadonlyMap<Form, () => ReadonlyMap<Node, ValidationPath>>
+  readonly pathReaders: ReadonlyMap<Form, () => readonly (readonly [SnapshotStore, ValidationPath])[]>
+  readonly receiverStores: ReadonlyMap<Form, SnapshotStore>
   readonly version: number
   readonly cycle: ErrorNotificationCycle
 }
@@ -86,7 +80,7 @@ function flush(): void {
           try {
             const next = validationCallback(() => ({
               candidates: captureWave(stores),
-              paths: new Map([...wave.pathReaders.values()].flatMap(read => snapshotPaths(read()))),
+              paths: new Map([...wave.pathReaders.values()].flatMap(read => read())),
             }))
             candidates = next.candidates
             paths = next.paths
@@ -122,9 +116,8 @@ function flush(): void {
           }
         }
         if (wave && paths) {
-          for (const receiver of wave.pathReaders.keys()) {
-            const store = snapshotOwners.get(receiver)
-            const path = store && paths.get(store)
+          for (const [receiver, store] of wave.receiverStores) {
+            const path = paths.get(store)
             if (path) wave.cycle.add(receiver, path)
           }
           wave.cycle.deliver()
@@ -283,8 +276,6 @@ export abstract class ObservableNode<TSnapshot> {
     () => this.stateChildren().map(child => child._stateStore),
   )
 
-  constructor() { snapshotOwners.set(this, this._stateStore) }
-
   protected abstract captureState(): TSnapshot
 
   protected stateChildren(): readonly ObservableNode<unknown>[] { return [] }
@@ -440,11 +431,15 @@ export abstract class ObservableNode<TSnapshot> {
     const stores = new Set(pending)
     for (const node of affected) node._stateStore.addWithParents(stores)
     const candidates = captureWave(stores)
-    const registeredPaths = new Map([...serverWave?.paths ?? [], ...snapshotPaths(paths)])
+    const storesFor = (registered: ReadonlyMap<Node, ValidationPath>) =>
+      [...registered].map(([node, path]) => [node._stateStore, path] as const)
+    const registeredPaths = new Map([...serverWave?.paths ?? [], ...storesFor(paths)])
     const pathReaders = new Map(serverWave?.pathReaders)
-    pathReaders.set(receiver, readPaths)
+    pathReaders.set(receiver, () => storesFor(readPaths()))
+    const receiverStores = new Map(serverWave?.receiverStores)
+    receiverStores.set(receiver, receiver._stateStore)
     const cycle = serverWave?.cycle ?? new ErrorNotificationCycle()
-    const wave = {stores, candidates, paths: registeredPaths, pathReaders, version: mutationVersion, cycle}
+    const wave = {stores, candidates, paths: registeredPaths, pathReaders, receiverStores, version: mutationVersion, cycle}
     const receiverPath = paths.get(receiver) ?? Object.freeze([])
     return () => {
       for (const store of wave.stores) pending.add(store)
@@ -468,6 +463,7 @@ export abstract class ObservableNode<TSnapshot> {
     assertValidationMutationAllowed()
     noteDependencyMutation(this)
     mutationVersion++
+    if (pulling) pullEpoch++
     mutationDepth++
     let failed = false
     try {

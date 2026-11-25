@@ -51,10 +51,6 @@ function matches(pattern: Pattern, path: ValidationPath): boolean {
   return pattern.length <= path.length && pattern.every((segment, index) => isCapture(segment) || segment === path[index])
 }
 
-function samePath(left: ValidationPath, right: ValidationPath): boolean {
-  return left.length === right.length && left.every((segment, index) => segment === right[index])
-}
-
 function sameIdentity(left: Scope, right: Scope): boolean {
   const length = Math.max(left.source.length, right.source.length)
   const input: Pattern = Array.from({length}, (_, at) => {
@@ -127,6 +123,21 @@ function wrap(program: Program, source: Pattern, target: Pattern): Program {
       isCapture(part) ? {...part, at: part.at + source.length} : part
     return {...scope, source: [...source, ...scope.source.map(shift)], target: [...target, ...scope.target.map(shift)]}
   })
+}
+
+const staticIndexes = new WeakMap<Program, ReadonlyMap<Scope, ReadonlyMap<string, {rule: StaticRule; rank: number}>>>()
+
+function staticIndex(program: Program) {
+  const existing = staticIndexes.get(program)
+  if (existing) return existing
+  const index = new Map<Scope, Map<string, {rule: StaticRule; rank: number}>>()
+  for (const [rank, rule] of program.statics.entries()) {
+    let rules = index.get(rule.scope)
+    if (!rules) { rules = new Map(); index.set(rule.scope, rules) }
+    rules.set(JSON.stringify(rule.from), {rule, rank})
+  }
+  staticIndexes.set(program, index)
+  return index
 }
 
 function checkPolicy(policy: 'error' | 'left' | 'right'): void {
@@ -233,9 +244,15 @@ export function mapError(
     to: to === null ? null : normalizePath([...route.prefix, ...normalizePath(to, maxSegments)], maxSegments),
     matchedBy, error,
   })
-  for (const rule of program.statics) {
-    const route = routes.get(rule.scope)
-    if (route && samePath(rule.from, route.local)) {
+  if (program.statics.length) {
+    const indexed = staticIndex(program)
+    let selected: {rule: StaticRule; rank: number; route: Route} | undefined
+    for (const [scope, route] of routes) {
+      const candidate = indexed.get(scope)?.get(JSON.stringify(route.local))
+      if (candidate && (!selected || candidate.rank < selected.rank)) selected = {...candidate, route}
+    }
+    if (selected) {
+      const {rule, route} = selected
       return result(route, typeof rule.to === 'function' ? rule.to(view(route)) : rule.to, 'static')
     }
   }

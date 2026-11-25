@@ -1,6 +1,6 @@
 import {prefixErrors, type LocatedValidationError, type ValidationResult} from './ValidationError'
 import {ErrorNode} from './state/ErrorNode'
-import {ancestors, notificationPaths, targetIndex, type RegisteredChild} from './server/nodes'
+import {ancestors, notificationPaths, targetIndex, type RegisteredChild, type ServerNode} from './server/nodes'
 import {beginServerOperation, prepareApply} from './server/operations'
 import {clearErrorReports, readErrorReports, subscribeErrorReports} from './server/notifications'
 import type {ParsedServerErrors} from './server/schemaTypes'
@@ -8,7 +8,7 @@ import type {
   ApplyServerErrorsOptions, ApplyServerErrorsResult, BeginServerErrorsOptions, ErrorNotificationReport, ServerErrorOperation,
 } from './server/applyTypes'
 import {withServerPartitions} from './state/ErrorStore'
-import {ObservableNode} from "@core/state/ObservableNode"
+import {ObservableNode, snapshotDiscoveryEpoch} from "@core/state/ObservableNode"
 import {hasStandardGetters, snapshotValue, type FormSnapshot} from "@core/state/snapshot"
 import {Field} from "@core/fields/Field"
 import {ArrayField} from "@core/fields/ArrayField"
@@ -35,6 +35,9 @@ export type FormFieldsValue<TForm extends Form> = {
     : never]: FormFieldValue<TForm[K]>
 }
 
+type RegisteredFields = Record<string, Field<any> | ArrayField<any> | ArrayFormField<any>>
+const discoveredFields = new WeakMap<Form, {readonly epoch: number; readonly fields: RegisteredFields}>()
+
 export abstract class Form extends ErrorNode<FormSnapshot> {
   private _dependencies?: DependencyGraph
 
@@ -50,7 +53,7 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
   protected childValidationContext(): Form { return this }
 
   private _snapshot?: FormSnapshot
-  private _snapshotFields?: Record<string, Field<any> | ArrayField<any> | ArrayFormField<any>>
+  private _snapshotFields?: RegisteredFields
 
   protected captureState(): FormSnapshot {
     // Reuse field discovery only within this capture. Later reads must still
@@ -100,7 +103,8 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
     const commit = validationCallback(() => {
       const prepared = prepareApply(this, batch, options)
       const paths = notificationPaths(prepared.index)
-      const affected = new Set([...prepared.changed].flatMap(node => [...ancestors(node)]))
+      const affected = new Set<ServerNode>()
+      for (const node of prepared.changed) ancestors(node, affected)
       const publish = withServerPartitions(prepared.plans, () => this.prepareServerSnapshots(this, affected, paths,
         () => notificationPaths(targetIndex(this))))
       prepared.recheck()
@@ -128,9 +132,12 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
       prefixErrors(field.getErrors(), [key])), ...prefixErrors(this.getOwnErrors(), [])])
   }
 
-  protected get _fields(): Record<string, Field<any> | ArrayField<any> | ArrayFormField<any>> {
+  protected get _fields(): RegisteredFields {
     if (this._snapshotFields) return this._snapshotFields
-    const fields: Record<string, Field<any> | ArrayField<any> | ArrayFormField<any>> = Object.create(null)
+    const epoch = snapshotDiscoveryEpoch()
+    const previous = epoch === undefined ? undefined : discoveredFields.get(this)
+    if (previous?.epoch === epoch && previous) return previous.fields
+    const fields: RegisteredFields = Object.create(null)
 
     for (const key of Object.keys(this)) {
       const descriptor = Object.getOwnPropertyDescriptor(this, key)
@@ -140,6 +147,7 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
       }
     }
 
+    if (epoch !== undefined) discoveredFields.set(this, {epoch, fields})
     return fields
   }
 
@@ -176,7 +184,9 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
       else if (field instanceof ArrayField) valueClear = field.itemsValue
       else if (field instanceof ArrayFormField) valueClear = field.formsFieldsValue
       else console.error(`Invalid field "${key}" type`)
-      Object.defineProperty(data, key, {value: valueClear, enumerable: true, writable: true, configurable: true})
+      if (key === '__proto__') {
+        Object.defineProperty(data, key, {value: valueClear, enumerable: true, writable: true, configurable: true})
+      } else data[key] = valueClear
     }
 
     return data as FormFieldsValue<this>
