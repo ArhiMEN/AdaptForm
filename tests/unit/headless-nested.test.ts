@@ -123,7 +123,7 @@ describe('HF-010 nested propagation and ownership', () => {
     leaf.name.setErrors([{code: 'manual', message: 'remote'}])
     expect(listener).toHaveBeenCalledTimes(7)
     expect(form.getSnapshot()).not.toBe(before)
-    form.checkValid()
+    form.validate()
     expect(listener).toHaveBeenCalledTimes(8)
   })
 

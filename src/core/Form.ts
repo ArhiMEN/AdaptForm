@@ -1,4 +1,4 @@
-import {prefixErrors, type LocatedValidationError} from './ValidationError'
+import {prefixErrors, type LocatedValidationError, type ValidationResult} from './ValidationError'
 import {ErrorNode} from './state/ErrorNode'
 import {ObservableNode} from "@core/state/ObservableNode"
 import {hasStandardGetters, snapshotValue, type FormSnapshot} from "@core/state/snapshot"
@@ -41,7 +41,7 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
 
   protected checkBatchNode(node: ObservableNode<unknown>, check: () => unknown): unknown {
     const field = Object.values(this._fields).find(field => field === node)
-    return field ? field.checkAndSetValid(this) : check()
+    return field ? field.validate(this) : check()
   }
 
   private _snapshot?: FormSnapshot
@@ -77,7 +77,7 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
   }
 
   batch<TResult>(callback: () => TResult & (TResult extends PromiseLike<unknown> ? never : unknown)): TResult {
-    return this.batchUpdate(callback, () => this.checkValid())
+    return this.batchUpdate(callback, () => this.validate())
   }
 
   /** All errors in field order, then own global errors; paths are relative to this Form. */
@@ -100,21 +100,12 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
     return fields
   }
 
-  checkValid(form?: this): boolean {
+  validate(_form?: Form): ValidationResult {
     const check = () => {
       this.clientChecked = false
-      let isFormValid = true
-      const fields = this._fields
-
-      for (const key of Object.keys(fields)) {
-        const field = fields[key]
-        if (!field.checkAndSetValid(form ?? this)) {
-          isFormValid = false
-        }
-      }
-
+      for (const field of Object.values(this._fields)) field.validate(this)
       this.clientChecked = true
-      return isFormValid && this.errors.length === 0
+      return {valid: this.isValid}
     }
     return this.update(() => this._dependencies?.isEnabled ? this._dependencies.check(check) : check())
   }
@@ -165,10 +156,10 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
               this._dependencies.request(field)
             } else if (field) {
               // Collection rules remain local and retain their owning Form context.
-              this.validateNodeAfterMutation(field, () => field.checkAndSetValid(this))
+              this.validateNodeAfterMutation(field, () => field.validate(this))
             }
           }
-        } else this.validateAfterMutation(() => this.checkValid())
+        } else this.validateAfterMutation(() => this.validate())
       }
       })
   }

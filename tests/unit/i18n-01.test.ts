@@ -50,11 +50,11 @@ describe('I18N-01 application-owned messages', () => {
     const custom = vi.fn(() => [])
     const field = new Field(StringType, null, {validate: custom})
     field.setRawValue(raw, false)
-    expect(field.checkValid()).toBe(false)
+    expect(field.validate().valid).toBe(false)
     expect(field.errors).toEqual([{code: 'required', source: 'type'}])
     expect(custom).not.toHaveBeenCalled()
     field.options = {isRequired: false}
-    expect(field.checkValid()).toBe(true)
+    expect(field.validate().valid).toBe(true)
     expect(field.errors).toEqual([])
   })
 
@@ -75,11 +75,11 @@ describe('I18N-01 application-owned messages', () => {
       [3, true, 1, 2, {code: 'max_items', params: {max: 2}}],
     ] as const) {
       const field = make(size, required, min, max)
-      expect(field.checkValid()).toBe(false)
+      expect(field.validate().valid).toBe(false)
       expect(field.errors).toEqual([{...expected, source: 'type'}])
     }
     const valid = make(2, true, 2, 2)
-    expect(valid.checkValid()).toBe(true)
+    expect(valid.validate().valid).toBe(true)
     expect(valid.errors).toEqual([])
   })
 
@@ -105,17 +105,17 @@ describe('I18N-01 application-owned messages', () => {
     const field = new Field(StringType, 'valid')
     field.setErrors([{code: 'manual', message: ''}])
     replaceNodeErrors(field, 'server', [{code: 'server', message: 'Server text'}])
-    expect(field.checkValid()).toBe(false)
+    expect(field.validate().valid).toBe(false)
     const before = field.errors
     field.options = {validate: () => [{code: 'ok'}, {code: 'bad', params: {value: Infinity}}]}
-    expect(() => field.checkValid()).toThrow()
+    expect(() => field.validate()).toThrow()
     expect(field.errors).toBe(before)
     expect(field.errors).toEqual([{code: 'server', message: 'Server text', source: 'server'},
       {code: 'manual', message: '', source: 'manual'}])
   })
 
-  it('retains legacy false failure without generating fallback text', () => {
-    const field = new Field(StringType, 'valid', {validate: () => false})
+  it('retains an explicit code without generating fallback text', () => {
+    const field = new Field(StringType, 'valid', {validate: () => [{code: 'custom'}]})
     expect(field.errors).toEqual([{code: 'custom', source: 'custom'}])
   })
 

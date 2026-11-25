@@ -120,9 +120,9 @@ describe('PERF-01 snapshot cache regressions', () => {
   it('preserves committed snapshots, equivalent batches, exception recovery and validation counts', () => {
     const root = new Root()
     const row = root.rows.forms[0]
-    const validate = vi.fn(() => true)
+    const validate = vi.fn(() => [])
     row.value.options = {validate}
-    root.checkValid()
+    root.validate()
     validate.mockClear()
     const listener = vi.fn()
     root.subscribe(listener)

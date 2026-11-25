@@ -4,7 +4,7 @@ import {DateTime} from "luxon"
 import {FieldType} from "@core/types/FieldType"
 import {FieldOptions} from "@core/options"
 
-export interface DateLuxonOptions extends FieldOptions {
+export interface DateLuxonOptions extends FieldOptions<DateTime> {
   minDate?: DateTime
   maxDate?: DateTime
   inputFormat?: string

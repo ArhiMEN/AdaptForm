@@ -272,7 +272,7 @@ function syncProfileFromInputs(event?: Event): void {
     }, false)
   }
 
-  if (validatedProfile) profile.checkValid()
+  if (validatedProfile) profile.validate()
   renderProfile()
 }
 
@@ -281,7 +281,7 @@ $('#profile-form').addEventListener('change', event => syncProfileFromInputs(eve
 $('#profile-form').addEventListener('submit', event => {
   event.preventDefault()
   validatedProfile = true
-  profile.checkValid()
+  profile.validate()
   renderProfile()
 })
 $('#reset-profile').addEventListener('click', () => {
@@ -321,7 +321,7 @@ $('#tags-list').addEventListener('input', event => {
   const index = Number(target.dataset.tagIndex)
   tagsInteracted = true
   tags.items[index]?.setRawValue(target.value, false)
-  tags.checkValid()
+  tags.validate()
   renderTags()
   const next = document.querySelector<HTMLInputElement>(`[data-tag-index="${index}"]`)
   next?.focus()
@@ -372,7 +372,7 @@ $('#addresses-list').addEventListener('input', event => {
   addressesValidated = true
   if (cityIndex !== undefined) form.city.setRawValue(target.value, false)
   if (postalIndex !== undefined) form.postalCode.setRawValue(target.value, false)
-  addresses.checkValid()
+  addresses.validate()
   renderAddresses()
   const selector = cityIndex !== undefined ? `[data-address-city="${index}"]` : `[data-address-postal="${index}"]`
   const next = document.querySelector<HTMLInputElement>(selector)
@@ -395,7 +395,7 @@ $('#add-address').addEventListener('click', () => {
 })
 $('#validate-addresses').addEventListener('click', () => {
   addressesValidated = true
-  addresses.checkValid()
+  addresses.validate()
   renderAddresses()
 })
 

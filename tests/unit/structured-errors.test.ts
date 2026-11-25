@@ -2,7 +2,7 @@ import {replaceNodeErrors} from '../../src/core/state/ErrorNode'
 import {DateTime} from 'luxon'
 import {DateLuxonType} from '../../src/luxon'
 import {describe, expect, expectTypeOf, it, vi} from 'vitest'
-import {ArrayField, ArrayFormField, BooleanType, DateType, DecimalType, ErrorsSchema, Field, FieldType, Form,
+import {ArrayField, ArrayFormField, BooleanType, DateType, DecimalType, ErrorContractError, ErrorsSchema, Field, FieldType, Form,
   NumberType, StringType, type FieldSnapshot, type ValidationError, type ValidationErrorInput,
   type FieldOptions, type LocatedValidationError} from '../../src'
 
@@ -27,7 +27,7 @@ describe('structured validation errors', () => {
   })
 
   it('supports errors without a message independently from their text projection', () => {
-    const field = new Field(StringType, 'x', {validate: () => ({code: 'unavailable'})})
+    const field = new Field(StringType, 'x', {validate: () => [{code: 'unavailable'}]})
     expect(field.getErrors()).toEqual([{code: 'unavailable', source: 'custom'}])
     expect(field.errors.map(error => error.message ?? '')).toEqual([''])
     expect(field.isValid).toBe(false)
@@ -36,7 +36,7 @@ describe('structured validation errors', () => {
   it('detaches and freezes params without retaining the input object or extra error properties', () => {
     const params = {min: 2, nested: {expected: ['a']}}
     const input = {code: 'min_length', params, value: 'sensitive', rawValue: 'sensitive'}
-    const field = new Field(StringType, 'secret', {validate: () => input})
+    const field = new Field(StringType, 'secret', {validate: () => [input]})
     const error = field.getErrors()[0]
     params.nested.expected.push('b')
     expect(error.params).toEqual({min: 2, nested: {expected: ['a']}})
@@ -47,17 +47,16 @@ describe('structured validation errors', () => {
     expect(JSON.stringify(error)).not.toContain('sensitive')
   })
 
-  it.each([true, false, '', 'Specific failure'] as const)('preserves legacy validator result %j', result => {
-    const field = new Field(StringType, 'x', {validate: () => result})
-    expect(field.isValid).toBe(result === true)
-    expect(field.errors.map(error => error.message)).toEqual(result === true ? [] : [result === false ? undefined : result])
-  })
-
-  it.each([undefined, null, 0, {}, [], [true]])('preserves other legacy JS success values %j', result => {
-    const field = new Field(StringType, 'x', {validate: (() => result) as NonNullable<FieldOptions['validate']>})
-    expect(field.isValid).toBe(true)
-    expect(field.getErrors()).toEqual([])
-  })
+  it.each([true, false, '', 'Specific failure', undefined, null, 0, {}, {code: 'single'}, [true], Promise.resolve([])])(
+    'rejects an unsupported validator result %j', result => {
+      const validate = (() => result) as unknown as NonNullable<FieldOptions['validate']>
+      const field = new Field(StringType, null, {validate})
+      field.setRawValue('x', false)
+      expect(() => field.validate()).toThrow(ErrorContractError)
+      expect(field.isValid).toBeNull()
+      expect(field.getErrors()).toEqual([])
+    },
+  )
 
   it('preserves type-specific early exits and does not invoke custom rules on type failures', () => {
     const validate = vi.fn(() => duplicate)
@@ -96,7 +95,7 @@ describe('structured validation errors', () => {
   })
 
   it('assigns provenance at the engine boundary', () => {
-    const field = new Field(StringType, 'x', {validate: () => ({code: 'rule', source: 'server', path: ['spoofed']})})
+    const field = new Field(StringType, 'x', {validate: () => [{code: 'rule', source: 'server', path: ['spoofed']}]})
     expect(field.getErrors()).toEqual([{code: 'rule', source: 'custom'}])
     field.setErrors([{code: 'manual', message: 'Manual'}])
     expect(field.getErrors().slice(-1)[0]?.source).toBe('manual')
@@ -126,7 +125,7 @@ describe('structured validation errors', () => {
 describe('built-in codes', () => {
   it('provides required and cast-error codes', () => {
     const required = new Field(StringType)
-    required.checkAndSetValid()
+    required.validate()
     expect(required.getErrors()).toMatchObject([{code: 'required', source: 'type'}])
     expect(new Field(NumberType, 'bad' as unknown as number).getErrors()).toMatchObject([{code: 'invalid_type'}])
   })
@@ -242,9 +241,9 @@ describe('server schema parsing and node ownership', () => {
     expect(form.email.errors).toEqual([])
     expect(form.email.isValid).toBeNull()
     replaceNodeErrors(form.email, 'server', [{code: 'taken'}])
-    expect(form.email.checkAndSetValid()).toBe(false)
+    expect(form.email.validate().valid).toBe(false)
     expect(form.email.errors).toMatchObject([{code: 'taken'}])
-    expect(form.checkValid()).toBe(false)
+    expect(form.validate().valid).toBe(false)
     form.clearErrors({sources: ['manual', 'server'], recursive: true})
     expect(form.getErrors()).toEqual([])
     form.reset()
@@ -298,7 +297,7 @@ describe('snapshots, ownership and scheduling', () => {
     const form = new Root()
     const validate = vi.fn(() => duplicate)
     form.email.options = {validate}
-    form.email.checkAndSetValid()
+    form.email.validate()
     validate.mockClear()
     expect(form.getSnapshot().errors).toEqual([])
     expect(form.getSnapshot().fields.email.errors).toHaveLength(2)
@@ -311,7 +310,7 @@ describe('snapshots, ownership and scheduling', () => {
   it('uses current indexes after move/remove and detaches removed children', () => {
     const form = new Root()
     for (const row of form.rows.forms) row.name.options = {validate: () => duplicate}
-    form.checkValid()
+    form.validate()
     const retained = form.rows.forms[1]
     const removed = form.rows.forms[0]
     const id = form.rows.getSnapshot().itemIds?.[1]
@@ -328,7 +327,7 @@ describe('snapshots, ownership and scheduling', () => {
   })
 
   it('keeps scalar item paths current and preserves automatic move revalidation', () => {
-    const tags = new ArrayField(value => new Field(StringType, value, {validate: () => ({code: 'rule'})}), {}, ['a', 'b'])
+    const tags = new ArrayField(value => new Field(StringType, value, {validate: () => [{code: 'rule'}]}), {}, ['a', 'b'])
     const retained = tags.items[1]
     tags.move(1, 0)
     expect(tags.items[0]).toBe(retained)
@@ -341,8 +340,8 @@ describe('snapshots, ownership and scheduling', () => {
   })
 
   it('deduplicates batch dependency validation and publishes atomic structured state', () => {
-    const validate = vi.fn((value: string) => value === 'valid' ? true : duplicate)
-    const unrelated = vi.fn(() => true)
+    const validate = vi.fn((value: string) => value === 'valid' ? [] : duplicate)
+    const unrelated = vi.fn(() => [])
     class Dependent extends Form {
       source = new Field(StringType, 'old')
       target = new Field(StringType, 'old', {dependsOn: [{path: ['source']}], validate})
@@ -372,7 +371,7 @@ describe('snapshots, ownership and scheduling', () => {
     const notify = vi.fn()
     field.subscribe(notify)
     const snapshot = field.getSnapshot()
-    for (let i = 0; i < 10; i++) field.checkAndSetValid()
+    for (let i = 0; i < 10; i++) field.validate()
     expect(field.getSnapshot()).toBe(snapshot)
     expect(notify).not.toHaveBeenCalled()
     expect(field.isTouched).toBe(false)
@@ -481,7 +480,7 @@ describe('manual extension and path boundaries', () => {
 
 describe('error-only batch boundaries', () => {
   it('batches server metadata without scheduling dependent validators', () => {
-    const validate = vi.fn(() => true)
+    const validate = vi.fn(() => [])
     class Dependent extends Form {
       source = new Field(StringType, 'a')
       target = new Field(StringType, 'b', {dependsOn: [{path: ['source']}], validate})

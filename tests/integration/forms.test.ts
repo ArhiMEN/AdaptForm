@@ -33,7 +33,7 @@ describe('Integration Tests', () => {
         agreed: 'true'
       }
       
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(true)
     })
 
@@ -47,7 +47,7 @@ describe('Integration Tests', () => {
         agreed: 'true'
       }
       
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(false)
       expect(errorsByPath(form).login).toBeDefined()
       expect(errorsByPath(form).login!.length).toBeGreaterThan(0)
@@ -63,7 +63,7 @@ describe('Integration Tests', () => {
         agreed: 'true'
       }
       
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(false)
       expect(form.email.getErrors()).toEqual([{code: 'pattern', source: 'type'}])
     })
@@ -78,7 +78,7 @@ describe('Integration Tests', () => {
         agreed: 'true'
       }
       
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(false)
       expect(errorsByPath(form).password).toBeDefined()
       expect(errorsByPath(form).password!.length).toBeGreaterThan(0)
@@ -96,11 +96,11 @@ describe('Integration Tests', () => {
       }
       
       // Custom validation
-      form.passwordConfirm.options.validate = (value, form) => {
-        return value === form?.password?.valueClear || 'Passwords do not match'
+      form.passwordConfirm.options.validate = (value, form?: RegistrationForm) => {
+        return value === form?.password?.valueClear ? [] : [{code: 'custom', message: 'Passwords do not match'}]
       }
       
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(false)
       expect(errorsByPath(form).passwordConfirm).toContain('Passwords do not match')
     })
@@ -115,7 +115,7 @@ describe('Integration Tests', () => {
         agreed: 'true'
       }
       
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(false)
       expect(errorsByPath(form).age).toBeDefined()
       expect(errorsByPath(form).age!.length).toBeGreaterThan(0)
@@ -131,7 +131,7 @@ describe('Integration Tests', () => {
         agreed: 'true'
       }
       
-      form.checkValid()
+      form.validate()
       const json = form.toJSON()
       
       expect(json).toEqual({
@@ -153,13 +153,13 @@ describe('Integration Tests', () => {
         total: 1000
       }
       
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(true)
     })
 
     it('should be invalid with empty items', () => {
       const form = new OrderForm()
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(false)
       expect(form.items.errors).toEqual([{code: 'required', source: 'type'}])
     })
@@ -171,7 +171,7 @@ describe('Integration Tests', () => {
         total: -100
       }
       
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(false)
       expect(form.total.getErrors()).toEqual([{code: 'min_value', params: {min: 0, exclusive: true}, source: 'type'}])
     })
@@ -180,7 +180,7 @@ describe('Integration Tests', () => {
       const form = new OrderForm()
       
       form.items.add('New Item')
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(true)
       expect(form.items.itemsValue.length).toBe(1)
       expect(form.items.itemsValue).toEqual(['New Item'])
@@ -193,11 +193,11 @@ describe('Integration Tests', () => {
         total: 1000
       }
       
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(true)
       
       form.items.remove(1)
-      form.checkValid()
+      form.validate()
       expect(form.items.itemsValue).toEqual(['Item 1', 'Item 3'])
       expect(form.isValid).toBe(true)
     })

@@ -77,12 +77,3 @@ export function prefixErrors(errors: readonly ValidationError[], prefix: Validat
     ...prefix, ...('path' in error ? (error as LocatedValidationError).path : []),
   ])}))
 }
-
-/** Retain legacy result interpretation until the array-only runner; never supply display text. */
-export function customErrors(result: unknown): readonly ValidationErrorInput[] {
-  if (result === false) return [{code: 'custom'}]
-  if (typeof result === 'string') return [{code: 'custom', message: result}]
-  if (isValidationError(result)) return [result]
-  if (Array.isArray(result) && result.length > 0 && result.every(isValidationError)) return result
-  return []
-}

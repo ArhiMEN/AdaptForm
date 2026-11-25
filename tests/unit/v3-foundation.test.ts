@@ -43,7 +43,7 @@ describe('V3 foundational contracts', () => {
     expect(field.isValid).toBe(true)
     expect(field.valueClear).toBe('okay')
     field.rawValue = null
-    field.checkAndSetValid()
+    field.validate()
     expect(field.getErrors()).toMatchObject([{code: 'required'}])
     class Root extends Form { slug = new Field(Slug, 'okay', {prefix: 'ok'}) }
     expectTypeOf(new Root().fieldsValue.slug).toEqualTypeOf<string | null>()
@@ -123,7 +123,7 @@ describe('V3 foundational contracts', () => {
     expect(field.isValid).toBe(true)
     field.options = {isDatetime: true}
     expect(field.isValid).toBe(null)
-    field.checkAndSetValid()
+    field.validate()
     expect(field.isValid).toBe(true)
   })
 
@@ -318,12 +318,12 @@ describe('ODR-02 ErrorParams domain', () => {
     const field = new Field(StringType, 'x')
     field.setErrors([{code: 'previous'}])
     field.options = {validate: () => [{code: 'bad', params: {nested: Infinity}}]}
-    failure(() => field.checkValid(), 'nonfinite_number')
+    failure(() => field.validate(), 'nonfinite_number')
     expect(field.getErrors()).toEqual([{code: 'previous', source: 'manual'}])
     const callback = vi.fn((): readonly ValidationErrorInput[] => [{code: 'previous'}])
     const array = new ArrayField(value => new Field(StringType, value), {validate: callback}, ['x'])
     callback.mockReturnValue([{code: 'bad', params: {nested: Infinity}}])
-    failure(() => array.checkValid(), 'nonfinite_number')
+    failure(() => array.validate(), 'nonfinite_number')
     expect(array.getOwnErrors()).toEqual([{code: 'previous', source: 'custom'}])
   })
 

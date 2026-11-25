@@ -156,7 +156,7 @@ export class DependencyGraph implements DependencyScheduler {
         }
       }
       dependencyValidation(() => {
-        for (const field of this.order) if (selected.has(field)) field.checkAndSetValid(this.form)
+        for (const field of this.order) if (selected.has(field)) field.validate(this.form)
       })
     } finally {
       this.rememberValues()

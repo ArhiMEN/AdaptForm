@@ -54,7 +54,7 @@ describe('Form value type contracts', () => {
 // Compile-time negative cases must never execute.
 function rejectedContracts(field: Field<string>, form: Leaf) {
   // @ts-expect-error A validation context must remain a real Form.
-  field.checkValid({label: {valueClear: 'fake'}})
+  field.validate({label: {valueClear: 'fake'}})
   // @ts-expect-error Clean numeric values must not widen to strings or any.
   const invalid: string | null = form.count.valueClear
   // @ts-expect-error Synchronous validators do not accept async callbacks.

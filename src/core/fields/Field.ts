@@ -1,5 +1,5 @@
 import {ErrorContractError} from '../ErrorContractError'
-import {customErrors, type ValidationError} from '../ValidationError'
+import type {ValidationError, ValidationResult} from '../ValidationError'
 import {ErrorNode} from '../state/ErrorNode'
 import {snapshotValue, type FieldSnapshot} from "@core/state/snapshot"
 import {FieldOptions} from "@core/options"
@@ -12,7 +12,7 @@ import {validationCallback} from '@core/state/dependencyScheduling'
 export class Field<T = any, O extends object = FieldOptions> extends ErrorNode<FieldSnapshot> {
   protected _rawValue: any = null
   protected _valueClear: T | null = null
-  protected fieldType: FieldTypeContract<T, O & FieldOptions>
+  protected fieldType: FieldTypeContract<T, O & FieldOptions<T>>
   protected defaultValue: T | null
   private _baseline: T | null = null
   getErrors(): readonly ValidationError[] { return this.getOwnErrors() }
@@ -30,11 +30,11 @@ export class Field<T = any, O extends object = FieldOptions> extends ErrorNode<F
   constructor(
     TypeConstructor: FieldTypeConstructor<T, O>,
     defaultValue?: T | null,
-    options?: (O & FieldOptions) | null,
+    options?: (O & FieldOptions<[T][T extends unknown ? 0 : never]>) | null,
   ) {
     super()
     // Engine options are optional properties; preserve the implementation's options object.
-    this.fieldType = new TypeConstructor({isRequired: true, ...options} as O) as FieldTypeContract<T, O & FieldOptions>
+    this.fieldType = new TypeConstructor({isRequired: true, ...options} as O) as FieldTypeContract<T, O & FieldOptions<T>>
     if (typeof this.fieldType.typeId !== 'string' || !this.fieldType.typeId.length) {
       throw new ErrorContractError('invalid_type_id', ['typeId'])
     }
@@ -49,7 +49,7 @@ export class Field<T = any, O extends object = FieldOptions> extends ErrorNode<F
     } else {
       this._rawValue = null
       this._valueClear = null
-      // Keep isValid as null until checkValid has been called.
+      // Keep isValid as null until validation is requested.
       this.clientChecked = false
     }
 
@@ -83,11 +83,11 @@ export class Field<T = any, O extends object = FieldOptions> extends ErrorNode<F
     })
   }
 
-  get options(): O & FieldOptions {
+  get options(): O & FieldOptions<T> {
     return this.fieldType.options
   }
 
-  set options(options: O) {
+  set options(options: O & FieldOptions<T>) {
     this.update(() => {
       const typeId = this.fieldType.typeId
       const before = copyValue({...this.fieldType.options})
@@ -116,7 +116,7 @@ export class Field<T = any, O extends object = FieldOptions> extends ErrorNode<F
       this.isTouched = true
 
       if (validate) {
-        this.validateAfterMutation(() => this.checkAndSetValid())
+        this.validateAfterMutation(() => this.validate())
       }
       })
   }
@@ -160,39 +160,33 @@ export class Field<T = any, O extends object = FieldOptions> extends ErrorNode<F
   // ========== Validation ==========
 
   private isRequired(form?: Form): boolean {
-    let isRequired
-    const rule = this.options.isRequired
-    if (typeof rule === 'function') {
-      isRequired = validationCallback(() => rule.call(this.options, form ?? null))
-    } else {
-      isRequired = rule ?? true
-    }
-
-    return isRequired
+    const options = this.options
+    const rule = options.isRequired
+    return typeof rule === 'function' ? validationCallback(() => rule.call(options, form)) : rule ?? true
   }
 
-  checkValid(form?: Form): boolean {
+  validate(form?: Form): ValidationResult {
     return this.update(() => {
       this.clientChecked = false
+      const value = this._valueClear
       if (this.isEmpty) {
-        this.completeClientCheck(this.isRequired(form)
-          ? [{code: 'required'}] : [])
-      } else if (this._valueClear === null) {
-        this.completeClientCheck([{code: 'invalid_type', params: {expected: this.fieldType.typeId}}])
+        this.completeClientCheck(this.isRequired(form) ? [{code: 'required'}] : [], [])
+      } else if (value === null) {
+        this.completeClientCheck([{code: 'invalid_type', params: {expected: this.fieldType.typeId}}], [])
       } else {
-        const type = validationCallback(() => this.fieldType.validateErrors(this._valueClear as T, form))
-        if (type.length) this.completeClientCheck(type)
+        const type = validationCallback(() => this.fieldType.validateErrors(value, form))
+        if (!Array.isArray(type)) throw new ErrorContractError('invalid_errors')
+        if (type.length) this.completeClientCheck(type, [])
         else {
-          const custom = this.options.validate
-            ? customErrors(validationCallback(() => this.options.validate!(this._valueClear, form))) : []
+          const options = this.options
+          const validate = options.validate
+          const custom = validate ? validationCallback(() => validate.call(options, value, form)) : []
           this.completeClientCheck(type, custom)
         }
       }
-      return this.isValid === true
+      return {valid: this.isValid === true}
     })
   }
-
-  checkAndSetValid(form?: Form): boolean { return this.checkValid(form) }
 
   get isEmpty(): boolean {
     let isEmpty = false

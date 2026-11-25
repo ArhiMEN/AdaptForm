@@ -28,7 +28,7 @@ describe('ArrayField', () => {
 
   describe('itemsValue setter', () => {
     it.each([{ value: [] }, { value: ['new'] }, { value: [null] }])('should check only the final replacement $value', ({ value }) => {
-      const validate = vi.fn(() => true)
+      const validate = vi.fn(() => [])
       const isRequired = vi.fn(() => false)
       const arrayField = new ArrayField(
         (value?: string) => new Field(StringType, value, { isRequired: false }),
@@ -40,7 +40,7 @@ describe('ArrayField', () => {
 
       arrayField.itemsValue = value
 
-      expect(isRequired).toHaveBeenCalledExactlyOnceWith(null)
+      expect(isRequired).toHaveBeenCalledExactlyOnceWith(undefined)
       expect(validate).toHaveBeenCalledExactlyOnceWith(value, undefined)
       expect(arrayField.isValid).toBe(true)
     })
@@ -158,11 +158,11 @@ describe('ArrayField', () => {
       expect(arrayField.isValid).toBe(false)
       
       arrayField.add('a')
-      arrayField.checkValid()
+      arrayField.validate()
       expect(arrayField.isValid).toBe(false)
       
       arrayField.add('b')
-      arrayField.checkValid()
+      arrayField.validate()
       expect(arrayField.isValid).toBe(true)
     })
 
@@ -176,15 +176,15 @@ describe('ArrayField', () => {
     it('should support custom validation', () => {
       const factory = (value?: string) => new Field(StringType, value)
       const arrayField = new ArrayField(factory, {
-        validate: (values) => values.includes('admin') || 'Must contain admin'
+        validate: (values) => values.includes('admin') ? [] : [{code: 'custom', message: 'Must contain admin'}]
       })
       
       arrayField.add('user')
-      arrayField.checkValid()
+      arrayField.validate()
       expect(arrayField.isValid).toBe(false)
       
       arrayField.add('admin')
-      arrayField.checkValid()
+      arrayField.validate()
       expect(arrayField.isValid).toBe(true)
     })
   })
@@ -221,7 +221,7 @@ describe('ArrayField', () => {
       expect(errorMessages(arrayField)).toEqual([])
       expect(arrayField.isValid).toBe(false)
 
-      expect(arrayField.checkValid()).toBe(false)
+      expect(arrayField.validate().valid).toBe(false)
       expect(errorMessages(arrayField)).not.toEqual([])
     })
   })

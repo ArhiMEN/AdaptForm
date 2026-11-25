@@ -44,12 +44,12 @@ describe('Form', () => {
     })
   })
 
-  describe('checkValid', () => {
+  describe('validate', () => {
     it.each([{ values: [] }, { values: [null] }, { values: ['new', 'other'] }])(
       'should defer all collection rules for $values until an explicit parent check',
       ({ values }) => {
         const isRequired = vi.fn(() => false)
-        const validate = vi.fn(() => true)
+        const validate = vi.fn(() => [])
         class CollectionForm extends Form {
           values = new ArrayField(
             (value?: string) => new Field(StringType, value, { isRequired: false }),
@@ -71,7 +71,7 @@ describe('Form', () => {
         expect(form.isValid).toBe(false)
         expect(isRequired).not.toHaveBeenCalled()
         expect(validate).not.toHaveBeenCalled()
-        expect(form.checkValid()).toBe(true)
+        expect(form.validate().valid).toBe(true)
         expect(isRequired).toHaveBeenCalledExactlyOnceWith(form)
         expect(validate).toHaveBeenCalledExactlyOnceWith(values, form)
       }
@@ -81,7 +81,7 @@ describe('Form', () => {
       const observations: unknown[] = []
       const validate = vi.fn((_values: unknown[], form?: Form) => {
         observations.push(form?.fieldsValue)
-        return true
+        return []
       })
       const isRequired = vi.fn(() => false)
       class CollectionForm extends Form {
@@ -112,7 +112,7 @@ describe('Form', () => {
     it('should check all fields', () => {
       const form = new TestForm()
       form.fields = { name: 'John', age: 25 }
-      expect(form.checkValid()).toBe(true)
+      expect(form.validate().valid).toBe(true)
     })
 
     it('should validate conditional required fields after bulk assignment', () => {
@@ -128,12 +128,12 @@ describe('Form', () => {
       expect(form.isValid).toBe(false)
 
       form.country.rawValue = 'CA'
-      expect(form.checkValid()).toBe(true)
+      expect(form.validate().valid).toBe(true)
       expect(form.isValid).toBe(true)
     })
 
     it('should run each field validator once during bulk assignment', () => {
-      const validate = vi.fn(() => true)
+      const validate = vi.fn(() => [])
       class ValidatedForm extends Form {
         name = new Field(StringType, null, { validate })
       }
@@ -148,7 +148,7 @@ describe('Form', () => {
     it('should return false if any field is invalid', () => {
       const form = new TestForm()
       form.fields = { name: 'John', age: null }
-      expect(form.checkValid()).toBe(false)
+      expect(form.validate().valid).toBe(false)
     })
   })
 
@@ -298,12 +298,12 @@ describe('Form', () => {
       expect(form.isValid).toBe(false)
     })
 
-    it('should return false from checkValid when global errors exist', () => {
+    it('should return false from validate when global errors exist', () => {
       const form = new TestForm()
       form.fields = { name: 'John', age: 25 }
       form.setErrors([...form.getOwnErrors(), {code: 'server', message: 'Request rejected'}])
 
-      expect(form.checkValid()).toBe(false)
+      expect(form.validate().valid).toBe(false)
       expect(form.isValid).toBe(false)
     })
     it('should be false when has global errors', () => {

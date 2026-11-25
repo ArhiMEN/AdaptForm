@@ -39,11 +39,11 @@ describe('HF-008 snapshots and subscriptions', () => {
     field.setErrors([{code: 'manual', message: 'server'}])
     expect(listener).toHaveBeenCalledTimes(2)
     const previous = field.getSnapshot()
-    field.checkValid()
+    field.validate()
     expect(listener).toHaveBeenCalledTimes(3)
-    expect(field.isValid).toBe(false) // checkValid retains legacy validity assignment semantics.
+    expect(field.isValid).toBe(false) // validate retains legacy validity assignment semantics.
     expect(errorMessages(previous)).toEqual(['server'])
-    field.checkAndSetValid()
+    field.validate()
     expect(listener).toHaveBeenCalledTimes(3)
     field.clearErrors({sources: ['manual']})
     expect(listener).toHaveBeenCalledTimes(4)
@@ -107,7 +107,7 @@ describe('HF-008 snapshots and subscriptions', () => {
   })
 
   it('does not validate or cast on snapshot reads', () => {
-    const validate = vi.fn(() => true)
+    const validate = vi.fn(() => [])
     const field = new Field(StringType, 'initial', {validate})
     const cast = vi.spyOn(StringType.prototype, 'cast')
     field.getSnapshot(); field.getSnapshot(); field.subscribe(() => {})

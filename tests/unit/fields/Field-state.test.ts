@@ -28,7 +28,7 @@ describe('HF-006 Field baseline', () => {
   })
 
   it('compares cached cast values without extra casts or validation', () => {
-    const validate = vi.fn(() => true)
+    const validate = vi.fn(() => [])
     const cast = vi.spyOn(NumberType.prototype, 'cast')
     const field = new Field(NumberType, 42, {validate})
     field.setRawValue('042', false)
@@ -57,7 +57,7 @@ describe('HF-006 Field baseline', () => {
     const field = new Field(NumberType)
     field.rawValue = 'invalid'
     expect(field.isDirty).toBe(false)
-    field.checkValid()
+    field.validate()
     expect(field.isDirty).toBe(false)
     field.rawValue = 0
     expect(field.isDirty).toBe(true)

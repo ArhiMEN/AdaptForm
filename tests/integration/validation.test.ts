@@ -145,11 +145,11 @@ describe('Validation Tests', () => {
       const form = new TestForm() as any
       form.hasEmail.rawValue = false
       form.email.rawValue = null
-      form.email.checkAndSetValid(form)
+      form.email.validate(form)
       expect(form.email.isValid).toBe(true)
       
       form.hasEmail.rawValue = true
-      form.email.checkAndSetValid(form)
+      form.email.validate(form)
       expect(form.email.isValid).toBe(false)
     })
   })
@@ -157,7 +157,7 @@ describe('Validation Tests', () => {
   describe('Custom Validation', () => {
     it('should support validator returning boolean', () => {
       const field = new Field(StringType, null, {
-        validate: (value) => value.length > 3 || false
+        validate: (value) => value.length > 3 ? [] : [{code: 'custom'}]
       })
       
       field.rawValue = 'ab'
@@ -169,7 +169,7 @@ describe('Validation Tests', () => {
 
     it('should support validator returning string', () => {
       const field = new Field(StringType, null, {
-        validate: (value) => value.length > 3 || 'Must be longer than 3 characters'
+        validate: (value) => value.length > 3 ? [] : [{code: 'custom', message: 'Must be longer than 3 characters'}]
       })
       
       field.rawValue = 'ab'
@@ -189,13 +189,13 @@ describe('Validation Tests', () => {
     it('should pass form context to validator', () => {
       const field2 = new Field(StringType, null, {
         validate: (value, form) => {
-          return value === (form as any)?.field?.valueClear || 'Must match field'
+          return value === (form as any)?.field?.valueClear ? [] : [{code: 'custom', message: 'Must match field'}]
         }
       })
       
       const form = { field: { valueClear: 'test' } } as any
       field2.rawValue = 'test'
-      field2.checkAndSetValid(form)
+      field2.validate(form)
       expect(field2.isValid).toBe(true)
     })
   })

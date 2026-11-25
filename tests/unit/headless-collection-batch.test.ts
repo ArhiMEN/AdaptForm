@@ -1,16 +1,16 @@
 import {describe, expect, it, vi} from 'vitest'
 import {ArrayField, ArrayFormField, Field, Form, StringType} from '../../src'
 
-function spyOnCheck(node: {checkValid(): boolean}) {
-  return vi.spyOn(node, 'checkValid')
+function spyOnCheck(node: {validate(): {readonly valid: boolean}}) {
+  return vi.spyOn(node, 'validate')
 }
 
 function setup(kind: 'ArrayField' | 'ArrayFormField') {
-  const descendantValidate = vi.fn((_value: unknown, _context?: Form) => true)
-  const siblingValidate = vi.fn(() => true)
-  const required = vi.fn((_context: Form | null) => false)
-  const validate = vi.fn((_values: unknown, context?: Form): boolean =>
-    context instanceof CollectionForm ? context.sibling.valueClear === 'ready' : true)
+  const descendantValidate = vi.fn((_value: unknown, _context?: Form) => [])
+  const siblingValidate = vi.fn(() => [])
+  const required = vi.fn((_context?: Form) => false)
+  const validate = vi.fn((_values: unknown, context?: Form) =>
+    !(context instanceof CollectionForm) || context.sibling.valueClear === 'ready' ? [] : [{code: 'custom'}])
   class Row extends Form {
     name = new Field(StringType, 'row', {validate: descendantValidate})
   }
@@ -108,7 +108,7 @@ describe.each(['ArrayField', 'ArrayFormField'] as const)('HF-009 %s removal batc
       mutate(form.collection, operation)
       expect(checks).not.toHaveBeenCalled()
       expect(collectionChecks).toHaveBeenCalledExactlyOnceWith()
-      expect(required).toHaveBeenCalledExactlyOnceWith(null)
+      expect(required).toHaveBeenCalledExactlyOnceWith(undefined)
       expect(validate).toHaveBeenCalledTimes(1)
       expect(validate.mock.calls[0][1]).toBeUndefined()
       expect(descendantValidate).toHaveBeenCalledTimes(operation === 'remove' ? 1 : 0)
@@ -122,10 +122,10 @@ describe.each(['ArrayField', 'ArrayFormField'] as const)('HF-009 %s removal batc
       form.batch(() => {
         mutate(form.collection, operation)
         expect(validate).not.toHaveBeenCalled()
-        expect(form.collection.checkValid()).toBe(true)
+        expect(form.collection.validate().valid).toBe(true)
         expect(collectionChecks).toHaveBeenCalledExactlyOnceWith()
         expect(validate).toHaveBeenCalledTimes(1)
-        expect(required).toHaveBeenCalledExactlyOnceWith(null)
+        expect(required).toHaveBeenCalledExactlyOnceWith(undefined)
         expect(validate.mock.calls[0][1]).toBeUndefined()
         expect(checks).not.toHaveBeenCalled()
         form.sibling.rawValue = 'ready'
@@ -169,7 +169,7 @@ describe.each(['ArrayField', 'ArrayFormField'] as const)('HF-009 %s removal batc
         for (const listener of listeners) expect(listener).not.toHaveBeenCalled()
       })
       expect(rootChecks).toHaveBeenCalledTimes(1)
-      expect(childChecks).toHaveBeenCalledExactlyOnceWith(child)
+      expect(childChecks).toHaveBeenCalledExactlyOnceWith()
       expect(fixture.required).toHaveBeenCalledExactlyOnceWith(child)
       expect(fixture.validate).toHaveBeenCalledTimes(1)
       expect(fixture.validate.mock.calls[0][1]).toBe(child)

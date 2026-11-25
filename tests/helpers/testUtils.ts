@@ -7,7 +7,7 @@ import type { Form } from '@core/Form'
  * Assert that a field is valid.
  */
 export function expectValid(field: Field, form?: Form) {
-  const isValid = field.checkAndSetValid(form)
+  const isValid = field.validate(form).valid
   expect(isValid).toBe(true)
   expect(field.isValid).toBe(true)
   expect(errorMessages(field)).toEqual([])
@@ -18,7 +18,7 @@ export function expectValid(field: Field, form?: Form) {
  * Assert that a field is invalid.
  */
 export function expectInvalid(field: Field, expectedErrors: string[] = [], form?: Form) {
-  const isValid = field.checkAndSetValid(form)
+  const isValid = field.validate(form).valid
   expect(isValid).toBe(false)
   expect(field.isValid).toBe(false)
   expect(errorMessages(field)).toEqual(expectedErrors)
@@ -77,7 +77,7 @@ export function createTestForm<T extends Form>(FormConstructor: new () => T): T 
  */
 export function expectFormValid(form: Form) {
   expect(form.isValid).toBe(true)
-  expect(form.checkValid()).toBe(true)
+  expect(form.validate().valid).toBe(true)
 }
 
 /**
@@ -85,5 +85,5 @@ export function expectFormValid(form: Form) {
  */
 export function expectFormInvalid(form: Form) {
   expect(form.isValid).toBe(false)
-  expect(form.checkValid()).toBe(false)
+  expect(form.validate().valid).toBe(false)
 }

@@ -93,7 +93,7 @@ describe('HF-011 retained collection identities', () => {
 
   it('keeps per-item errors on surviving scalar nodes after an index shift', () => {
     const values = new ArrayField((value?: string) => new Field(StringType, value, {
-      validate: value => value === 'bad' ? 'bad item' : true,
+      validate: value => value === 'bad' ? [{code: 'custom', message: 'bad item'}] : [],
     }), {}, ['good', 'bad'])
     const bad = values.items[1]
     const identity = ids(values)![1]
@@ -104,7 +104,7 @@ describe('HF-011 retained collection identities', () => {
   })
 
   it('coalesces structural changes and validates once with final values and parent context', () => {
-    const validate = vi.fn(() => true)
+    const validate = vi.fn(() => [])
     class Batched extends Form {
       values = new ArrayField((value?: string) => new Field(StringType, value), {validate}, ['a', 'b'])
     }
@@ -196,7 +196,7 @@ describe('HF-011 retained collection identities', () => {
   })
 
   it('finalizes nested structural batches on exceptions and keeps retained form identity', () => {
-    const validate = vi.fn(() => true)
+    const validate = vi.fn(() => [])
     class Batched extends Form {
       rows = new ArrayFormField(Row, {validate}, [{name: 'a'}, {name: 'b'}])
     }

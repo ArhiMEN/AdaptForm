@@ -91,7 +91,7 @@ describe('HF-007 aggregate dirty state', () => {
     form.setErrors([...form.getOwnErrors(), {code: 'server', message: 'error'}])
     form.commitBaseline()
     expect(form.isDirty).toBe(false)
-    expect(form.checkValid()).toBe(false)
+    expect(form.validate().valid).toBe(false)
     expect(form.isDirty).toBe(false)
     expect(ownMessagesByCode(form)).toEqual({server: 'error'})
     form.clearErrors()

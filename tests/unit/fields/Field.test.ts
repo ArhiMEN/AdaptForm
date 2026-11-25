@@ -140,13 +140,13 @@ describe('Field', () => {
         }
         const form1 = new CountryForm()
         form1.country.rawValue = 'Canada'
-        field.checkAndSetValid(form1)
+        field.validate(form1)
         expect(field.isValid).toBe(true)
         
         // Required
         const form2 = new CountryForm()
         form2.country.rawValue = 'USA'
-        field.checkAndSetValid(form2)
+        field.validate(form2)
         expect(field.isValid).toBe(false)
       })
     })
@@ -154,7 +154,7 @@ describe('Field', () => {
     describe('custom validate', () => {
       it('should support custom validator returning boolean', () => {
         const field = new Field(StringType, null, {
-          validate: (value) => value === 'admin' || false
+          validate: (value) => value === 'admin' ? [] : [{code: 'custom'}]
         })
         
         field.rawValue = 'admin'
@@ -166,7 +166,7 @@ describe('Field', () => {
 
       it('should support custom validator returning string', () => {
         const field = new Field(StringType, null, {
-          validate: (value) => value === 'admin' || 'Must be admin'
+          validate: (value) => value === 'admin' ? [] : [{code: 'custom', message: 'Must be admin'}]
         })
         
         field.rawValue = 'user'
@@ -176,7 +176,7 @@ describe('Field', () => {
       it('should pass form to validator', () => {
         const field2 = new Field(StringType, null, {
           validate: (value, form) => {
-            return value === (form as any)?.otherField?.valueClear || 'Must match'
+            return value === (form as any)?.otherField?.valueClear ? [] : [{code: 'custom', message: 'Must match'}]
           }
         })
         
@@ -185,7 +185,7 @@ describe('Field', () => {
         }
         const form = new ContextForm()
         field2.rawValue = 'test'
-        field2.checkAndSetValid(form)
+        field2.validate(form)
         expect(field2.isValid).toBe(true)
       })
     })
@@ -216,7 +216,7 @@ describe('Field', () => {
     })
 
     it('should restore defaults without validating until the next explicit check', () => {
-      const validate = vi.fn(() => false)
+      const validate = vi.fn(() => [{code: 'custom'}])
       const field = new Field(StringType, 'default', { validate })
       expect(validate).toHaveBeenCalledTimes(1)
 

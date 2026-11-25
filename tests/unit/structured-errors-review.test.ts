@@ -53,7 +53,7 @@ describe('structured error ownership review regressions', () => {
     for (const collection of collections) {
       replaceNodeErrors(collection, 'server', [{code: 'remote'}])
       collection.setErrors([{code: 'manual'}])
-      collection.checkValid()
+      collection.validate()
       expect(collection.errors.map(error => error.source)).toEqual(['server', 'manual'])
     }
   })

@@ -1,3 +1,4 @@
+import type {Form} from './Form'
 import type {ValidationErrorInput} from './ValidationError'
 import {FieldPlugin} from "@core/plugins"
 
@@ -9,38 +10,52 @@ export interface DependencyRef {
   readonly path: DependencyPath
 }
 
-export interface FieldOptions {
+export type FieldValidator<T, F extends Form = Form> = (
+  value: T,
+  form?: F,
+) => readonly ValidationErrorInput[]
+
+export type RequiredRule<F extends Form = Form> = boolean | ((form?: F) => boolean)
+
+// Options also accept callbacks annotated with a specific owning Form class.
+// Standalone validation still supplies undefined as the custom callback context.
+type ValidatorOption<T, F extends Form> = {
+  validate(value: T, form?: F): ReturnType<FieldValidator<T, F>>
+}['validate']
+type RequiredOption<F extends Form> = boolean | { required(form?: F): boolean }['required']
+
+export interface FieldOptions<T = any, F extends Form = Form> {
   readonly dependsOn?: readonly DependencyRef[]
-  isRequired?: boolean | ((form?: any) => boolean)
-  validate?: (value: any, form?: any) => boolean | string | ValidationErrorInput | readonly ValidationErrorInput[]
+  isRequired?: RequiredOption<F>
+  validate?: ValidatorOption<T, F>
   plugins?: FieldPlugin[]
 }
 
-export interface StringOptions extends FieldOptions {
+export interface StringOptions extends FieldOptions<string> {
   minLength?: number
   maxLength?: number
   pattern?: RegExp
 }
 
-export interface NumberOptions extends FieldOptions {
+export interface NumberOptions extends FieldOptions<number> {
   gt?: number // greater than
   ge?: number // greater than or equal to
   lt?: number // less than
   le?: number // less than or equal to
 }
 
-export interface BooleanOptions extends FieldOptions {
+export interface BooleanOptions extends FieldOptions<boolean> {
   mustBeTrue?: boolean   // when true, the value must be true
   mustBeFalse?: boolean// when true, the value must be false
 }
 
-export interface DateOptions extends FieldOptions {
+export interface DateOptions extends FieldOptions<Date> {
   minDate?: Date
   maxDate?: Date
   isDatetime?: boolean
 }
 
-export interface DecimalOptions extends FieldOptions {
+export interface DecimalOptions extends FieldOptions<number | string> {
   gt?: number
   ge?: number
   lt?: number
@@ -53,16 +68,16 @@ export interface DecimalOptions extends FieldOptions {
 
 // Region: additional fields
 
-export interface ArrayFieldOptions {
-  isRequired?: boolean | ((form?: any) => boolean)
-  validate?: (value: any[], form?: any) => boolean | string | ValidationErrorInput | readonly ValidationErrorInput[]
+export interface ArrayFieldOptions<T = any, F extends Form = Form> {
+  isRequired?: RequiredOption<F>
+  validate?: ValidatorOption<(T | null)[], F>
   minItems?: number
   maxItems?: number
 }
 
-export interface ArrayFormFieldOptions {
-  isRequired?: boolean | ((form?: any) => boolean)
-  validate?: (value: any[], form?: any) => boolean | string | ValidationErrorInput | readonly ValidationErrorInput[]
+export interface ArrayFormFieldOptions<T extends Form = Form, F extends Form = Form> {
+  isRequired?: RequiredOption<F>
+  validate?: ValidatorOption<T[], F>
   minForms?: number
   maxForms?: number
 }

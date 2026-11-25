@@ -1,4 +1,4 @@
-import {customErrors, prefixErrors, type LocatedValidationError} from '../ValidationError'
+import {prefixErrors, type LocatedValidationError, type ValidationResult} from '../ValidationError'
 import {ErrorNode} from '../state/ErrorNode'
 import type {ObservableNode} from "@core/state/ObservableNode"
 import {hasStandardGetters, snapshotValue, type ArrayFieldSnapshot} from "@core/state/snapshot"
@@ -29,7 +29,7 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
       itemIds, items, errors, isValid, isTouched, isDirty}
   }
 
-  protected options: ArrayFieldOptions
+  protected options: ArrayFieldOptions<T>
   protected _items: Field<T>[] = []
   protected clearsOnDescendantChange = true
 
@@ -54,17 +54,17 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
 
   constructor(
     protected factory: (value?: T) => Field<T>,
-    options: ArrayFieldOptions = {},
+    options: ArrayFieldOptions<T> = {},
     initial: (T | null)[] = []
   ) {
     super()
     this.options = {
       isRequired: true,
       ...options
-    } as ArrayFieldOptions
+    }
     this._items = initial.map(value => this.factory(value as T))
     this.syncErrorChildren()
-    this.validateAfterMutation(() => this.checkValid())
+    this.validateAfterMutation(() => this.validate())
     this.commitBaseline()
   }
 
@@ -95,7 +95,7 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
         this.add(item as T, false)
       }
 
-      if (validate) this.validateAfterMutation(() => this.checkValid())
+      if (validate) this.validateAfterMutation(() => this.validate())
       })
   }
 
@@ -127,7 +127,7 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
       this.syncErrorChildren()
       this.inputChanged()
 
-      if (force_check) this.validateAfterMutation(() => this.checkValid())
+      if (force_check) this.validateAfterMutation(() => this.validate())
 
       return field
       })
@@ -142,7 +142,7 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
       this._items.splice(to, 0, node)
       this.syncErrorChildren()
       this.inputChanged()
-      this.validateAfterMutation(() => this.checkValid())
+      this.validateAfterMutation(() => this.validate())
     })
   }
 
@@ -153,7 +153,7 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
       this._items.splice(index, 1)
       this.syncErrorChildren()
       this.inputChanged()
-      this.validateAfterMutation(() => this.checkValid())
+      this.validateAfterMutation(() => this.validate())
       })
   }
 
@@ -163,7 +163,7 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
       this._items = []
       this.syncErrorChildren()
       this.inputChanged()
-      this.validateAfterMutation(() => this.checkValid())
+      this.validateAfterMutation(() => this.validate())
       })
   }
 
@@ -172,7 +172,7 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
   private isRequired(form?: Form): boolean {
     let isRequired
     if (typeof this.options.isRequired === 'function') {
-      isRequired = this.options.isRequired(form ?? null)
+      isRequired = this.options.isRequired(form ?? undefined)
     } else {
       isRequired = this.options.isRequired ?? false
     }
@@ -180,49 +180,32 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
     return isRequired
   }
 
-  checkValid(form?: Form): boolean {
+  validate(form?: Form): ValidationResult {
     return this.update(() => {
       this.clientChecked = false
       if (this.isRequired(form) && this._items.length === 0) {
-        this.completeClientCheck([{code: 'required'}])
-        return false
+        this.completeClientCheck([{code: 'required'}], [])
+        return {valid: false}
       }
 
       if (this.options.minItems != null && this._items.length < this.options.minItems) {
-        this.completeClientCheck([{code: 'min_items', params: {min: this.options.minItems}}])
-        return false
+        this.completeClientCheck([{code: 'min_items', params: {min: this.options.minItems}}], [])
+        return {valid: false}
       }
 
       if (this.options.maxItems != null && this._items.length > this.options.maxItems) {
-        this.completeClientCheck([{code: 'max_items', params: {max: this.options.maxItems}}])
-        return false
+        this.completeClientCheck([{code: 'max_items', params: {max: this.options.maxItems}}], [])
+        return {valid: false}
       }
-
-      let valid = true
 
       for (const field of this._items) {
-        const ok = field.checkAndSetValid(form)
-        if (!ok) valid = false
+        field.validate(form)
       }
 
-      if (this.options.validate) {
-        const values = this._items.map(item => item.valueClear)
-        const result = this.options.validate(values, form)
-
-        const errors = customErrors(result)
-        if (errors.length) {
-          this.completeClientCheck([], errors)
-          return false
-        }
-      }
-
-      this.completeClientCheck()
-      return valid && this.isValid
-      })
-  }
-
-  checkAndSetValid(form?: Form): boolean {
-    return this.checkValid(form)
+      const custom = this.options.validate ? this.options.validate(this.itemsValue, form) : []
+      this.completeClientCheck([], custom)
+      return {valid: this.isValid}
+    })
   }
 
   get isValid(): boolean {

@@ -84,12 +84,12 @@ describe('V3 validity and lifecycle', () => {
     expect(field.isValid).toBe(false)
     field.setErrors([])
     expect(field.isValid).toBeNull()
-    expect(field.checkValid()).toBe(false)
+    expect(field.validate().valid).toBe(false)
     field.clearErrors({sources: ['type']})
     expect(field.isValid).toBeNull()
     field.setRawValue('valid', false)
     expect(field.isValid).toBeNull()
-    expect(field.checkValid()).toBe(true)
+    expect(field.validate().valid).toBe(true)
     field.setErrors(error('review'))
     expect(field.isValid).toBe(false)
     field.setErrors([])
@@ -103,11 +103,11 @@ describe('V3 validity and lifecycle', () => {
     server(field)
     field.setErrors(error('manual'))
     for (let i = 0; i < 3; i++) {
-      expect(field.checkAndSetValid()).toBe(false)
+      expect(field.validate().valid).toBe(false)
       expect(field.errors.map(entry => entry.source)).toEqual(['custom', 'custom', 'server', 'manual'])
     }
     field.options = {validate: () => []}
-    expect(field.checkValid()).toBe(false)
+    expect(field.validate().valid).toBe(false)
     expect(field.errors.map(entry => entry.source)).toEqual(['server', 'manual'])
     field.clearErrors({sources: ['server', 'manual']})
     expect(field.isValid).toBe(true)
@@ -116,7 +116,7 @@ describe('V3 validity and lifecycle', () => {
   it('clears stale custom results on type failure and stale type results on success', () => {
     const field = new Field(StringType, 'valid', {minLength: 3, validate: () => error('custom')})
     field.setRawValue('x', false)
-    field.checkValid()
+    field.validate()
     expect(field.errors.map(entry => entry.source)).toEqual(['type'])
     field.options = {validate: () => []}
     field.rawValue = 'valid'
@@ -224,12 +224,12 @@ describe('V3 validity and lifecycle', () => {
       : new ArrayFormField(Row, {validate}, [{}])
     server(collection); collection.setErrors(error('manual'))
     fail = true
-    expect(() => collection.checkValid()).toThrow('collection failure')
+    expect(() => collection.validate()).toThrow('collection failure')
     expect(collection.errors.map(entry => entry.source)).toEqual(['server', 'manual'])
     collection.clearErrors({sources: ['server', 'manual']})
     expect(collection.isValid).toBe(false)
     fail = false
-    expect(collection.checkValid()).toBe(true)
+    expect(collection.validate().valid).toBe(true)
   })
 
   it('ignores untrusted manual provenance and local routing data at runtime', () => {
@@ -243,7 +243,7 @@ describe('V3 validity and lifecycle', () => {
   it('commitBaseline changes dirty without clearing errors or client-check knowledge', () => {
     const root = new Root()
     root.name.rawValue = 'edited'
-    root.checkValid()
+    root.validate()
     server(root.name); root.setErrors(error('global'))
     const before = root.getErrors()
     expect(root.isDirty).toBe(true)
@@ -261,13 +261,13 @@ describe('V3 validity and lifecycle', () => {
     const before = field.getSnapshot(), notify = vi.fn()
     field.subscribe(notify)
     fail = true
-    expect(() => field.checkValid()).toThrow(ErrorContractError)
+    expect(() => field.validate()).toThrow(ErrorContractError)
     expect(field.getSnapshot()).toBe(before)
     expect(notify).not.toHaveBeenCalled()
     field.clearErrors({sources: ['server', 'manual']})
     expect(field.isValid).toBeNull()
     fail = false
-    expect(field.checkValid()).toBe(true)
+    expect(field.validate().valid).toBe(true)
   })
 
   it('does not reuse an old successful check after an exception', () => {
@@ -275,7 +275,7 @@ describe('V3 validity and lifecycle', () => {
     const field = new Field(StringType, 'x', {validate: () => { if (fail) throw new Error('failure'); return [] }})
     expect(field.isValid).toBe(true)
     fail = true
-    expect(() => field.checkValid()).toThrow('failure')
+    expect(() => field.validate()).toThrow('failure')
     expect(field.isValid).toBeNull()
   })
 })
@@ -348,7 +348,7 @@ describe('V3 containers, paths and snapshots', () => {
 
   it('supports recursive source clearing and preserves completed checks when clearing only external errors', () => {
     const root = new Root()
-    root.checkValid()
+    root.validate()
     for (const node of [root, root.name, root.rows, root.rows.forms[0].name]) {
       node.setErrors(error('manual')); server(node)
     }
@@ -384,7 +384,7 @@ describe('V3 containers, paths and snapshots', () => {
     server(field)
     const before = field.getSnapshot()
     field.setErrors([{code: 'b', message: '', params: {n: 2}}]); server(field)
-    field.checkValid(); field.checkValid()
+    field.validate(); field.validate()
     expect(notify).toHaveBeenCalledTimes(4)
     expect(field.getSnapshot()).toBe(before)
   })

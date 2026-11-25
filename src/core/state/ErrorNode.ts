@@ -53,7 +53,7 @@ export abstract class ErrorNode<TSnapshot> extends ObservableNode<TSnapshot> {
     })
   }
 
-  protected completeClientCheck(type: readonly ValidationErrorInput[] = [], custom: readonly ValidationErrorInput[] = []): void {
+  protected completeClientCheck(type: readonly ValidationErrorInput[], custom: readonly ValidationErrorInput[]): void {
     this.errorStore.replaceClient(type, custom)
     this.clientChecked = true
   }
