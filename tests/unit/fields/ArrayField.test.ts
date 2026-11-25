@@ -64,7 +64,7 @@ describe('ArrayField', () => {
     it('should validate on set', () => {
       const factory = (value?: number) => new Field(NumberType, value, { gt: 0 })
       const arrayField = new ArrayField(factory, {}, [1, 2])
-      expect(arrayField.isValid).toBe(true)
+      expect(arrayField.validate().valid).toBe(true)
       
       arrayField.itemsValue = [-1, 2]
       expect(arrayField.isValid).toBe(false)
@@ -113,6 +113,7 @@ describe('ArrayField', () => {
     it('should validate after remove', () => {
       const factory = (value?: number) => new Field(NumberType, value, { gt: 0 })
       const arrayField = new ArrayField(factory, { minItems: 2 }, [1, 2, 3])
+      arrayField.validate()
       arrayField.remove(2)
       expect(arrayField.isValid).toBe(true)
     })
@@ -138,7 +139,7 @@ describe('ArrayField', () => {
     it('should validate all items', () => {
       const factory = (value?: number) => new Field(NumberType, value, { gt: 0 })
       const arrayField = new ArrayField(factory, {}, [1, 2])
-      expect(arrayField.isValid).toBe(true)
+      expect(arrayField.validate().valid).toBe(true)
       
       arrayField.add(-1)
       expect(arrayField.isValid).toBe(false)
@@ -214,6 +215,7 @@ describe('ArrayField', () => {
       )
 
       expect(arrayField.isValid).toBe(false)
+      arrayField.validate()
       expect(errorMessages(arrayField)).not.toEqual([])
 
       arrayField.reset()

@@ -7,7 +7,7 @@ import type {FieldTypeContract, FieldTypeConstructor} from "@core/types/FieldTyp
 import {Form} from "@core/Form"
 import {copyValue, equalValue} from "@core/state/value"
 
-import {validationCallback} from '@core/state/validationExecution'
+import {assertValidationAllowed, duringValidationAssembly, validationCallback} from '@core/state/validationExecution'
 
 export class Field<T = any, O extends object = FieldOptions> extends ErrorNode<FieldSnapshot> {
   protected _rawValue: any = null
@@ -34,28 +34,23 @@ export class Field<T = any, O extends object = FieldOptions> extends ErrorNode<F
   ) {
     super()
     // Engine options are optional properties; preserve the implementation's options object.
-    this.fieldType = new TypeConstructor({isRequired: true, ...options} as O) as FieldTypeContract<T, O & FieldOptions<T>>
+    this.fieldType = duringValidationAssembly(() => new TypeConstructor({isRequired: true, ...options} as O)) as
+      FieldTypeContract<T, O & FieldOptions<T>>
     if (typeof this.fieldType.typeId !== 'string' || !this.fieldType.typeId.length) {
       throw new ErrorContractError('invalid_type_id', ['typeId'])
     }
     this.defaultValue = defaultValue ?? null
 
-    for (const plugin of this.options.plugins ?? []) {
-      plugin.init?.(this)
-    }
-
-    if (defaultValue !== undefined && defaultValue !== null) {
-      this.rawValue = defaultValue
-    } else {
-      this._rawValue = null
-      this._valueClear = null
-      // Keep isValid as null until validation is requested.
-      this.clientChecked = false
-    }
-
-    // Constructor defaults are pristine values, not user edits.
-    this.isTouched = false
-    this.commitBaseline()
+    duringValidationAssembly(() => {
+      for (const plugin of this.options.plugins ?? []) plugin.init?.(this)
+      if (defaultValue != null) this.setRawValue(defaultValue, false)
+      else {
+        this._rawValue = null
+        this._valueClear = null
+      }
+      this.isTouched = false
+      this.commitBaseline()
+    })
   }
 
   private _snapshot?: FieldSnapshot
@@ -116,7 +111,7 @@ export class Field<T = any, O extends object = FieldOptions> extends ErrorNode<F
       this.isTouched = true
 
       if (validate) {
-        this.validateAfterMutation(() => this.validate())
+        this.validateAfterMutation(form => this.validate(form))
       }
       })
   }
@@ -166,11 +161,13 @@ export class Field<T = any, O extends object = FieldOptions> extends ErrorNode<F
   }
 
   validate(form?: Form): ValidationResult {
+    assertValidationAllowed()
     return this.update(() => {
       this.clientChecked = false
       const value = this._valueClear
+      const required = this.isRequired(form)
       if (this.isEmpty) {
-        this.completeClientCheck(this.isRequired(form) ? [{code: 'required'}] : [], [])
+        this.completeClientCheck(required ? [{code: 'required'}] : [], [])
       } else if (value === null) {
         this.completeClientCheck([{code: 'invalid_type', params: {expected: this.fieldType.typeId}}], [])
       } else {

@@ -94,6 +94,7 @@ describe('I18N-01 application-owned messages', () => {
     const field = kind === 'field' ? new Field(StringType, 'valid', {validate})
       : kind === 'items' ? new ArrayField(item, {validate}, ['valid'])
       : new ArrayFormField(Row, {validate}, [{}])
+    field.validate()
     expect(field.errors).toEqual(errors.map(error => ({...error, source: 'custom'})))
     expect(Object.prototype.hasOwnProperty.call(field.errors[0], 'message')).toBe(false)
     expect(Object.isFrozen(field.errors)).toBe(true)
@@ -116,6 +117,7 @@ describe('I18N-01 application-owned messages', () => {
 
   it('retains an explicit code without generating fallback text', () => {
     const field = new Field(StringType, 'valid', {validate: () => [{code: 'custom'}]})
+    field.validate()
     expect(field.errors).toEqual([{code: 'custom', source: 'custom'}])
   })
 
@@ -125,7 +127,9 @@ describe('I18N-01 application-owned messages', () => {
       const results = ['en', 'ru', 'de'].map(locale => {
         Settings.defaultLocale = locale
         document.documentElement.lang = locale
-        return new Field(StringType, 'x', {minLength: 3}).errors
+        const field = new Field(StringType, 'x', {minLength: 3})
+        field.validate()
+        return field.errors
       })
       expect(results[0]).toEqual([{code: 'min_length', params: {min: 3}, source: 'type'}])
       expect(results[1]).toEqual(results[0])

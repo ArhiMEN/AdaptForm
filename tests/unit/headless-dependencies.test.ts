@@ -293,7 +293,7 @@ describe('HF-013 dependent validation', () => {
     disable()
     disable()
     form.password.rawValue = 'new'
-    expect(form.confirmation.isValid).toBe(true)
+    expect(form.confirmation.isValid).toBeNull()
     const again = form.enableDependencies()
     expect(again).not.toBe(disable)
     form.password.rawValue = 'newer'
@@ -516,7 +516,7 @@ describe('HF-013 dependent validation', () => {
     const form = new Credentials()
     form.confirmation.options = {dependsOn: [{path: ['missing']}]}
     form.password.rawValue = 'new'
-    expect(form.confirmation.isValid).toBe(true)
+    expect(form.confirmation.isValid).toBeNull()
     const checks = vi.spyOn(form.unrelated, 'validate')
     form.batch(() => { form.password.rawValue = 'another' })
     expect(checks).toHaveBeenCalledTimes(1)

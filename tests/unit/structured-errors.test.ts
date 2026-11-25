@@ -17,9 +17,15 @@ class Root extends Form {
 }
 const duplicate = [{code: 'rule', message: 'First', params: {min: 2}}, {code: 'rule', message: 'Second'}] as const
 
+function checked<T extends {validate(): unknown}>(node: T): T {
+  node.validate()
+  return node
+}
+
 describe('structured validation errors', () => {
   it('retains multiple errors, repeated codes and their order', () => {
     const field = new Field(StringType, 'x', {validate: () => duplicate})
+    field.validate()
     expect(field.getErrors()).toEqual(duplicate.map(error => ({...error, source: 'custom'})))
     expect(field.errors.map(error => error.message)).toEqual(['First', 'Second'])
     expect(field.errors[0].message).toBe('First')
@@ -28,6 +34,7 @@ describe('structured validation errors', () => {
 
   it('supports errors without a message independently from their text projection', () => {
     const field = new Field(StringType, 'x', {validate: () => [{code: 'unavailable'}]})
+    field.validate()
     expect(field.getErrors()).toEqual([{code: 'unavailable', source: 'custom'}])
     expect(field.errors.map(error => error.message ?? '')).toEqual([''])
     expect(field.isValid).toBe(false)
@@ -37,6 +44,7 @@ describe('structured validation errors', () => {
     const params = {min: 2, nested: {expected: ['a']}}
     const input = {code: 'min_length', params, value: 'sensitive', rawValue: 'sensitive'}
     const field = new Field(StringType, 'secret', {validate: () => [input]})
+    field.validate()
     const error = field.getErrors()[0]
     params.nested.expected.push('b')
     expect(error.params).toEqual({min: 2, nested: {expected: ['a']}})
@@ -61,6 +69,7 @@ describe('structured validation errors', () => {
   it('preserves type-specific early exits and does not invoke custom rules on type failures', () => {
     const validate = vi.fn(() => duplicate)
     const field = new Field(StringType, 'x', {minLength: 2, pattern: /^z$/, validate})
+    field.validate()
     expect(field.getErrors().map(error => error.code)).toEqual(['min_length', 'pattern'])
     expect(validate).not.toHaveBeenCalled()
     expect(field.getErrors().every(error => !('message' in error))).toBe(true)
@@ -73,8 +82,8 @@ describe('structured validation errors', () => {
       validateErrors() { return [{code: 'one', message: 'One'}, {code: 'two', message: 'Two'}] }
     }
     class CustomString extends StringType { validateErrors() { return [{code: 'app.override'}] } }
-    expect(new Field(Custom, 'x').errors.map(error => error.message)).toEqual(['One', 'Two'])
-    expect(new Field(CustomString, 'x', {minLength: 20}).getErrors()).toMatchObject([{code: 'app.override'}])
+    expect(checked(new Field(Custom, 'x')).errors.map(error => error.message)).toEqual(['One', 'Two'])
+    expect(checked(new Field(CustomString, 'x', {minLength: 20})).getErrors()).toMatchObject([{code: 'app.override'}])
     expect(new StringType({minLength: 2}).validateErrors('x')).toEqual([{code: 'min_length', params: {min: 2}}])
   })
 
@@ -96,6 +105,7 @@ describe('structured validation errors', () => {
 
   it('assigns provenance at the engine boundary', () => {
     const field = new Field(StringType, 'x', {validate: () => [{code: 'rule', source: 'server', path: ['spoofed']}]})
+    field.validate()
     expect(field.getErrors()).toEqual([{code: 'rule', source: 'custom'}])
     field.setErrors([{code: 'manual', message: 'Manual'}])
     expect(field.getErrors().slice(-1)[0]?.source).toBe('manual')
@@ -127,42 +137,46 @@ describe('built-in codes', () => {
     const required = new Field(StringType)
     required.validate()
     expect(required.getErrors()).toMatchObject([{code: 'required', source: 'type'}])
-    expect(new Field(NumberType, 'bad' as unknown as number).getErrors()).toMatchObject([{code: 'invalid_type'}])
+    expect(checked(new Field(NumberType, 'bad' as unknown as number)).getErrors()).toMatchObject([{code: 'invalid_type'}])
   })
 
   it('provides stable codes and multiple identical codes without generated messages', () => {
     const field = new Field(NumberType, 1.5, {gt: 5, ge: 6, lt: 0, le: 1})
+    field.validate()
     expect(field.getErrors().map(error => error.code)).toEqual(['integer', 'min_value', 'min_value', 'max_value', 'max_value'])
     expect(field.getErrors()[1].params).toEqual({min: 5, exclusive: true})
     expect(field.getErrors()[2].params).toEqual({min: 6, exclusive: false})
     expect(field.getErrors().slice(1, 3).every(error => !('message' in error))).toBe(true)
-    expect(new Field(StringType, 'abc', {maxLength: 2}).getErrors()[0].code).toBe('max_length')
+    expect(checked(new Field(StringType, 'abc', {maxLength: 2})).getErrors()[0].code).toBe('max_length')
   })
 
   it('covers decimal format, precision and digit constraints without generated messages', () => {
-    expect(new Field(DecimalType, '123.').getErrors()[0].code).toBe('pattern')
+    expect(checked(new Field(DecimalType, '123.')).getErrors()[0].code).toBe('pattern')
     const decimal = new Field(DecimalType, '12345.678', {maxDigits: 6, decimalPlaces: 2})
+    decimal.validate()
     expect(decimal.getErrors().map(error => error.code)).toEqual(['max_digits', 'max_digits', 'decimal_places'])
-    expect(new Field(DecimalType, '1', {ge: 2}).getErrors()).toMatchObject([{code: 'min_value', params: {min: 2}}])
-    expect(new Field(DecimalType, '5', {le: 2}).getErrors()).toMatchObject([{code: 'max_value', params: {max: 2}}])
+    expect(checked(new Field(DecimalType, '1', {ge: 2})).getErrors()).toMatchObject([{code: 'min_value', params: {min: 2}}])
+    expect(checked(new Field(DecimalType, '5', {le: 2})).getErrors()).toMatchObject([{code: 'max_value', params: {max: 2}}])
   })
 
   it('covers date and boolean constraints', () => {
-    expect(new Field(DateType, new Date('2020-01-01'), {minDate: new Date('2021-01-01')}).getErrors()).toMatchObject([{code: 'min_date'}])
-    expect(new Field(DateType, new Date('2022-01-01'), {maxDate: new Date('2021-01-01')}).getErrors()).toMatchObject([{code: 'max_date'}])
-    expect(new Field(BooleanType, false, {mustBeTrue: true}).getErrors()[0].code).toBe('must_be_true')
-    expect(new Field(BooleanType, true, {mustBeFalse: true}).getErrors()[0].code).toBe('must_be_false')
+    expect(checked(new Field(DateType, new Date('2020-01-01'), {minDate: new Date('2021-01-01')})).getErrors()).toMatchObject([{code: 'min_date'}])
+    expect(checked(new Field(DateType, new Date('2022-01-01'), {maxDate: new Date('2021-01-01')})).getErrors()).toMatchObject([{code: 'max_date'}])
+    expect(checked(new Field(BooleanType, false, {mustBeTrue: true})).getErrors()[0].code).toBe('must_be_true')
+    expect(checked(new Field(BooleanType, true, {mustBeFalse: true})).getErrors()[0].code).toBe('must_be_false')
   })
 
   it('covers both collection constraints and structured callbacks', () => {
-    expect(new ArrayField(value => new Field(StringType, value)).getErrors()[0].code).toBe('required')
-    expect(new ArrayField(value => new Field(StringType, value), {isRequired: false, minItems: 1}).getErrors()[0].code).toBe('min_items')
-    expect(new ArrayField(value => new Field(StringType, value), {maxItems: 0}, ['x']).getErrors()[0].code).toBe('max_items')
-    expect(new ArrayFormField(Row, {minForms: 1}).getErrors()[0].code).toBe('min_items')
-    expect(new ArrayFormField(Row, {maxForms: 0}, [{}]).getErrors()[0].code).toBe('max_items')
-    expect(new ArrayFormField(Row, {isRequired: true}).getErrors()[0].code).toBe('required')
+    expect(checked(new ArrayField(value => new Field(StringType, value))).getErrors()[0].code).toBe('required')
+    expect(checked(new ArrayField(value => new Field(StringType, value), {isRequired: false, minItems: 1})).getErrors()[0].code).toBe('min_items')
+    expect(checked(new ArrayField(value => new Field(StringType, value), {maxItems: 0}, ['x'])).getErrors()[0].code).toBe('max_items')
+    expect(checked(new ArrayFormField(Row, {minForms: 1})).getErrors()[0].code).toBe('min_items')
+    expect(checked(new ArrayFormField(Row, {maxForms: 0}, [{}])).getErrors()[0].code).toBe('max_items')
+    expect(checked(new ArrayFormField(Row, {isRequired: true})).getErrors()[0].code).toBe('required')
     const tags = new ArrayField(value => new Field(StringType, value), {validate: () => duplicate}, ['x'])
+    tags.validate()
     const rows = new ArrayFormField(Row, {validate: () => duplicate}, [{}])
+    rows.validate()
     expect(tags.errors.map(error => error.message)).toEqual(['First', 'Second'])
     expect(rows.errors.map(error => error.message)).toEqual(['First', 'Second'])
     expect(tags.isValid).toBe(false)
@@ -326,8 +340,9 @@ describe('snapshots, ownership and scheduling', () => {
     expect(form.getErrors()).toHaveLength(2)
   })
 
-  it('keeps scalar item paths current and preserves automatic move revalidation', () => {
+  it('keeps scalar item error paths current without rechecking retained items', () => {
     const tags = new ArrayField(value => new Field(StringType, value, {validate: () => [{code: 'rule'}]}), {}, ['a', 'b'])
+    tags.validate()
     const retained = tags.items[1]
     tags.move(1, 0)
     expect(tags.items[0]).toBe(retained)
@@ -368,6 +383,7 @@ describe('snapshots, ownership and scheduling', () => {
 
   it('does not notify for identical repeated validation or change touched/dirty', () => {
     const field = new Field(StringType, 'x', {validate: () => duplicate})
+    field.validate()
     const notify = vi.fn()
     field.subscribe(notify)
     const snapshot = field.getSnapshot()
@@ -407,9 +423,9 @@ describe('snapshots, ownership and scheduling', () => {
 describe('optional Luxon error codes', () => {
   it('retains optional date constraints', () => {
     const date = DateTime.fromISO('2020-01-01')
-    expect(new Field(DateLuxonType, date, {minDate: DateTime.fromISO('2021-01-01')}).getErrors()).toMatchObject([{code: 'min_date'}])
-    expect(new Field(DateLuxonType, date, {maxDate: DateTime.fromISO('2019-01-01')}).getErrors()).toMatchObject([{code: 'max_date'}])
-    expect(new Field(DateLuxonType, DateTime.fromISO('1800-01-01')).getErrors()).toMatchObject([{code: 'invalid_year', params: {min: 1900, max: 2100}}])
+    expect(checked(new Field(DateLuxonType, date, {minDate: DateTime.fromISO('2021-01-01')})).getErrors()).toMatchObject([{code: 'min_date'}])
+    expect(checked(new Field(DateLuxonType, date, {maxDate: DateTime.fromISO('2019-01-01')})).getErrors()).toMatchObject([{code: 'max_date'}])
+    expect(checked(new Field(DateLuxonType, DateTime.fromISO('1800-01-01'))).getErrors()).toMatchObject([{code: 'invalid_year', params: {min: 1900, max: 2100}}])
     expect(new DateLuxonType({}).validateErrors(DateTime.invalid('invalid'))).toMatchObject([{code: 'invalid_type'}])
   })
 })

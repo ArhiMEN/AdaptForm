@@ -111,7 +111,7 @@ describe('HF-008 snapshots and subscriptions', () => {
     const field = new Field(StringType, 'initial', {validate})
     const cast = vi.spyOn(StringType.prototype, 'cast')
     field.getSnapshot(); field.getSnapshot(); field.subscribe(() => {})
-    expect(validate).toHaveBeenCalledTimes(1)
+    expect(validate).not.toHaveBeenCalled()
     expect(cast).not.toHaveBeenCalled()
     cast.mockRestore()
   })

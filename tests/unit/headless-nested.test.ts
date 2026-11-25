@@ -250,6 +250,7 @@ describe('HF-010 nested propagation and ownership', () => {
     class Empty extends Form {}
     class Parent extends Form { children = new ArrayFormField(Empty, {}, [{}]) }
     const form = new Parent()
+    form.validate()
     const child = form.children.forms[0]
     const parentListener = vi.fn()
     const childListener = vi.fn()

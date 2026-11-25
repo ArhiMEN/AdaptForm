@@ -95,6 +95,7 @@ describe('HF-011 retained collection identities', () => {
     const values = new ArrayField((value?: string) => new Field(StringType, value, {
       validate: value => value === 'bad' ? [{code: 'custom', message: 'bad item'}] : [],
     }), {}, ['good', 'bad'])
+    values.validate()
     const bad = values.items[1]
     const identity = ids(values)![1]
     values.remove(0)

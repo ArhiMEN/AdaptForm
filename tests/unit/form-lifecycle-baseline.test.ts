@@ -57,7 +57,7 @@ describe('HF-001 form lifecycle baseline', () => {
       expect(form.toJSON()).toEqual({ value: 42, omitted: 'default' })
       expect(errorMessages(form.value)).toEqual([])
       expect(form.value.isValid).toBeNull()
-      expect(form.omitted.isValid).toBe(true)
+      expect(form.omitted.isValid).toBeNull()
       expect(form.omitted.isTouched).toBe(false)
       expect(form.isTouched).toBe(true)
       expect(form.isValid).toBe(false)
@@ -90,7 +90,7 @@ describe('HF-001 form lifecycle baseline', () => {
   })
 
   describe('ArrayField assignment validation', () => {
-    it('validates only the replacement collection and validates new non-null items twice', () => {
+    it('validates only the replacement collection and checks each new item once', () => {
       const itemValidate = vi.fn(() => [])
       const collectionValidate = vi.fn(() => [])
       const field = new ArrayField(
@@ -101,9 +101,7 @@ describe('HF-001 form lifecycle baseline', () => {
       field.itemsValue = ['new']
 
       expect(collectionValidate).toHaveBeenCalledExactlyOnceWith(['new'], undefined)
-      expect(itemValidate).toHaveBeenCalledTimes(2)
-      expect(itemValidate).toHaveBeenNthCalledWith(1, 'new', undefined)
-      expect(itemValidate).toHaveBeenNthCalledWith(2, 'new', undefined)
+      expect(itemValidate).toHaveBeenCalledExactlyOnceWith('new', undefined)
       expect(field.isTouched).toBe(true)
       expect(field.items[0].isTouched).toBe(false)
       expect(field.isValid).toBe(true)
@@ -132,9 +130,8 @@ describe('HF-001 form lifecycle baseline', () => {
       expect(observations).toEqual([
         ...(validate ? [{ values: ['new'], sibling: 'ready', hasParent: true }] : []),
       ])
-      expect(itemValidate).toHaveBeenCalledTimes(validate ? 2 : 1)
-      expect(itemValidate).toHaveBeenNthCalledWith(1, 'new', undefined)
-      if (validate) expect(itemValidate).toHaveBeenNthCalledWith(2, 'new', form)
+      expect(itemValidate).toHaveBeenCalledTimes(validate ? 1 : 0)
+      if (validate) expect(itemValidate).toHaveBeenCalledExactlyOnceWith('new', form)
       expect(form.values.isValid).toBe(validate)
       expect(form.sibling.isValid).toBe(validate ? true : null)
       expect(form.isValid).toBe(validate)
@@ -174,14 +171,14 @@ describe('HF-001 form lifecycle baseline', () => {
       expect(parent.isValid).toBe(true)
     })
 
-    it('runs non-null constructor defaults even during deferred nested hydration', () => {
+    it('skips non-null constructor defaults during deferred nested hydration', () => {
       const validate = vi.fn(() => [])
       class Child extends Form {
         name = new Field(StringType, 'default', { validate })
       }
       const children = new ArrayFormField(Child)
       children.setForms([{ name: 'hydrated' }], false)
-      expect(validate).toHaveBeenCalledExactlyOnceWith('default', undefined)
+      expect(validate).not.toHaveBeenCalled()
       expect(children.forms[0].name.valueClear).toBe('hydrated')
       expect(children.forms[0].name.isValid).toBeNull()
     })

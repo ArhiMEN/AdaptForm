@@ -36,6 +36,7 @@ const builtins = [
 describe('V3 foundational contracts', () => {
   it('accepts a structural type without inheritance, including custom options and value inference', () => {
     const field = new Field(Slug, 'wrong', {prefix: 'ok'})
+    field.validate()
     expectTypeOf(field.valueClear).toEqualTypeOf<string | null>()
     expectTypeOf(field.options.prefix).toEqualTypeOf<string | undefined>()
     expect(field.getErrors()).toEqual([{code: 'app.prefix', source: 'type'}])
@@ -65,6 +66,7 @@ describe('V3 foundational contracts', () => {
       validateErrors(value: string) { return this.options.accepts(value) ? [] : [{code: 'app.prefix'}] }
     }
     const field = new Field(Configured, 'okay')
+    field.validate()
     expect(field.options).toBe(configuration)
     expect(field.options.accepts('okay')).toBe(true)
     expect(field.isValid).toBe(true)
@@ -120,6 +122,7 @@ describe('V3 foundational contracts', () => {
 
   it('invalidates a successful field check when a supported date mode change changes its semantic ID', () => {
     const field = new Field(DateType, new Date('2026-01-01'))
+    field.validate()
     expect(field.isValid).toBe(true)
     field.options = {isDatetime: true}
     expect(field.isValid).toBe(null)
@@ -322,6 +325,7 @@ describe('ODR-02 ErrorParams domain', () => {
     expect(field.getErrors()).toEqual([{code: 'previous', source: 'manual'}])
     const callback = vi.fn((): readonly ValidationErrorInput[] => [{code: 'previous'}])
     const array = new ArrayField(value => new Field(StringType, value), {validate: callback}, ['x'])
+    array.validate()
     callback.mockReturnValue([{code: 'bad', params: {nested: Infinity}}])
     failure(() => array.validate(), 'nonfinite_number')
     expect(array.getOwnErrors()).toEqual([{code: 'previous', source: 'custom'}])
@@ -329,8 +333,8 @@ describe('ODR-02 ErrorParams domain', () => {
 
   it('applies the same params validation to existing type, custom, manual and server ingress', () => {
     class BadType extends Slug { validateErrors() { return [{code: 'bad', params: {value: Infinity}}] } }
-    failure(() => new Field(BadType, 'x'), 'nonfinite_number')
-    failure(() => new Field(StringType, 'x', {validate: () => [{code: 'bad', params: {value: Infinity}}]}), 'nonfinite_number')
+    failure(() => new Field(BadType, 'x').validate(), 'nonfinite_number')
+    failure(() => new Field(StringType, 'x', {validate: () => [{code: 'bad', params: {value: Infinity}}]}).validate(), 'nonfinite_number')
     const field = new Field(StringType)
     failure(() => field.setErrors([{code: 'bad', params: {value: Infinity}}]), 'nonfinite_number')
     class Root extends Form { value = field }

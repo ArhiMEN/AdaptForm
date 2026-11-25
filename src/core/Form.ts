@@ -7,7 +7,7 @@ import {ArrayField} from "@core/fields/ArrayField"
 import {ArrayFormField} from "@core/fields/ArrayFormField"
 
 import {DependencyGraph} from "@core/state/DependencyGraph"
-import {assertValidationMutationAllowed} from "@core/state/validationExecution"
+import {assertValidationAllowed, assertValidationMutationAllowed, duringValidationAssembly, isAssemblingValidationNodes} from "@core/state/validationExecution"
 
 export type FormFieldValue<TField> =
   TField extends Field<infer TValue, infer _Options> ? TValue | null :
@@ -39,10 +39,7 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
     return this._dependencies.disable
   }
 
-  protected checkBatchNode(node: ObservableNode<unknown>, check: () => unknown): unknown {
-    const field = Object.values(this._fields).find(field => field === node)
-    return field ? field.validate(this) : check()
-  }
+  protected childValidationContext(): Form { return this }
 
   private _snapshot?: FormSnapshot
   private _snapshotFields?: Record<string, Field<any> | ArrayField<any> | ArrayFormField<any>>
@@ -101,6 +98,7 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
   }
 
   validate(_form?: Form): ValidationResult {
+    assertValidationAllowed()
     const check = () => {
       this.clientChecked = false
       for (const field of Object.values(this._fields)) field.validate(this)
@@ -135,20 +133,22 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
     return this.update(() => {
       const fields = this._fields
 
-      for (const key of Object.keys(data)) {
-        const field = fields[key]
-        if (field) {
-          if (field instanceof Field) field.setRawValue(data[key], false)
-          else if (field instanceof ArrayField) field.setItemsValue(data[key] as unknown[], false)
-          else if (field instanceof ArrayFormField) field.setForms(data[key] as unknown[], false)
-          else console.error(`Invalid field "${key}" type`)
+      duringValidationAssembly(() => {
+        for (const key of Object.keys(data)) {
+          const field = fields[key]
+          if (field) {
+            if (field instanceof Field) field.setRawValue(data[key], false)
+            else if (field instanceof ArrayField) field.setItemsValue(data[key] as unknown[], false)
+            else if (field instanceof ArrayFormField) field.setForms(data[key] as unknown[], false)
+            else console.error(`Invalid field "${key}" type`)
+          }
         }
-      }
+      })
 
       this.syncErrorChildren()
 
       // Validate after assignment so conditional rules see the complete form.
-      if (validate) {
+      if (validate && !isAssemblingValidationNodes()) {
         if (this._dependencies?.isEnabled && this._dependencies.selective) {
           for (const key of Object.keys(data)) {
             const field = fields[key]

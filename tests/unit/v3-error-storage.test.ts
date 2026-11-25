@@ -273,6 +273,7 @@ describe('V3 validity and lifecycle', () => {
   it('does not reuse an old successful check after an exception', () => {
     let fail = false
     const field = new Field(StringType, 'x', {validate: () => { if (fail) throw new Error('failure'); return [] }})
+    field.validate()
     expect(field.isValid).toBe(true)
     fail = true
     expect(() => field.validate()).toThrow('failure')

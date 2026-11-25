@@ -120,7 +120,7 @@ describe('ArrayFormField', () => {
         { name: 'John' },
         { name: 'Jane' }
       ])
-      expect(arrayFormField.isValid).toBe(true)
+      expect(arrayFormField.validate().valid).toBe(true)
       
       arrayFormField.add({ name: null })
       expect(arrayFormField.isValid).toBe(false)
@@ -137,6 +137,8 @@ describe('ArrayFormField', () => {
     it('should not rerun custom validation when reading isValid', () => {
       const validate = vi.fn(() => [])
       const arrayFormField = new ArrayFormField(TestForm, { validate }, [{ name: 'John' }])
+      expect(validate).not.toHaveBeenCalled()
+      arrayFormField.validate()
       expect(validate).toHaveBeenCalledTimes(1)
 
       expect(arrayFormField.isValid).toBe(true)
@@ -198,6 +200,7 @@ describe('ArrayFormField', () => {
       const arrayFormField = new ArrayFormField(TestForm, { minForms: 1 })
 
       expect(arrayFormField.isValid).toBe(false)
+      arrayFormField.validate()
       expect(errorMessages(arrayFormField)).not.toEqual([])
 
       arrayFormField.reset()

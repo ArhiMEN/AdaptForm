@@ -1,17 +1,27 @@
+import type {Form} from '../Form'
 import {equalValue} from './value'
 import {freezeSnapshot} from './snapshot'
-import {assertValidationMutationAllowed} from './validationExecution'
+import {assertValidationMutationAllowed, isAssemblingValidationNodes} from './validationExecution'
 import {commitDependencies, DependencyConfigurationError, dependencyOwner, noteDependencyMutation} from './dependencyScheduling'
 
 let mutationDepth = 0
 let flushing = false
 let publishing = false
-let batchDepth = 0
 let captureDepth = 0
 let pullEpoch = 0
 let pulling = false
-const validations = new Map<ObservableNode<unknown>, () => unknown>()
-const batchRoots = new Map<ObservableNode<unknown>, () => unknown>()
+type Node = ObservableNode<unknown>
+type FullCheck = (form?: Form) => unknown
+type OwnCheck = (form: Form | undefined, visitChildren: () => void) => unknown
+interface ValidationRequest {
+  full?: FullCheck
+  own?: OwnCheck
+  /** An inserted subtree is eligible while it belongs to this container. */
+  parent?: Node
+  structural?: boolean
+}
+const validations = new Map<Node, ValidationRequest>()
+const batchRoots = new Map<Node, FullCheck>()
 const pending = new Set<SnapshotStore>()
 
 function flush(): void {
@@ -171,77 +181,110 @@ export abstract class ObservableNode<TSnapshot> {
     return [this, ...this.stateChildren().flatMap(child => child.dependencyTree(seen))]
   }
 
-  private contains(node: ObservableNode<unknown>, seen = new Set<ObservableNode<unknown>>()): boolean {
-    if (this === node) return true
-    if (seen.has(this)) return false
-    seen.add(this)
-    return this.stateChildren().some(child => child.contains(node, seen))
+  protected childValidationContext(form?: Form): Form | undefined { return form }
+
+  protected validateAfterMutation(check: FullCheck, parent?: Node, structural = false): void {
+    if (isAssemblingValidationNodes() || dependencyOwner(this)?.request(this)) return
+    const request = validations.get(this)
+    // An independent request keeps its eligibility even if the node is detached.
+    if (!request?.full || request.parent || !parent) validations.set(this, {...request, full: check, parent, structural})
   }
 
-  private hasSelectiveDependencies(seen = new Set<ObservableNode<unknown>>()): boolean {
-    if (seen.has(this)) return false
-    seen.add(this)
-    const owner = dependencyOwner(this)
-    return owner?.selective === true && owner.selects(this) ||
-      this.stateChildren().some(child => child.hasSelectiveDependencies(seen))
+  protected validateNodeAfterMutation(node: Node, check: FullCheck): void {
+    node.validateAfterMutation(check, this)
   }
 
-  protected checkBatchNode(_node: ObservableNode<unknown>, check: () => unknown): unknown { return check() }
-
-  protected validateNodeAfterMutation(node: ObservableNode<unknown>, callback: () => unknown): void {
-    node.validateAfterMutation(callback)
+  protected validateOwnAfterMutation(check: OwnCheck): void {
+    if (isAssemblingValidationNodes()) return
+    validations.set(this, {...validations.get(this), own: check})
   }
 
-  protected validateAfterMutation(callback: () => unknown): void {
-    if (dependencyOwner(this)?.request(this)) return
-    if (batchDepth) validations.set(this, callback)
-    else callback()
+  private static commitValidations(): void {
+    const requested = new Map(validations)
+    const scopes = new Map(batchRoots)
+    validations.clear()
+    batchRoots.clear()
+    for (const [node, {parent, own}] of requested) {
+      if (!parent || parent.stateChildren().includes(node)) continue
+      if (own) requested.set(node, {own})
+      else requested.delete(node)
+    }
+    if (!requested.size) return
+
+    const children = new Map<Node, readonly Node[]>()
+    const descendants = new Set<Node>()
+    const discover = (node: Node): void => {
+      if (children.has(node)) return
+      const nodes = node.stateChildren()
+      children.set(node, nodes)
+      for (const child of nodes) {
+        descendants.add(child)
+        discover(child)
+      }
+    }
+    const roots = new Set([...scopes.keys(), ...requested.keys()])
+    // A single request outside a batch needs neither context discovery nor overlap elimination.
+    if (roots.size > 1) for (const root of roots) discover(root)
+    // Scalar-only batches retain HF-009's full Form check when HF-013 is inactive.
+    // An ODR-03 structural request keeps the batch on the local traversal path.
+    const useLegacyBatch = ![...requested.values()].some(request => request.own || request.structural)
+    const batchProfile = new Map<Node, {requested: boolean; selective: boolean}>()
+    const profile = (node: Node) => {
+      const previous = batchProfile.get(node)
+      if (previous) return previous
+      const owner = dependencyOwner(node)
+      const result = {requested: requested.has(node), selective: owner?.selective === true && owner.selects(node)}
+      batchProfile.set(node, result)
+      for (const child of children.get(node) ?? []) {
+        const nested = profile(child)
+        result.requested ||= nested.requested
+        result.selective ||= nested.selective
+      }
+      return result
+    }
+    const seen = new Set<Node>()
+    const plan = (node: Node, context?: Form): (() => unknown)[] => {
+      if (seen.has(node)) return []
+      seen.add(node)
+      const request = requested.get(node)
+      if (request?.full) {
+        if (dependencyOwner(node)?.request(node)) return []
+        return [() => request.full!(context)]
+      }
+      const scope = scopes.get(node)
+      if (scope && useLegacyBatch) {
+        const {requested, selective} = profile(node)
+        if (requested && !selective) return [() => scope()]
+      }
+      const childContext = node.childValidationContext(context)
+      const nested = (children.get(node) ?? []).flatMap(child => plan(child, childContext))
+      const own = request?.own
+      return own ? [() => own(context, () => { for (const check of nested) check() })] : nested
+    }
+    const checks = [...roots].filter(root => !descendants.has(root)).flatMap(node => plan(node))
+    let failed = false
+    let failure: unknown
+    for (const check of checks) {
+      try {
+        check()
+      } catch (error) {
+        if (!failed) { failed = true; failure = error }
+      }
+    }
+    if (failed) throw failure
   }
 
-  protected batchUpdate<TResult>(callback: () => TResult, validate: () => unknown): TResult {
+  protected batchUpdate<TResult>(callback: () => TResult, validate: FullCheck): TResult {
     assertValidationMutationAllowed()
     // Capture committed state before the first write, including descendants.
     this.getSnapshot()
     return this.update(() => {
-      batchDepth++
       batchRoots.set(this, validate)
-      let failed = false
-      let failure: unknown
-      let result!: TResult
-      try {
-        result = callback()
-        if (result !== null && (typeof result === 'object' || typeof result === 'function') &&
-          'then' in result && typeof result.then === 'function') {
-          throw new TypeError('batch callbacks must be synchronous')
-        }
-      } catch (error) {
-        failed = true
-        failure = error
-      } finally {
-        batchDepth--
+      const result = callback()
+      if (result !== null && (typeof result === 'object' || typeof result === 'function') &&
+        'then' in result && typeof result.then === 'function') {
+        throw new TypeError('batch callbacks must be synchronous')
       }
-      if (!batchDepth) {
-        const requested = [...validations].filter(([node]) => !dependencyOwner(node)?.request(node))
-        const roots = [...batchRoots]
-        validations.clear()
-        batchRoots.clear()
-        const legacyRoots = roots.filter(([root]) => !root.hasSelectiveDependencies())
-        const selected = legacyRoots.filter(([root]) => requested.some(([node]) => root.contains(node)))
-          .filter(([root], index, all) => !all.some(([other], otherIndex) =>
-            other !== root && other.contains(root) && (!root.contains(other) || otherIndex < index)))
-        const checks = [...selected.map(([, check]) => check),
-          ...requested.filter(([node]) => !selected.some(([root]) => root.contains(node))).map(([node, check]) =>
-            () => {
-              const owner = roots.find(([root]) => root.contains(node))
-              return owner ? owner[0].checkBatchNode(node, check) : check()
-            })]
-        for (const check of checks) {
-          try { check() } catch (error) {
-            if (!failed) { failed = true; failure = error }
-          }
-        }
-      }
-      if (failed) throw failure
       return result
     })
   }
@@ -274,18 +317,27 @@ export abstract class ObservableNode<TSnapshot> {
       // Preserve the mutation's exception if finalization also throws.
       const finalize = () => {
         if (mutationDepth) return
-        let graphFailed = false
+        mutationDepth++
+        let failed = false
+        let failure: unknown
         try {
-          mutationDepth++
+          ObservableNode.commitValidations()
+        } catch (error) {
+          failed = true
+          failure = error
+        }
+        try {
           commitDependencies()
         } catch (error) {
-          graphFailed = true
-          throw error
+          if (!failed) { failed = true; failure = error }
         } finally {
           mutationDepth--
-          if (graphFailed) { try { flush() } catch { /* Preserve the graph failure. */ } }
-          else flush()
         }
+        if (failed) {
+          try { flush() } catch { /* Preserve the validation failure. */ }
+          throw failure
+        }
+        flush()
       }
       if (failed) { try { finalize() } catch { /* The original exception takes precedence. */ } }
       else finalize()

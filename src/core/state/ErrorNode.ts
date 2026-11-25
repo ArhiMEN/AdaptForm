@@ -69,14 +69,16 @@ export abstract class ErrorNode<TSnapshot> extends ObservableNode<TSnapshot> {
     this.errorChildren = next
   }
 
-  protected inputChanged(): void {
+  protected requestOwnValidation(): void {}
+
+  protected inputChanged(validateStructure = false): void {
     this.errorStore.clear()
     this.clientChecked = false
     if (this.errorParents.size) this.markStateChanged()
-    this.propagateInputChange(new Set([this]))
+    this.propagateInputChange(new Set([this]), validateStructure)
   }
 
-  private propagateInputChange(seen: Set<ErrorNode<unknown>>): void {
+  private propagateInputChange(seen: Set<ErrorNode<unknown>>, validateStructure: boolean): void {
     for (const parent of this.errorParents) {
       if (seen.has(parent)) continue
       seen.add(parent)
@@ -84,8 +86,9 @@ export abstract class ErrorNode<TSnapshot> extends ObservableNode<TSnapshot> {
         if (parent.clearsOnDescendantChange) {
           parent.errorStore.clear()
           parent.clientChecked = false
+          if (validateStructure) parent.requestOwnValidation()
         }
-        parent.propagateInputChange(seen)
+        parent.propagateInputChange(seen, validateStructure)
       })
     }
   }

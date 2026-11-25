@@ -35,7 +35,7 @@ describe('HF-006 Field baseline', () => {
     const calls = cast.mock.calls.length
     for (let i = 0; i < 5; i++) expect(field.isDirty).toBe(false)
     expect(cast).toHaveBeenCalledTimes(calls)
-    expect(validate).toHaveBeenCalledTimes(1)
+    expect(validate).not.toHaveBeenCalled()
     cast.mockRestore()
   })
 

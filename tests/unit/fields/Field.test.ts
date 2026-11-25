@@ -218,10 +218,10 @@ describe('Field', () => {
     it('should restore defaults without validating until the next explicit check', () => {
       const validate = vi.fn(() => [{code: 'custom'}])
       const field = new Field(StringType, 'default', { validate })
-      expect(validate).toHaveBeenCalledTimes(1)
+      expect(validate).not.toHaveBeenCalled()
 
       field.rawValue = 'changed'
-      expect(validate).toHaveBeenCalledTimes(2)
+      expect(validate).toHaveBeenCalledTimes(1)
 
       field.reset()
 
@@ -229,7 +229,7 @@ describe('Field', () => {
       expect(field.isTouched).toBe(false)
       expect(field.isValid).toBeNull()
       expect(errorMessages(field)).toEqual([])
-      expect(validate).toHaveBeenCalledTimes(2)
+      expect(validate).toHaveBeenCalledTimes(1)
     })
   })
 

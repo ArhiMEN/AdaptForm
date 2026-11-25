@@ -20,3 +20,23 @@ export function validationCallback<TResult>(callback: () => TResult): TResult {
     callbackDepth--
   }
 }
+
+let assemblyDepth = 0
+
+export function duringValidationAssembly<TResult>(assemble: () => TResult): TResult {
+  assemblyDepth++
+  try {
+    return assemble()
+  } finally {
+    assemblyDepth--
+  }
+}
+
+export function isAssemblingValidationNodes(): boolean {
+  return assemblyDepth > 0
+}
+
+export function assertValidationAllowed(): void {
+  assertValidationMutationAllowed()
+  if (isAssemblingValidationNodes()) throw new TypeError('Validation requires completed node assembly')
+}

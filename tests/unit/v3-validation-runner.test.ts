@@ -54,7 +54,7 @@ describe('V3 validation runner', () => {
     expect(field.validate().valid).toBe(false)
     failType = false
     expect(field.validate().valid).toBe(true)
-    expect(events).toEqual(['required', 'type', 'type', 'custom'])
+    expect(events).toEqual(['required', 'required', 'required', 'type', 'required', 'type', 'custom'])
   })
 
   it('keeps installed partitions when a later type-success/custom check throws', () => {
