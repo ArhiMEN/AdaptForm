@@ -7,7 +7,7 @@ import type {FieldTypeContract, FieldTypeConstructor} from "@core/types/FieldTyp
 import {Form} from "@core/Form"
 import {copyValue, equalValue} from "@core/state/value"
 
-import {assertValidationAllowed, duringValidationAssembly, validationCallback} from '@core/state/validationExecution'
+import {assertValidationAllowed, duringValidationAssembly, evaluateRequired, validationCallback} from '@core/state/validationExecution'
 
 export class Field<T = any, O extends object = FieldOptions> extends ErrorNode<FieldSnapshot> {
   protected _rawValue: any = null
@@ -30,6 +30,7 @@ export class Field<T = any, O extends object = FieldOptions> extends ErrorNode<F
   constructor(
     TypeConstructor: FieldTypeConstructor<T, O>,
     defaultValue?: T | null,
+    // Infer the clean type from the type constructor and default, rather than from a validator's parameter.
     options?: (O & FieldOptions<[T][T extends unknown ? 0 : never]>) | null,
   ) {
     super()
@@ -154,18 +155,12 @@ export class Field<T = any, O extends object = FieldOptions> extends ErrorNode<F
 
   // ========== Validation ==========
 
-  private isRequired(form?: Form): boolean {
-    const options = this.options
-    const rule = options.isRequired
-    return typeof rule === 'function' ? validationCallback(() => rule.call(options, form)) : rule ?? true
-  }
-
   validate(form?: Form): ValidationResult {
     assertValidationAllowed()
     return this.update(() => {
       this.clientChecked = false
       const value = this._valueClear
-      const required = this.isRequired(form)
+      const required = evaluateRequired(this.options, true, form)
       if (this.isEmpty) {
         this.completeClientCheck(required ? [{code: 'required'}] : [], [])
       } else if (value === null) {

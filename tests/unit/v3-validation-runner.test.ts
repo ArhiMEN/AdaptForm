@@ -97,6 +97,18 @@ describe('V3 validation runner', () => {
     expect(field.isValid).toBeNull()
   })
 
+  it('rejects an asynchronous required rule without replacing previous errors', () => {
+    let asyncRule = false
+    const field = new Field(StringType, null, {
+      isRequired: () => asyncRule ? Promise.resolve(true) as unknown as boolean : true,
+    })
+    expect(field.validate().valid).toBe(false)
+    const errors = field.errors
+    asyncRule = true
+    expect(() => field.validate()).toThrow(ErrorContractError)
+    expect(field.errors).toBe(errors)
+  })
+
   it('infers the clean values of scalar and collection callbacks', () => {
     new Field(StringType, null, {validate: (value, context) => {
       expectTypeOf(value).toEqualTypeOf<string>()

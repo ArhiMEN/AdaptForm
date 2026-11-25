@@ -1,5 +1,5 @@
 import {prefixErrors, type LocatedValidationError, type ValidationResult} from '../ValidationError'
-import {assertValidationAllowed, assertValidationMutationAllowed, duringValidationAssembly, validationCallback} from '../state/validationExecution'
+import {assertValidationAllowed, assertValidationMutationAllowed, duringValidationAssembly, evaluateRequired, validationCallback} from '../state/validationExecution'
 import {ErrorNode} from '../state/ErrorNode'
 import type {ObservableNode} from "@core/state/ObservableNode"
 import {hasStandardGetters, snapshotValue, type ArrayFormSnapshot} from "@core/state/snapshot"
@@ -7,7 +7,7 @@ import {copyValue, equalValue} from "@core/state/value"
 import {Form, type FormFieldsValue} from "@core/Form"
 import {ArrayFormFieldOptions} from "@core/options"
 import {collectionItemId} from "@core/fields/collectionIdentity"
-import {collectionTypeErrors, isValidArrayIndex} from "@core/fields/arrayUtils"
+import {assembleCollection, collectionTypeErrors, isValidArrayIndex} from "@core/fields/arrayUtils"
 
 export class ArrayFormField<T extends Form = Form> extends ErrorNode<ArrayFormSnapshot> {
   private _snapshot?: ArrayFormSnapshot
@@ -23,7 +23,7 @@ export class ArrayFormField<T extends Form = Form> extends ErrorNode<ArrayFormSn
       hasStandardGetters(this, ArrayFormField.prototype, ['formsFieldsValue']) &&
       previous.errors === errors && previous.isValid === isValid && previous.isTouched === isTouched && previous.isDirty === isDirty &&
       previous.forms.length === forms.length && forms.every((child, index) => previous.forms[index] === child) &&
-      itemIds.every((id, index) => previous.itemIds?.[index] === id)) return previous
+      itemIds.every((id, index) => previous.itemIds[index] === id)) return previous
     return this._snapshot = {formsFieldsValue: snapshotValue(this.formsFieldsValue) as ArrayFormSnapshot['formsFieldsValue'],
       itemIds, forms, errors, isValid, isTouched, isDirty}
   }
@@ -57,7 +57,7 @@ export class ArrayFormField<T extends Form = Form> extends ErrorNode<ArrayFormSn
   ) {
     super()
     duringValidationAssembly(() => {
-      this._forms = initial.map(data => this.createForm(data))
+      this._forms = assembleCollection(initial, data => this.createForm(data))
       this.syncErrorChildren()
       this.commitBaseline()
     })
@@ -82,8 +82,8 @@ export class ArrayFormField<T extends Form = Form> extends ErrorNode<ArrayFormSn
 
   setForms(forms: unknown[], validate: boolean = true): void {
     this.update(() => {
-      if (!this._forms.length && !forms.length) return
-      this._forms = duringValidationAssembly(() => forms.map(data => this.createForm(data, true)))
+      if (!this._forms.length && forms.length === 0) return
+      this._forms = assembleCollection(forms, data => this.createForm(data, true))
       if (this._forms.length) this.isTouched = true
       this.syncErrorChildren()
       this.inputChanged(validate)
@@ -181,11 +181,6 @@ export class ArrayFormField<T extends Form = Form> extends ErrorNode<ArrayFormSn
 
   // ===== validation =====
 
-  private isRequired(form?: Form): boolean {
-    const rule = this.options.isRequired
-    return typeof rule === 'function' ? validationCallback(() => rule.call(this.options, form)) : rule ?? false
-  }
-
   validate(form?: Form): ValidationResult {
     return this.validateSelection(form, () => {
       for (const item of this._forms) item.validate()
@@ -200,7 +195,7 @@ export class ArrayFormField<T extends Form = Form> extends ErrorNode<ArrayFormSn
     assertValidationAllowed()
     return this.update(() => {
       this.clientChecked = false
-      const type = collectionTypeErrors(this._forms.length, this.isRequired(form),
+      const type = collectionTypeErrors(this._forms.length, evaluateRequired(this.options, false, form),
         this.options.minForms, this.options.maxForms)
       visitChildren()
       const validate = this.options.validate
@@ -211,7 +206,7 @@ export class ArrayFormField<T extends Form = Form> extends ErrorNode<ArrayFormSn
   }
 
   get isValid(): boolean {
-    if (!this.clientChecked) return false
+    if (this.clientChecked !== true) return false
     if (this.errors.length > 0) return false
 
     return this._forms.every(form => form.isValid)

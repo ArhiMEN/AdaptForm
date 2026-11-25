@@ -36,7 +36,7 @@ function flush(): void {
       const before = stores.map(store => store.committed())
       pending.clear()
       // Parent captures can refresh children: compare against all pre-flush snapshots.
-      // A library mutation also refreshes legacy externally edited values.
+      // A library mutation also refreshes externally edited values.
       // Probe each reachable store once for this wave, including clean siblings.
       pulling = true
       pullEpoch++
@@ -45,10 +45,10 @@ function flush(): void {
       } finally {
         pulling = false
       }
-      const changed = stores.filter((store, index) => before[index] !== store.committed())
+      const changed = new Set(stores.filter((store, index) => before[index] !== store.committed()))
       publishing = true
       try {
-        for (const store of changed) {
+        for (const store of SnapshotStore.notificationOrder(stores, changed)) {
           try { store.notify() } catch (error) {
             if (!failed) { failure = error; failed = true }
           }
@@ -99,7 +99,7 @@ class SnapshotStore {
     if (!mutationDepth && !publishing) {
       if (captureDepth) this.refresh()
       else {
-        // Public reads still discover direct property/legacy-container edits.
+        // Public reads still discover direct property and container edits.
         pulling = true
         pullEpoch++
         try { this.refresh() } finally { pulling = false }
@@ -150,6 +150,21 @@ class SnapshotStore {
     // Descendant writes do not change an ancestor's membership. Reconcile only
     // the mutated owner, so validating N children does not scan N siblings N times.
     for (const parent of this.parents) parent.invalidate(seen)
+  }
+
+  static notificationOrder(stores: readonly SnapshotStore[], changed: Set<SnapshotStore>): SnapshotStore[] {
+    if (changed.size <= 1) return [...changed]
+    const affected = new Set(stores)
+    const seen = new Set<SnapshotStore>()
+    const ordered: SnapshotStore[] = []
+    const visit = (store: SnapshotStore): void => {
+      if (seen.has(store)) return
+      seen.add(store)
+      for (const child of store.children) if (affected.has(child)) visit(child)
+      if (changed.has(store)) ordered.push(store)
+    }
+    for (const store of stores) visit(store)
+    return ordered
   }
 
   notify(): void {

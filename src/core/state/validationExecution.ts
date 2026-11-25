@@ -1,3 +1,7 @@
+import {ErrorContractError} from '../ErrorContractError'
+import type {Form} from '../Form'
+import type {RequiredRule} from '../options'
+
 let callbackDepth = 0
 
 export class ValidationMutationError extends Error {
@@ -19,6 +23,13 @@ export function validationCallback<TResult>(callback: () => TResult): TResult {
   } finally {
     callbackDepth--
   }
+}
+
+export function evaluateRequired(options: {isRequired?: RequiredRule}, fallback: boolean, form?: Form): boolean {
+  const rule = options.isRequired
+  const required = typeof rule === 'function' ? validationCallback(() => rule.call(options, form)) : rule ?? fallback
+  if (typeof required !== 'boolean') throw new ErrorContractError('invalid_required')
+  return required
 }
 
 let assemblyDepth = 0

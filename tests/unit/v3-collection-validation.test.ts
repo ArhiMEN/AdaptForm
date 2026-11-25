@@ -56,6 +56,26 @@ describe('ODR-03 validation assembly', () => {
 })
 
 describe('ODR-03 validation traversal and local requests', () => {
+  it('assembles sparse input and preserves current membership when a factory throws', () => {
+    const tags = new ArrayField((value = 'fallback') => {
+      if (value === 'invalid') throw new Error('factory failed')
+      return new Field(StringType, value)
+    }, {}, ['existing'])
+    const listener = vi.fn()
+    tags.subscribe(listener)
+    const before = tags.getSnapshot()
+    const retained = tags.items[0]
+    expect(() => tags.setItemsValue(['created', 'invalid'])).toThrow('factory failed')
+    expect(tags.items).toEqual([retained])
+    expect(tags.getSnapshot()).toBe(before)
+    expect(listener).not.toHaveBeenCalled()
+
+    tags.setItemsValue(new Array<string>(2), false)
+    expect(tags.itemsValue).toEqual(['fallback', 'fallback'])
+    expect(tags.items.map(item => item.isValid)).toEqual([null, null])
+    expect(tags.getSnapshot().itemIds).toHaveLength(2)
+  })
+
   it('checks every child despite container errors and preserves the owning Form context', () => {
     const calls: unknown[][] = []
     class Row extends Form {

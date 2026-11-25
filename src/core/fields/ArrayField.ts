@@ -1,5 +1,5 @@
 import {prefixErrors, type LocatedValidationError, type ValidationResult} from '../ValidationError'
-import {assertValidationAllowed, assertValidationMutationAllowed, duringValidationAssembly, validationCallback} from '../state/validationExecution'
+import {assertValidationAllowed, assertValidationMutationAllowed, duringValidationAssembly, evaluateRequired, validationCallback} from '../state/validationExecution'
 import {ErrorNode} from '../state/ErrorNode'
 import type {ObservableNode} from "@core/state/ObservableNode"
 import {hasStandardGetters, snapshotValue, type ArrayFieldSnapshot} from "@core/state/snapshot"
@@ -8,7 +8,7 @@ import {ArrayFieldOptions} from "@core/options"
 import {Field} from "@core/fields/Field"
 import {Form} from "@core/Form"
 import {collectionItemId} from "@core/fields/collectionIdentity"
-import {collectionTypeErrors, isValidArrayIndex} from "@core/fields/arrayUtils"
+import {assembleCollection, collectionTypeErrors, isValidArrayIndex} from "@core/fields/arrayUtils"
 
 export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
   private _snapshot?: ArrayFieldSnapshot
@@ -24,7 +24,7 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
       hasStandardGetters(this, ArrayField.prototype, ['itemsValue']) &&
       previous.errors === errors && previous.isValid === isValid && previous.isTouched === isTouched && previous.isDirty === isDirty &&
       previous.items.length === items.length && items.every((child, index) => previous.items[index] === child) &&
-      itemIds.every((id, index) => previous.itemIds?.[index] === id) &&
+      itemIds.every((id, index) => previous.itemIds[index] === id) &&
       this._items.every(child => hasStandardGetters(child, Field.prototype, ['valueClear']))) return previous
     return this._snapshot = {itemsValue: snapshotValue(this.itemsValue) as ArrayFieldSnapshot['itemsValue'],
       itemIds, items, errors, isValid, isTouched, isDirty}
@@ -64,7 +64,7 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
       ...options
     }
     duringValidationAssembly(() => {
-      this._items = initial.map(value => this.factory(value as T))
+      this._items = assembleCollection(initial, value => this.factory(value as T))
       this.syncErrorChildren()
       this.commitBaseline()
     })
@@ -89,8 +89,8 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
 
   setItemsValue(items: (T | null)[], validate: boolean = true): void {
     this.update(() => {
-      if (!this._items.length && !items.length) return
-      this._items = duringValidationAssembly(() => items.map(value => this.createItem(value as T)))
+      if (!this._items.length && items.length === 0) return
+      this._items = assembleCollection(items, value => this.createItem(value as T))
       if (this._items.length) this.isTouched = true
       this.syncErrorChildren()
       this.inputChanged(validate)
@@ -178,11 +178,6 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
 
   // ===== validation =====
 
-  private isRequired(form?: Form): boolean {
-    const rule = this.options.isRequired
-    return typeof rule === 'function' ? validationCallback(() => rule.call(this.options, form)) : rule ?? false
-  }
-
   validate(form?: Form): ValidationResult {
     return this.validateSelection(form, () => {
       for (const item of this._items) item.validate(form)
@@ -197,7 +192,7 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
     assertValidationAllowed()
     return this.update(() => {
       this.clientChecked = false
-      const type = collectionTypeErrors(this._items.length, this.isRequired(form),
+      const type = collectionTypeErrors(this._items.length, evaluateRequired(this.options, false, form),
         this.options.minItems, this.options.maxItems)
       visitChildren()
       const validate = this.options.validate
@@ -208,7 +203,7 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
   }
 
   get isValid(): boolean {
-    if (!this.clientChecked) return false
+    if (this.clientChecked !== true) return false
     if (this.errors.length > 0) return false
 
     return this._items.every(item => item.isValid === true)
