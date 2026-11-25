@@ -60,13 +60,6 @@ export class ErrorNotificationCycle {
 
   private read(): readonly NotificationFailure[] { return this.view ??= Object.freeze([...this.failures]) }
 
-  retainFollowingFailure(error: unknown): void {
-    const next = new ErrorNotificationCycle()
-    for (const [receiver, path] of this.receivers) next.add(receiver, path)
-    next.record('finalization', Object.freeze([]), error)
-    next.deliver()
-  }
-
   deliver(): void {
     for (const [receiver, path] of this.receivers) {
       const listeners = channels.get(receiver)?.listeners
@@ -76,6 +69,7 @@ export class ErrorNotificationCycle {
         try { listener(this.report) } catch (error) { this.record('diagnostic', path, error, index) }
       }
     }
+    this.view = Object.freeze(this.failures)
     this.delivered = true
     if (this.failures.length) {
       for (const receiver of this.receivers.keys()) {
@@ -83,5 +77,6 @@ export class ErrorNotificationCycle {
         state.reports = Object.freeze([...state.reports, this.report])
       }
     }
+    this.receivers.clear()
   }
 }

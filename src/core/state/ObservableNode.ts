@@ -449,11 +449,10 @@ export abstract class ObservableNode<TSnapshot> {
         flush()
       } catch (error) {
         // A subsequent reentrant wave cannot turn an installed Apply into a rejection.
-        if (cycle.report.status === 'delivered') cycle.retainFollowingFailure(error)
-        else {
-          cycle.record('finalization', receiverPath, error)
-          cycle.deliver()
-        }
+        const reportCycle = cycle.report.status === 'delivered' ? new ErrorNotificationCycle() : cycle
+        reportCycle.add(receiver, receiverPath)
+        reportCycle.record('finalization', receiverPath, error)
+        reportCycle.deliver()
       }
       return cycle.report
     }
