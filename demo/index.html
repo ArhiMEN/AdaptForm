@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#101827" />
-    <meta name="description" content="Try published AdaptForm 2.2.0: validation, reactive state, snapshots, batching, nested forms, server errors, and serialization." />
+    <meta name="description" content="Try AdaptForm 3.0: validation, reactive state, snapshots, batching, nested forms, server errors, and serialization." />
     <title>AdaptForm — Interactive Demo</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
   </head>
@@ -13,7 +13,7 @@
       <header class="topbar">
         <a class="brand" href="#top" aria-label="AdaptForm home">
           <span class="brand-mark">A</span>
-          <span>AdaptForm<span class="brand-version">2.2.0 · published</span></span>
+          <span>AdaptForm<span class="brand-version">3.0 · preview</span></span>
         </a>
         <nav class="top-links" aria-label="Project links">
           <a href="https://github.com/ArhiMEN/AdaptForm" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
@@ -29,7 +29,7 @@
           <div class="hero-copy">
             <div class="eyebrow"><span class="status-dot"></span> INTERACTIVE PLAYGROUND</div>
             <h1>Forms you can <span>actually try.</span></h1>
-            <p>Explore published AdaptForm 2.2.0: reactive form state, validation, nested collections, server errors, and serialization.</p>
+            <p>Explore AdaptForm 3.0: reactive form state, validation, nested collections, server errors, and serialization.</p>
             <div class="hero-actions">
               <a class="button button-primary" href="#basic-form">Try the form <span aria-hidden="true">↓</span></a>
               <a class="button button-quiet" href="https://github.com/ArhiMEN/AdaptForm/tree/master" target="_blank" rel="noreferrer">Browse source <span aria-hidden="true">↗</span></a>
@@ -168,9 +168,9 @@ form.getSnapshot()</code></pre>
             <div class="form-result" id="server-result" role="status" aria-live="polite">No simulated server errors applied.</div>
           </article>
           <article class="panel">
-            <div class="panel-heading"><div><h3>Mapped errors</h3><p>Field errors and unknown keys</p></div><span class="panel-icon">⚑</span></div>
-            <div id="mapped-errors" class="mapped-errors"><div class="empty-state">Apply the example payload to see how errors are attached to fields and unknown keys become global errors.</div></div>
-            <p class="inspector-note">The form uses <code>ErrorsSchema</code>'s default fallback mapping. You can configure static, dynamic, nested, and array-item mappings in your own application.</p>
+            <div class="panel-heading"><div><h3>Mapped errors</h3><p>Field and global errors</p></div><span class="panel-icon">⚑</span></div>
+            <div id="mapped-errors" class="mapped-errors"><div class="empty-state">Apply the example payload to see how backend keys map to fields and to a global error.</div></div>
+            <p class="inspector-note">The example parses with <code>ErrorsSchema</code> and applies the mapped errors using a form operation token.</p>
           </article>
         </section>
 
@@ -184,7 +184,7 @@ form.getSnapshot()</code></pre>
         </section>
 
         <section class="section-heading" id="headless-state">
-          <div><div class="eyebrow">05 / HEADLESS ENGINE</div><h2>Reactive state playground</h2><p>Experiment with the published 2.2.0 APIs: track isDirty against a baseline, subscribe to snapshots, and apply multiple changes in one batch.</p></div>
+          <div><div class="eyebrow">05 / HEADLESS ENGINE</div><h2>Reactive state playground</h2><p>Experiment with the 3.0 APIs: track isDirty against a baseline, subscribe to snapshots, and apply multiple changes in one batch.</p></div>
           <div class="live-pill"><span class="status-dot"></span> PUBLISHED ON NPM</div>
         </section>
         <section class="two-column headless-playground">
@@ -215,7 +215,7 @@ form.getSnapshot()</code></pre>
 
         <footer class="footer">
           <a class="brand footer-brand" href="#top"><span class="brand-mark">A</span><span>AdaptForm</span></a>
-          <p>Interactive playground for published AdaptForm <code>2.2.0</code>. Form values stay in your browser; nothing is submitted.</p>
+          <p>Interactive playground for AdaptForm <code>3.0</code>. Form values stay in your browser; nothing is submitted.</p>
           <div class="footer-links"><a href="https://github.com/ArhiMEN/AdaptForm/tree/master" target="_blank" rel="noreferrer">Source</a><a data-document="CHANGELOG" href="https://github.com/ArhiMEN/AdaptForm/blob/master/CHANGELOG.md" target="_blank" rel="noreferrer">Changelog</a><a href="https://www.npmjs.com/package/adaptform" target="_blank" rel="noreferrer">npm</a></div>
         </footer>
       </main>

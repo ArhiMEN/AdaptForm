@@ -3,7 +3,7 @@ import {dirname, resolve} from 'node:path'
 import {describe, expect, it} from 'vitest'
 import {russian} from '../../demo/translations'
 
-const documents = ['README.md', 'CHANGELOG.md', 'LICENSE.md', 'AGENTS.md', 'docs/DEMO.md', 'docs/roadmap/v2.1.0/PLAN.md', 'docs/roadmap/v2.1.0/STATUS.md']
+const documents = ['README.md', 'CHANGELOG.md', 'LICENSE.md', 'AGENTS.md', 'docs/DEMO.md', 'docs/roadmap/v2.1.0/PLAN.md', 'docs/roadmap/v2.1.0/STATUS.md', 'docs/roadmap/v3.0.0/MIGRATION.md']
 
 describe('Bilingual documentation', () => {
   it.each(documents)('provides a discoverable complete companion for %s', path => {
@@ -26,14 +26,14 @@ describe('Bilingual documentation', () => {
     }
   })
 
-  it('matches the published package version and exercises the v2.2.0 headless state APIs', () => {
-    const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as {version: string}
+  it('demonstrates the 3.0 headless and server error APIs', () => {
     const html = readFileSync('demo/index.html', 'utf8')
     const main = readFileSync('demo/main.ts', 'utf8')
     const workflow = readFileSync('.github/workflows/deploy-demo.yml', 'utf8')
 
-    expect(html).toContain(`${pkg.version} · published`)
-    expect(html).toContain(`published AdaptForm <code>${pkg.version}</code>`)
+    expect(html).toContain('AdaptForm <code>3.0</code>')
+    expect(main).toContain('profile.beginServerErrorOperation()')
+    expect(main).toContain('profile.applyServerErrors(')
     expect(html).toContain('id="headless-state"')
     expect(html).toContain('id="state-snapshot"')
     expect(html).toContain('id="state-notifications"')

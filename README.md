@@ -43,7 +43,7 @@ Luxon integration is optional:
 npm install luxon
 ```
 
-The [interactive demo](https://arhimen.github.io/AdaptForm/) runs from repository source, with automatic deployment from `v2.1.0` and `master`. **Headless APIs are published in [adaptform@2.2.0](https://www.npmjs.com/package/adaptform/v/2.2.0)** via npm Trusted Publisher (OIDC).
+This guide targets AdaptForm 3.0. For upgrades from 2.x, see the [migration guide](docs/roadmap/v3.0.0/MIGRATION.md). The interactive demo runs from repository source.
 
 The demo supports English and Russian with a persistent language selector: [English](https://arhimen.github.io/AdaptForm/?lang=en) · [Русский](https://arhimen.github.io/AdaptForm/?lang=ru). Switching languages preserves form data and validation state.
 
@@ -80,7 +80,7 @@ if (form.isValid) {
   console.log(form.fieldsValue)
   console.log(form.toJSON())
 } else {
-  console.log(form.allErrors)
+  console.log(form.getErrors())
 }
 ```
 
@@ -98,11 +98,7 @@ const username = new Field(StringType, null, {
   minLength: 3,
   maxLength: 32,
   pattern: /^[a-z0-9_]+$/i,
-  messages: {
-    isRequired: 'Enter a username.',
-    minLength: 'Use at least 3 characters.',
-    pattern: 'Use only letters, numbers, and underscores.',
-  },
+
 })
 ```
 
@@ -130,7 +126,7 @@ const price = new Field(DecimalType, null, {
 })
 ```
 
-Supports `gt`, `ge`, `lt`, `le`, `decimalPlaces`, and `maxDigits`. Numeric inputs with excess precision are rejected rather than silently rounded. String inputs may use a comma or a period as the decimal separator. Incomplete values such as `"123."` retain their editable text but fail explicit validation; call `Form.checkValid()` before submitting. `toJSON()` does not validate automatically.
+Supports `gt`, `ge`, `lt`, `le`, `decimalPlaces`, and `maxDigits`. Numeric inputs with excess precision are rejected rather than silently rounded. String inputs may use a comma or a period as the decimal separator. Incomplete values such as `"123."` retain their editable text but fail explicit validation; call `form.validate()` before submitting. `toJSON()` does not validate automatically.
 
 ### BooleanType
 
@@ -156,54 +152,44 @@ Supports `minDate`, `maxDate`, and `isDatetime`. When `isDatetime` is false, com
 
 ### Custom validation and messages
 
-Field options support `isRequired`, `messages`, and a synchronous `validate(value, form)` callback. A custom validator returns `true` for success, `false` for the configured validation message, or a string for a specific error.
+Field options support `isRequired` and a synchronous `validate(value, form)`. Return `[]` for success or an array of structured errors with explicit codes.
 
 ```typescript
 class PasswordForm extends Form {
   password = new Field(StringType, null, { minLength: 8 })
-
   confirmation = new Field(StringType, null, {
-    isRequired: true,
-    validate: (value, form) =>
-      value === form?.password.valueClear || 'Passwords do not match.',
+    validate: (value, form?: PasswordForm) => value === form?.password.valueClear
+      ? []
+      : [{ code: 'app.password_mismatch' }],
   })
 }
 ```
 
-Validators are synchronous; returning a Promise is not supported. For asynchronous checks such as server-side uniqueness, call the service separately and apply the response through the form's error API.
+Required, type and custom callbacks may read form state. Writes through supported node APIs and recursive validation throw `ValidationMutationError`. For asynchronous rules, use a separate server operation.
 
-## Structured errors (HF-015 source preview)
+## Structured errors
 
-Current source adds `getErrors()` on Field, collections and Form: ordered errors with required `code`, optional `message`/`params`, relative `path` and `source` (`client`, `custom`, `server`, `external`). Duplicates survive; no UI or localization is required. This PR does not update the published npm 2.2.0 package.
+A field returns its own pathless errors. Forms and collections return ordered errors with relative tuple paths. Duplicate codes and optional application messages are preserved. Built-in rules return codes and params for application-owned display.
 
-```ts
-const email = new Field(StringType, null, {
-  validate: (value: string) => value.length < 2
-    ? [{code: 'min_length', message: 'Minimum length is 2', params: {min: 2}},
-       {code: 'review_required'}]
-    : true,
-});
-email.rawValue = 'x';
+```typescript
+const email = new Field(StringType, 'x', { minLength: 2 })
+const { valid } = email.validate()
 for (const error of email.getErrors()) {
-  console.log(error.code, error.message, error.params, error.path, error.source);
+  console.log(error.code, error.params, error.message, error.source)
 }
-console.log(email.errors); // ['Minimum length is 2', 'review_required']
 ```
 
-Existing `errors`, `error`, `allErrors` and boolean/string results keep working. Without `message`, the string projection displays the code. `field.setErrors([...])` replaces own manual errors. `form.setErrors({email: [{code: 'taken'}, {code: 'blocked'}]})` is the new server importer for multiple errors, nested paths and ArrayField items; existing `form.errors = response` retains `parseErrors()` and transformer behavior. New `ErrorsSchema.parseValidationErrors()` preserves codes and duplicates. Value writes/validation clear field errors under the existing policy; global errors require explicit clearing. Snapshots gain optional `validationErrors` for node-owned errors only. [Model, API, codes, migration and limits](docs/ai/HEADLESS_ERRORS.md).
+`errors` and `getOwnErrors()` expose only the node’s own errors. `setErrors([...])` sets own manual errors. Sources are read in type, custom, server, manual order. `clearErrors()` accepts source and recursive options.
 
 ## Validation lifecycle and state
 
-- Constructor defaults begin untouched.
-- Empty strings and whitespace-only strings count as empty values.
-- Global and sticky regular-expression flags do not make repeated string validation stateful.
-- `form.checkValid()` validates every field and returns `false` when a field is invalid or global server errors remain.
-- Reading `isValid` does not run validators. Fields without a non-null default start with `isValid === null`; non-null constructor defaults pass through casting and validation but still start untouched. After `reset()`, field validity is unset until validation runs again.
-- Bulk assignment validates after direct field values have been assigned, so conditional-required rules can inspect the complete form state.
-- If you change dependent fields one at a time, call `form.checkValid()` after the changes to recompute cross-field rules.
-- `field.setRawValue(value, false)` and `form.setFields(data, false)` allow advanced callers to defer validation. Call `checkValid()` before relying on the validity state.
-- `reset()` restores defaults, clears errors, and leaves validity unset until the next validation. Collection validity is false after reset until the collection is checked again.
-- Adding, removing, or clearing collection items refreshes collection validation outside `Form.batch()`; inside a batch automatic validation is deferred. Invalid removal indices are ignored.
+- Constructors cast defaults and capture baselines. They run zero validation callbacks.
+- Empty strings and whitespace-only strings count as empty inputs. Explicit validation checks required, cast, type and custom rules in that order.
+- `validate().valid` reports effective validity across all sources. A field starts at `isValid === null`; reading validity and snapshots runs zero checks.
+- Bulk assignment hydrates all requested values before validation. Use `setRawValue(value, false)` or `setFields(data, false)` to defer checking.
+- Validation preserves server and manual errors. Actual value changes invalidate the check and clear the affected value’s errors.
+- Insertion checks the new branch and collection rules; removal, move and clear check own rules. An explicit collection check visits every child.
+- `reset()` restores defaults for surviving nodes, clears errors and leaves the subtree unchecked.
 
 ## Dynamic collections
 
@@ -228,7 +214,7 @@ console.log(tags.itemsValue)
 console.log(tags.isValid)
 ```
 
-Options include `isRequired`, `minItems`, `maxItems`, `messages`, and a synchronous `validate(values, form)` callback. `itemsValue` returns an array whose entries may be `null`.
+Options include `isRequired`, `minItems`, `maxItems`, and a synchronous `validate(values, form)` callback. `itemsValue` returns an array whose entries may be `null`.
 
 ### ArrayFormField
 
@@ -251,7 +237,7 @@ addresses.add({ city: 'Berlin', postalCode: '10115' })
 console.log(addresses.formsFieldsValue)
 ```
 
-Options include `isRequired`, `minForms`, `maxForms`, `messages`, and a synchronous `validate(forms, form)` callback.
+Options include `isRequired`, `minForms`, `maxForms`, and a synchronous `validate(forms, form)` callback.
 
 ## Input masks
 
@@ -277,43 +263,34 @@ console.log(phone.valueClear)
 
 ## Server-side errors with ErrorsSchema
 
-`ErrorsSchema` maps error keys returned by a backend to form fields. By default, unmatched keys fall back to their original names.
+Choose records, tree or adapter extraction. A mapping can route errors to another tuple path or `[]` for a Form-level error. Start the operation before dispatching the request and apply the parsed response once.
 
 ```typescript
-import { ErrorsSchema, Form, Field, StringType } from 'adaptform'
+import { ErrorsMapping, ErrorsSchema, Field, Form, StringType } from 'adaptform'
 
 class AccountForm extends Form {
   email = new Field(StringType)
-  username = new Field(StringType)
 }
 
 const form = new AccountForm()
-form.errorsShema = new ErrorsSchema()
-  .staticKey('email_address', 'email')
-  .staticKey('user_name', 'username')
-  .fallback(key => key)
+const schema = new ErrorsSchema({
+  kind: 'records',
+  path: { at: ['path'] },
+  code: { at: ['code'] },
+  message: { at: ['message'] },
+  mapping: ErrorsMapping.fromObject({ email_address: ['email'], summary: [] }),
+})
 
-form.errors = {
-  email_address: 'This email is already registered.',
-  user_name: 'This username is unavailable.',
-  request_id: 'The request could not be completed.',
-}
-
-console.log(form.allErrors)
+const operation = form.beginServerErrorOperation()
+const batch = schema.parse([
+  { path: ['email_address'], code: 'app.taken', message: 'Email already registered.' },
+  { path: ['summary'], code: 'app.update_failed' },
+])
+form.applyServerErrors(batch, { operation })
+console.log(form.getErrors())
 ```
 
-Available schema methods:
-
-- `staticKey(errorKey, fieldName)` maps an exact key.
-- `dynamicKey(pattern, mapping, options?)` maps keys using a regular expression and optional priority.
-- `fallback(handler)` handles keys that do not match configured rules.
-- `transformValue(transformer)` normalizes server error values before mapping.
-- `nest(prefix)` creates a schema for nested field paths.
-- `clone()` and `merge(other)` compose schemas.
-- `ErrorsSchema.fromObject(mapping)` creates a schema from a key-to-field map.
-- `ErrorsSchema.forArray(itemSchema, arrayFieldName, indexExtractor?)` maps array-item errors, including bracket and dotted index notation.
-
-Assigning a new `form.errors` object clears previously applied errors before applying the new payload. Unknown field keys become global errors.
+Apply defaults to replacing server errors across the receiver. Use a scope when beginning the operation for a subtree. Parsed paths remain relative to the receiver. Unknown paths throw by default. `unknownPath: "global"` or `"ignore"` is an explicit alternative. Subscribers receive the coherent committed state and notification failures are available on the result.
 
 ## Serialization
 
@@ -369,11 +346,14 @@ const date = new Field(DateLuxonType, null, {
 
 | Class | Main API |
 | --- | --- |
-| `Form` | `fields`, `setFields()`, `fieldsValue`, `checkValid()`, `isValid`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `batch()`, `allErrors`, `globalErrors`, `errors`, `getErrors()`, `setErrors()`, `setGlobalError()`, `clearGlobalErrors()`, `reset()`, `toJSON()`, `toFormData()` |
-| `Field` | `rawValue`, `setRawValue()`, `valueClear`, `errors`, `error`, `getErrors()`, `getOwnErrors()`, `setErrors()`, `isValid`, `isTouched`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `isEmpty`, `checkValid()`, `reset()` |
-| `ArrayField` | `items`, `itemsValue`, `add()`, `remove()`, `clear()`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `checkValid()`, `reset()` |
-| `ArrayFormField` | `forms`, `formsFieldsValue`, `add()`, `remove()`, `clear()`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `checkValid()`, `reset()` |
-| `ErrorsSchema` | `staticKey()`, `dynamicKey()`, `fallback()`, `transformValue()`, `parseErrors()`, `parseErrorsDetailed()`, `nest()`, `clone()`, `merge()`, `forArray()`, `fromObject()` |
+| `Form` | `setFields()`, `fieldsValue`, `validate()`, `batch()`, `beginServerErrorOperation()`, `applyServerErrors()`, `subscribeErrorNotifications()`, `toJSON()`, `toFormData()` |
+| `Field` | `rawValue`, `setRawValue()`, `valueClear`, `options`, `validate()`, `isEmpty` |
+| `ArrayField` | `items`, `itemsValue`, `add()`, `insert()`, `move()`, `remove()`, `clear()`, `validate()` |
+| `ArrayFormField` | `forms`, `formsFieldsValue`, `add()`, `insert()`, `move()`, `remove()`, `clear()`, `validate()` |
+| `ErrorsSchema` | `parse()` |
+| `ErrorsMapping` | `fromObject()`, `forArray()`, `nest()`, `clone()`, `merge()` |
+
+Every node supports `errors`, `getOwnErrors()`, `getErrors()`, `setErrors()`, `clearErrors()`, `isValid`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()` and `reset()`.
 
 ## Development
 
@@ -395,7 +375,7 @@ To run the interactive demo locally:
 npm run dev -- --config demo/vite.config.ts
 ```
 
-The demo is built by GitHub Actions from `v2.1.0` and `master`. GitHub Pages is configured to allow both branches to publish to the same demo URL; see [Demo and GitHub Pages notes](https://github.com/ArhiMEN/AdaptForm/blob/master/docs/DEMO.md).
+The demo is built by GitHub Actions from `master`. See [Demo and GitHub Pages notes](https://github.com/ArhiMEN/AdaptForm/blob/master/docs/DEMO.md).
 
 ## Links
 
@@ -410,9 +390,9 @@ The demo is built by GitHub Actions from `v2.1.0` and `master`. GitHub Pages is 
 
 MIT © Stanislav Orlov
 
-## Headless form state (2.2.0)
+## Headless form state
 
-HF-005–HF-010 were merged after independent review and are **published in [adaptform@2.2.0](https://www.npmjs.com/package/adaptform/v/2.2.0)** with npm Trusted Publisher and signed provenance.
+Snapshots carry own structured errors and stable collection `itemIds`. A batch publishes the final affected snapshots before notifying subscribers.
 
 ```typescript
 import {Field, Form, NumberType, StringType} from 'adaptform'
@@ -439,11 +419,11 @@ unsubscribe()        // Release the listener
 
 `isTouched` keeps its former semantics. `commitBaseline()` changes the dirty-comparison baseline, **not** the constructor defaults restored by `reset()`; a reset may leave `isDirty=true`. Snapshots are detached read-only descriptions, not mutable source objects; `toJSON()` still does not validate.
 
-Automatic validation inside `Form.batch()` is deferred, whereas explicit `checkValid()` is immediate. Batch callbacks must be synchronous and do not roll back changes on errors. Direct in-place changes to legacy public arrays or arbitrary form properties are not automatically observed. See [usage and limitations](docs/ai/HEADLESS_STATE_USAGE.md) and the [2.1.1 compatibility table](docs/ai/HEADLESS_STATE_CONTRACT.md#compatibility-with-211).
+Automatic validation inside `Form.batch()` is deferred. Explicit `validate()` runs immediately. A synchronous batch preserves completed writes after an exception. Use node mutation APIs for observable changes.
 
-## Dependent validation (HF-013 source preview)
+## Dependent validation
 
-The 2.3.0 milestone source adds optional `dependsOn` and explicit `enableDependencies()` for ordinary fields of one Form. This API is not in the published 2.2.0 package; the manifest version remains unchanged.
+Configure `dependsOn` and call `enableDependencies()` for direct scalar fields of the same Form.
 
 ```typescript
 class Registration extends Form {
@@ -451,7 +431,7 @@ class Registration extends Form {
   confirmation = new Field(StringType, null, {
     dependsOn: [{path: ['password']}],
     validate: (value: string, form?: Registration) =>
-      !form || value === form.password.valueClear || 'Passwords differ',
+      !form || value === form.password.valueClear ? [] : [{code: 'app.password_mismatch'}],
   })
 }
 const form = new Registration()
@@ -462,4 +442,4 @@ form.password.rawValue = 'changed' // Also revalidates confirmation
 disable()
 ```
 
-Activation does not validate or change flags. Automatic checks select changed sources and reachable targets, including chains/diamonds, once per completed batch. `setRawValue(value, false)` / `setFields(data, false)` suppress originating requests; explicit checks remain immediate. Missing fields, cycles and overlapping enabled trees throw `DependencyConfigurationError`; mutating graph validators throw `ValidationMutationError`. Validators must be synchronous and pure. Without activation, existing scheduling is preserved. Paths are single literal Field names; collections and direct node references are excluded. See [complete behavior, examples and limits](docs/ai/HEADLESS_DEPENDENCIES_USAGE.md).
+Activation does not validate or change flags. Automatic checks select changed sources and reachable targets, including chains/diamonds, once per completed batch. `setRawValue(value, false)` / `setFields(data, false)` suppress originating requests; explicit checks remain immediate. Missing fields, cycles and overlapping enabled trees throw `DependencyConfigurationError`; mutating graph validators throw `ValidationMutationError`. Validators must be synchronous and pure. Without activation, existing scheduling is preserved. Paths are single literal Field names; collections and direct node references are excluded. See [complete behavior, examples and limits](docs/roadmap/v3.0.0/MIGRATION.md).

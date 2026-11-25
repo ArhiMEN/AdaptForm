@@ -43,7 +43,7 @@ npm install adaptform
 npm install luxon
 ```
 
-[Интерактивное демо](https://arhimen.github.io/AdaptForm/?lang=ru) использует исходный код репозитория и автоматически публикуется из `v2.1.0` и `master`. **Новые headless API опубликованы в [adaptform@2.2.0](https://www.npmjs.com/package/adaptform/v/2.2.0)** через npm Trusted Publisher (OIDC).
+Руководство описывает AdaptForm 3.0. Для перехода с 2.x см. [руководство по миграции](docs/roadmap/v3.0.0/MIGRATION.ru.md). Интерактивное демо собирается из исходников репозитория.
 
 Демо поддерживает английский и русский языки с сохранением выбора: [English](https://arhimen.github.io/AdaptForm/?lang=en) · [Русский](https://arhimen.github.io/AdaptForm/?lang=ru). Переключение языка сохраняет данные формы и состояние валидации.
 
@@ -80,7 +80,7 @@ if (form.isValid) {
   console.log(form.fieldsValue)
   console.log(form.toJSON())
 } else {
-  console.log(form.allErrors)
+  console.log(form.getErrors())
 }
 ```
 
@@ -98,11 +98,7 @@ const username = new Field(StringType, null, {
   minLength: 3,
   maxLength: 32,
   pattern: /^[a-z0-9_]+$/i,
-  messages: {
-    isRequired: 'Enter a username.',
-    minLength: 'Use at least 3 characters.',
-    pattern: 'Use only letters, numbers, and underscores.',
-  },
+
 })
 ```
 
@@ -130,7 +126,7 @@ const price = new Field(DecimalType, null, {
 })
 ```
 
-Поддерживаются `gt`, `ge`, `lt`, `le`, `decimalPlaces` и `maxDigits`. Числовые значения с избыточной точностью отклоняются без скрытого округления. В строковых значениях десятичным разделителем может быть запятая или точка. Незавершённые значения вроде `"123."` сохраняются при редактировании, но не проходят явную проверку; перед отправкой вызывайте `Form.checkValid()`. Метод `toJSON()` не выполняет валидацию автоматически.
+Поддерживаются `gt`, `ge`, `lt`, `le`, `decimalPlaces` и `maxDigits`. Числовые значения с избыточной точностью отклоняются без скрытого округления. В строковых значениях десятичным разделителем может быть запятая или точка. Незавершённые значения вроде `"123."` сохраняются при редактировании, но не проходят явную проверку; перед отправкой вызывайте `form.validate()`. Метод `toJSON()` не выполняет валидацию автоматически.
 
 ### BooleanType
 
@@ -156,54 +152,44 @@ const birthday = new Field(DateType, null, {
 
 ### Пользовательская валидация и сообщения
 
-Параметры поля поддерживают `isRequired`, `messages` и синхронную функцию `validate(value, form)`. Пользовательский валидатор возвращает `true` при успехе, `false` для настроенного сообщения валидации или строку с конкретной ошибкой.
+Опции поля поддерживают `isRequired` и синхронный `validate(value, form)`. Возвращайте `[]` при успехе или массив структурированных ошибок с явными кодами.
 
 ```typescript
 class PasswordForm extends Form {
   password = new Field(StringType, null, { minLength: 8 })
-
   confirmation = new Field(StringType, null, {
-    isRequired: true,
-    validate: (value, form) =>
-      value === form?.password.valueClear || 'Passwords do not match.',
+    validate: (value, form?: PasswordForm) => value === form?.password.valueClear
+      ? []
+      : [{ code: 'app.password_mismatch' }],
   })
 }
 ```
 
-Валидаторы синхронные; возврат Promise не поддерживается. Для асинхронных проверок, например уникальности на сервере, вызовите сервис отдельно и примените ответ через API ошибок формы.
+Колбэки required, type и custom могут читать состояние формы. Запись через API узлов и рекурсивная валидация вызывают `ValidationMutationError`. Для асинхронных правил используйте отдельную серверную операцию.
 
-## Структурированные ошибки (исходники HF-015)
+## Структурированные ошибки
 
-В текущих исходниках `getErrors()` у Field, коллекций и Form возвращает упорядоченные ошибки с обязательным `code`, необязательными `message`/`params`, относительным `path` и `source` (`client`, `custom`, `server`, `external`). Дубликаты сохраняются; UI и локализация не требуются. Опубликованный npm-пакет 2.2.0 этим PR не обновляется.
+Поле возвращает собственные ошибки без пути. Формы и коллекции возвращают упорядоченные ошибки с относительными путями-кортежами. Повторные коды и сообщения приложения сохраняются. Встроенные правила предоставляют коды и параметры для отображения в приложении.
 
-```ts
-const email = new Field(StringType, null, {
-  validate: (value: string) => value.length < 2
-    ? [{code: 'min_length', message: 'Minimum length is 2', params: {min: 2}},
-       {code: 'review_required'}]
-    : true,
-});
-email.rawValue = 'x';
+```typescript
+const email = new Field(StringType, 'x', { minLength: 2 })
+const { valid } = email.validate()
 for (const error of email.getErrors()) {
-  console.log(error.code, error.message, error.params, error.path, error.source);
+  console.log(error.code, error.params, error.message, error.source)
 }
-console.log(email.errors); // ['Minimum length is 2', 'review_required']
 ```
 
-Старые `errors`, `error`, `allErrors` и результаты boolean/string работают как раньше. Без `message` строковое представление показывает код. `field.setErrors([...])` заменяет собственные ручные ошибки. `form.setErrors({email: [{code: 'taken'}, {code: 'blocked'}]})` — новый серверный импорт с несколькими ошибками, вложенными путями и элементами ArrayField; старый `form.errors = response` сохраняет `parseErrors()` и поведение трансформеров. Новый `ErrorsSchema.parseValidationErrors()` сохраняет коды и дубликаты. Запись значения/валидация очищает ошибки поля по прежней политике; глобальные ошибки требуют явной очистки. Snapshots получают необязательный `validationErrors` только для собственных ошибок узла. [Модель, API, коды, миграция и ограничения](docs/ai/HEADLESS_ERRORS.ru.md).
+`errors` и `getOwnErrors()` возвращают только собственные ошибки узла. `setErrors([...])` заменяет собственные manual-ошибки. Порядок источников — type, custom, server, manual. `clearErrors()` поддерживает выбор источников и рекурсивную очистку.
 
 ## Жизненный цикл валидации и состояние
 
-- Значения по умолчанию начинают со состояния «не изменено».
-- Пустые строки и строки только из пробелов считаются пустыми значениями.
-- Глобальный и липкий флаги регулярных выражений не влияют на повторные проверки строк.
-- `form.checkValid()` проверяет каждое поле и возвращает `false`, если хотя бы одно поле некорректно или остались общие серверные ошибки.
-- Чтение `isValid` не запускает валидаторы. Поля без ненулевого значения по умолчанию начинают с `isValid === null`; ненулевые значения конструктора проходят приведение и валидацию, но остаются неизменёнными по состоянию. После `reset()` корректность поля не определена до следующей проверки.
-- Массовое присваивание запускает проверку после установки значений непосредственных полей, поэтому правила условной обязательности видят полное состояние формы.
-- Если зависимые поля меняются по отдельности, после изменений вызовите `form.checkValid()` для пересчёта зависимых правил.
-- `field.setRawValue(value, false)` и `form.setFields(data, false)` позволяют отложить валидацию. Прежде чем полагаться на корректность формы, вызовите `checkValid()`.
-- `reset()` восстанавливает значения по умолчанию, очищает ошибки и оставляет корректность неопределённой до следующей проверки. Корректность коллекции после сброса равна false до её повторной проверки.
-- Добавление, удаление и очистка элементов проверяют коллекции вне `Form.batch()`; внутри batch автоматическая валидация откладывается. Некорректные индексы удаления игнорируются.
+- Конструкторы приводят значения по умолчанию и фиксируют baseline. Они выполняют ноль проверок.
+- Пустые строки и строки из пробелов считаются пустым вводом. Порядок явной проверки — required, cast, type, custom.
+- `validate().valid` учитывает все источники ошибок. Поле начинается с `isValid === null`. Чтение валидности и снапшотов выполняет ноль проверок.
+- Массовая запись загружает все указанные значения перед проверкой. Для отложенной проверки используйте `setRawValue(value, false)` или `setFields(data, false)`.
+- Валидация сохраняет server и manual. Фактическое изменение значения сбрасывает проверку и очищает ошибки затронутого значения.
+- При вставке проверяются новая ветка и правила коллекции. Удаление, перемещение и очистка проверяют собственные правила коллекции. Явная проверка коллекции обходит всех детей.
+- `reset()` восстанавливает значения по умолчанию у сохранённых узлов, очищает ошибки и сбрасывает проверку поддерева.
 
 ## Динамические коллекции
 
@@ -228,7 +214,7 @@ console.log(tags.itemsValue)
 console.log(tags.isValid)
 ```
 
-Параметры включают `isRequired`, `minItems`, `maxItems`, `messages` и синхронную функцию `validate(values, form)`. `itemsValue` возвращает массив, элементы которого могут быть `null`.
+Параметры включают `isRequired`, `minItems`, `maxItems` и синхронную функцию `validate(values, form)`. `itemsValue` возвращает массив, элементы которого могут быть `null`.
 
 ### ArrayFormField
 
@@ -251,7 +237,7 @@ addresses.add({ city: 'Berlin', postalCode: '10115' })
 console.log(addresses.formsFieldsValue)
 ```
 
-Параметры включают `isRequired`, `minForms`, `maxForms`, `messages` и синхронную функцию `validate(forms, form)`.
+Параметры включают `isRequired`, `minForms`, `maxForms` и синхронную функцию `validate(forms, form)`.
 
 ## Маски ввода
 
@@ -277,43 +263,34 @@ console.log(phone.valueClear)
 
 ## Серверные ошибки и ErrorsSchema
 
-`ErrorsSchema` сопоставляет ключи ошибок сервера с полями формы. По умолчанию для ключей без соответствия сохраняются исходные имена.
+Выберите извлечение records, tree или adapter. Маппинг позволяет перенести ошибку на другой путь-кортеж или на `[]` для общей ошибки формы. Откройте операцию до отправки запроса и примените разобранный ответ один раз.
 
 ```typescript
-import { ErrorsSchema, Form, Field, StringType } from 'adaptform'
+import { ErrorsMapping, ErrorsSchema, Field, Form, StringType } from 'adaptform'
 
 class AccountForm extends Form {
   email = new Field(StringType)
-  username = new Field(StringType)
 }
 
 const form = new AccountForm()
-form.errorsShema = new ErrorsSchema()
-  .staticKey('email_address', 'email')
-  .staticKey('user_name', 'username')
-  .fallback(key => key)
+const schema = new ErrorsSchema({
+  kind: 'records',
+  path: { at: ['path'] },
+  code: { at: ['code'] },
+  message: { at: ['message'] },
+  mapping: ErrorsMapping.fromObject({ email_address: ['email'], summary: [] }),
+})
 
-form.errors = {
-  email_address: 'This email is already registered.',
-  user_name: 'This username is unavailable.',
-  request_id: 'The request could not be completed.',
-}
-
-console.log(form.allErrors)
+const operation = form.beginServerErrorOperation()
+const batch = schema.parse([
+  { path: ['email_address'], code: 'app.taken', message: 'Email already registered.' },
+  { path: ['summary'], code: 'app.update_failed' },
+])
+form.applyServerErrors(batch, { operation })
+console.log(form.getErrors())
 ```
 
-Доступные методы схемы:
-
-- `staticKey(errorKey, fieldName)` сопоставляет точный ключ.
-- `dynamicKey(pattern, mapping, options?)` сопоставляет ключи по регулярному выражению с необязательным приоритетом.
-- `fallback(handler)` обрабатывает ключи, не подошедшие под настроенные правила.
-- `transformValue(transformer)` нормализует значения серверных ошибок до сопоставления.
-- `nest(prefix)` создаёт схему для вложенных путей полей.
-- `clone()` и `merge(other)` позволяют составлять схемы.
-- `ErrorsSchema.fromObject(mapping)` создаёт схему из таблицы соответствий ключей и полей.
-- `ErrorsSchema.forArray(itemSchema, arrayFieldName, indexExtractor?)` сопоставляет ошибки элементов массива, включая индексы в скобках и через точку.
-
-Присваивание нового объекта `form.errors` очищает предыдущие ошибки перед применением нового ответа. Неизвестные ключи полей становятся общими ошибками формы.
+По умолчанию Apply заменяет серверные ошибки во всей форме. Укажите область при создании операции для поддерева. Пути ответа остаются относительными к форме. Неизвестные пути по умолчанию вызывают исключение. Для изменения поведения задайте `unknownPath: "global"` или `"ignore"`. Подписчики получают согласованное состояние, а сбои уведомлений доступны в результате Apply.
 
 ## Сериализация
 
@@ -369,11 +346,14 @@ const date = new Field(DateLuxonType, null, {
 
 | Класс | Основной API |
 | --- | --- |
-| `Form` | `fields`, `setFields()`, `fieldsValue`, `checkValid()`, `isValid`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `batch()`, `allErrors`, `globalErrors`, `errors`, `getErrors()`, `setErrors()`, `setGlobalError()`, `clearGlobalErrors()`, `reset()`, `toJSON()`, `toFormData()` |
-| `Field` | `rawValue`, `setRawValue()`, `valueClear`, `errors`, `error`, `getErrors()`, `getOwnErrors()`, `setErrors()`, `isValid`, `isTouched`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `isEmpty`, `checkValid()`, `reset()` |
-| `ArrayField` | `items`, `itemsValue`, `add()`, `remove()`, `clear()`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `checkValid()`, `reset()` |
-| `ArrayFormField` | `forms`, `formsFieldsValue`, `add()`, `remove()`, `clear()`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()`, `checkValid()`, `reset()` |
-| `ErrorsSchema` | `staticKey()`, `dynamicKey()`, `fallback()`, `transformValue()`, `parseErrors()`, `parseErrorsDetailed()`, `nest()`, `clone()`, `merge()`, `forArray()`, `fromObject()` |
+| `Form` | `setFields()`, `fieldsValue`, `validate()`, `batch()`, `beginServerErrorOperation()`, `applyServerErrors()`, `subscribeErrorNotifications()`, `toJSON()`, `toFormData()` |
+| `Field` | `rawValue`, `setRawValue()`, `valueClear`, `options`, `validate()`, `isEmpty` |
+| `ArrayField` | `items`, `itemsValue`, `add()`, `insert()`, `move()`, `remove()`, `clear()`, `validate()` |
+| `ArrayFormField` | `forms`, `formsFieldsValue`, `add()`, `insert()`, `move()`, `remove()`, `clear()`, `validate()` |
+| `ErrorsSchema` | `parse()` |
+| `ErrorsMapping` | `fromObject()`, `forArray()`, `nest()`, `clone()`, `merge()` |
+
+Все узлы поддерживают `errors`, `getOwnErrors()`, `getErrors()`, `setErrors()`, `clearErrors()`, `isValid`, `isDirty`, `commitBaseline()`, `subscribe()`, `getSnapshot()` и `reset()`.
 
 ## Разработка
 
@@ -395,7 +375,7 @@ npm run build:demo
 npm run dev -- --config demo/vite.config.ts
 ```
 
-Демо собирается GitHub Actions из `v2.1.0` и `master`. GitHub Pages разрешает обеим веткам публиковать страницу по одному адресу; см. [Демо и GitHub Pages](https://github.com/ArhiMEN/AdaptForm/blob/master/docs/DEMO.ru.md).
+Демо собирается GitHub Actions из `master`. GitHub Pages разрешает обеим веткам публиковать страницу по одному адресу; см. [Демо и GitHub Pages](https://github.com/ArhiMEN/AdaptForm/blob/master/docs/DEMO.ru.md).
 
 ## Ссылки
 
@@ -410,9 +390,9 @@ npm run dev -- --config demo/vite.config.ts
 
 MIT © Stanislav Orlov
 
-## Headless-состояния форм (2.2.0)
+## Headless-состояния формы
 
-HF-005–HF-010 прошли независимое ревью и **опубликованы в [adaptform@2.2.0](https://www.npmjs.com/package/adaptform/v/2.2.0)** через npm Trusted Publisher с подписанным provenance.
+Снапшоты содержат собственные структурированные ошибки и стабильные `itemIds` коллекций. Batch фиксирует итоговые снапшоты всех затронутых узлов до уведомлений.
 
 ```typescript
 import {Field, Form, NumberType, StringType} from 'adaptform'
@@ -439,11 +419,11 @@ unsubscribe()        // Release the listener
 
 `isTouched` сохраняет прежнюю семантику. `commitBaseline()` меняет точку сравнения dirty, **не** значения конструктора, возвращаемые `reset()`; после сброса `isDirty` иногда остаётся `true`. Snapshots — независимые неизменяемые представления, а не ссылки на изменяемые данные. `toJSON()` по-прежнему не выполняет валидацию.
 
-Автоматическая проверка внутри `Form.batch()` откладывается, явные `checkValid()` выполняются сразу. Batch только синхронный; при исключении выполненные изменения не откатываются. Прямые мутации старых публичных массивов и произвольная замена свойств формы не создают автоматических уведомлений. Подробности: [использование и ограничения](docs/ai/HEADLESS_STATE_USAGE.ru.md), [совместимость с 2.1.1](docs/ai/HEADLESS_STATE_CONTRACT.ru.md#совместимость-с-211).
+Внутри `Form.batch()` автоматическая валидация откладывается, а явный `validate()` выполняется сразу. Синхронный batch сохраняет завершённые записи при исключении. Для наблюдаемых изменений используйте API мутации узлов.
 
-## Зависимая валидация (исходный API HF-013)
+## Зависимая валидация
 
-Исходники этапа 2.3.0 добавляют необязательный `dependsOn` и явный `enableDependencies()` для обычных полей одной Form. Этого API нет в опубликованном пакете 2.2.0; версия manifest не изменяется.
+Настройте `dependsOn` и вызовите `enableDependencies()` для прямых скалярных полей одной формы.
 
 ```typescript
 class Registration extends Form {
@@ -451,7 +431,7 @@ class Registration extends Form {
   confirmation = new Field(StringType, null, {
     dependsOn: [{path: ['password']}],
     validate: (value: string, form?: Registration) =>
-      !form || value === form.password.valueClear || 'Passwords differ',
+      !form || value === form.password.valueClear ? [] : [{code: 'app.password_mismatch'}],
   })
 }
 const form = new Registration()
@@ -462,4 +442,4 @@ form.password.rawValue = 'changed' // Also revalidates confirmation
 disable()
 ```
 
-Активация не валидирует и не меняет флаги. Автоматическая проверка выбирает изменённые source и достижимые target, включая цепочки/ромбы, по разу за завершённый batch. `setRawValue(value, false)` / `setFields(data, false)` подавляют исходящие запросы; явные проверки остаются немедленными. Отсутствующие поля, циклы и пересекающиеся активные деревья вызывают `DependencyConfigurationError`; мутации из валидаторов графа — `ValidationMutationError`. Валидаторы должны быть синхронными и чистыми. Без активации существующее планирование сохраняется. Пути — одно буквальное имя Field; коллекции и прямые ссылки исключены. См. [полное поведение, примеры и ограничения](docs/ai/HEADLESS_DEPENDENCIES_USAGE.ru.md).
+Активация не валидирует и не меняет флаги. Автоматическая проверка выбирает изменённые source и достижимые target, включая цепочки/ромбы, по разу за завершённый batch. `setRawValue(value, false)` / `setFields(data, false)` подавляют исходящие запросы; явные проверки остаются немедленными. Отсутствующие поля, циклы и пересекающиеся активные деревья вызывают `DependencyConfigurationError`; мутации из валидаторов графа — `ValidationMutationError`. Валидаторы должны быть синхронными и чистыми. Без активации существующее планирование сохраняется. Пути — одно буквальное имя Field; коллекции и прямые ссылки исключены. См. [полное поведение, примеры и ограничения](docs/roadmap/v3.0.0/MIGRATION.ru.md).

@@ -6,6 +6,8 @@ import {
   ArrayFormField,
   BooleanType,
   DateType,
+  ErrorsMapping,
+  ErrorsSchema,
   Field,
   Form,
   MaskPlugin,
@@ -405,11 +407,23 @@ const serverPayload = {
   profile_id: 'The profile could not be updated.',
 }
 
+const serverCodes: Record<keyof typeof serverPayload, string> = {
+  email: 'app.email_taken',
+  region: 'app.region_unavailable',
+  profile_id: 'app.profile',
+}
+const serverSchema = new ErrorsSchema<typeof serverPayload>({
+  kind: 'adapter',
+  extract: response => (Object.keys(serverCodes) as Array<keyof typeof serverPayload>).map(key => ({
+    path: [key], code: serverCodes[key], message: response[key],
+  })),
+  mapping: ErrorsMapping.fromObject({email: ['email'], region: ['region'], profile_id: []}),
+})
+
 $('#apply-server-errors').addEventListener('click', () => {
   syncProfileFromInputs()
-  profile.email.setErrors([{code: 'app.email_taken', message: serverPayload.email}])
-  profile.region.setErrors([{code: 'app.region_unavailable', message: serverPayload.region}])
-  profile.setErrors([{code: 'app.profile', message: serverPayload.profile_id}])
+  const operation = profile.beginServerErrorOperation()
+  profile.applyServerErrors(serverSchema.parse(serverPayload), {operation})
   serverErrorsApplied = true
   renderProfile()
   $('#server-result').className = 'form-result result-error'
@@ -417,7 +431,7 @@ $('#apply-server-errors').addEventListener('click', () => {
   translatePage()
 })
 $('#clear-server-errors').addEventListener('click', () => {
-  profile.clearErrors({sources: ['manual'], recursive: true})
+  profile.clearErrors({sources: ['server'], recursive: true})
   serverErrorsApplied = false
   renderProfile()
   $('#server-result').className = 'form-result result-success'
