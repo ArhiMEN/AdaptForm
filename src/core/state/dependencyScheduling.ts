@@ -9,7 +9,7 @@ export interface DependencyScheduler {
 
 const owners = new WeakMap<ObservableNode<unknown>, DependencyScheduler>()
 const pending = new Set<DependencyScheduler>()
-let validationDepth = 0
+let dependencySuppressionDepth = 0
 
 export class DependencyConfigurationError extends Error {
   constructor(message: string) {
@@ -46,12 +46,12 @@ export function commitDependencies(): void {
   if (failed) throw failure
 }
 
-export function dependencyValidation<TResult>(callback: () => TResult): TResult {
-  validationDepth++
-  try { return callback() } finally { validationDepth-- }
+export function withoutDependencyScheduling<TResult>(callback: () => TResult): TResult {
+  dependencySuppressionDepth++
+  try { return callback() } finally { dependencySuppressionDepth-- }
 }
 
 export function noteDependencyMutation(node: ObservableNode<unknown>): void {
   const owner = owners.get(node)
-  if (owner && !validationDepth) pending.add(owner)
+  if (owner && !dependencySuppressionDepth) pending.add(owner)
 }

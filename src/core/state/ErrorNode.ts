@@ -18,7 +18,7 @@ export function replaceNodeErrors(node: object, source: ValidationErrorSource, e
 /** Shared storage and client-check knowledge, independent of snapshot subscriptions. */
 export abstract class ErrorNode<TSnapshot> extends ObservableNode<TSnapshot> {
   private readonly errorStore = new ErrorStore()
-  protected clientChecked = false
+  protected clientChecked: boolean | 'failed' = false
   private errorParents = new Set<ErrorNode<unknown>>()
   private errorChildren = new Set<ErrorNode<unknown>>()
   protected clearsOnDescendantChange = false

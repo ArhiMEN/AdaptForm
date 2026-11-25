@@ -5,6 +5,7 @@ import {assertValidationMutationAllowed, isAssemblingValidationNodes} from './va
 import {commitDependencies, DependencyConfigurationError, dependencyOwner, noteDependencyMutation} from './dependencyScheduling'
 
 let mutationDepth = 0
+let automaticFullCheckDepth = 0
 let flushing = false
 let publishing = false
 let captureDepth = 0
@@ -199,6 +200,17 @@ export abstract class ObservableNode<TSnapshot> {
     validations.set(this, {...validations.get(this), own: check})
   }
 
+  protected get isAutomaticFullCheck(): boolean { return automaticFullCheckDepth > 0 }
+
+  private static runAutomaticFullCheck(check: FullCheck, form?: Form): unknown {
+    automaticFullCheckDepth++
+    try {
+      return check(form)
+    } finally {
+      automaticFullCheckDepth--
+    }
+  }
+
   private static commitValidations(): void {
     const requested = new Map(validations)
     const scopes = new Map(batchRoots)
@@ -227,18 +239,23 @@ export abstract class ObservableNode<TSnapshot> {
     if (roots.size > 1) for (const root of roots) discover(root)
     // Scalar-only batches retain HF-009's full Form check when HF-013 is inactive.
     // An ODR-03 structural request keeps the batch on the local traversal path.
-    const useLegacyBatch = ![...requested.values()].some(request => request.own || request.structural)
-    const batchProfile = new Map<Node, {requested: boolean; selective: boolean}>()
+    const batchProfile = new Map<Node, {requested: boolean; selective: boolean; structural: boolean}>()
     const profile = (node: Node) => {
       const previous = batchProfile.get(node)
       if (previous) return previous
       const owner = dependencyOwner(node)
-      const result = {requested: requested.has(node), selective: owner?.selective === true && owner.selects(node)}
+      const request = requested.get(node)
+      const result = {
+        requested: request !== undefined,
+        selective: owner?.selective === true && owner.selects(node),
+        structural: request?.own !== undefined || request?.structural === true,
+      }
       batchProfile.set(node, result)
       for (const child of children.get(node) ?? []) {
         const nested = profile(child)
         result.requested ||= nested.requested
         result.selective ||= nested.selective
+        result.structural ||= nested.structural
       }
       return result
     }
@@ -247,14 +264,15 @@ export abstract class ObservableNode<TSnapshot> {
       if (seen.has(node)) return []
       seen.add(node)
       const request = requested.get(node)
-      if (request?.full) {
+      const full = request?.full
+      if (full) {
         if (dependencyOwner(node)?.request(node)) return []
-        return [() => request.full!(context)]
+        return [() => ObservableNode.runAutomaticFullCheck(full, context)]
       }
       const scope = scopes.get(node)
-      if (scope && useLegacyBatch) {
-        const {requested, selective} = profile(node)
-        if (requested && !selective) return [() => scope()]
+      if (scope) {
+        const {requested, selective, structural} = profile(node)
+        if (requested && !selective && !structural) return [() => ObservableNode.runAutomaticFullCheck(scope)]
       }
       const childContext = node.childValidationContext(context)
       const nested = (children.get(node) ?? []).flatMap(child => plan(child, childContext))

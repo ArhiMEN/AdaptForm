@@ -100,12 +100,23 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
   validate(_form?: Form): ValidationResult {
     assertValidationAllowed()
     const check = () => {
-      this.clientChecked = false
-      for (const field of Object.values(this._fields)) field.validate(this)
+      const fields = Object.values(this._fields)
+      this.syncErrorChildren(false, fields)
+      for (const field of new Set(fields)) field.validate(this)
       this.clientChecked = true
       return {valid: this.isValid}
     }
-    return this.update(() => this._dependencies?.isEnabled ? this._dependencies.check(check) : check())
+    return this.update(() => {
+      this.clientChecked = false
+      try {
+        return this._dependencies?.isEnabled
+          ? this._dependencies.runFullCheck(check, this.isAutomaticFullCheck)
+          : check()
+      } catch (error) {
+        this.clientChecked = 'failed'
+        throw error
+      }
+    })
   }
 
   get fieldsValue(): FormFieldsValue<this> {
@@ -132,15 +143,21 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
   setFields(data: Record<string, unknown>, validate: boolean = true): void {
     return this.update(() => {
       const fields = this._fields
-
+      const replacedCollections = new Set<ArrayField | ArrayFormField>()
       duringValidationAssembly(() => {
         for (const key of Object.keys(data)) {
           const field = fields[key]
           if (field) {
             if (field instanceof Field) field.setRawValue(data[key], false)
-            else if (field instanceof ArrayField) field.setItemsValue(data[key] as unknown[], false)
-            else if (field instanceof ArrayFormField) field.setForms(data[key] as unknown[], false)
-            else console.error(`Invalid field "${key}" type`)
+            else if (field instanceof ArrayField) {
+              const previous = field.items
+              field.setItemsValue(data[key] as unknown[], false)
+              if (field.items !== previous) replacedCollections.add(field)
+            } else if (field instanceof ArrayFormField) {
+              const previous = field.forms
+              field.setForms(data[key] as unknown[], false)
+              if (field.forms !== previous) replacedCollections.add(field)
+            }
           }
         }
       })
@@ -154,10 +171,10 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
             const field = fields[key]
             if (field instanceof Field) {
               this._dependencies.request(field)
-            } else if (field) {
-              // Collection rules remain local and retain their owning Form context.
-              this.validateNodeAfterMutation(field, () => field.validate(this))
             }
+          }
+          for (const collection of replacedCollections) {
+            this.validateNodeAfterMutation(collection, () => collection.validate(this))
           }
         } else this.validateAfterMutation(() => this.validate())
       }
@@ -194,6 +211,7 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
 
   // Check whether the form is valid.
   get isValid(): boolean {
+    if (this.clientChecked === 'failed') return false
     const fields = this._fields
     for (const key of Object.keys(fields)) {
       if (fields[key].isValid !== true) return false

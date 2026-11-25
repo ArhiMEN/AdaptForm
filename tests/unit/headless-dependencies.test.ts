@@ -1,4 +1,5 @@
 import {errorMessages, ownMessagesByCode} from '../helpers/errorViews'
+import {replaceNodeErrors} from '../../src/core/state/ErrorNode'
 import {describe, expect, it, vi} from 'vitest'
 import {
   ArrayField, ArrayFormField, DependencyConfigurationError, Field, Form, NumberType, StringType,
@@ -148,7 +149,7 @@ describe('HF-013 dependent validation', () => {
     expect(calls).toEqual([])
   })
 
-  it('continues downstream after ordinary false/string results', () => {
+  it('continues downstream after ordinary structured errors', () => {
     const {form, calls} = graph()
     form.a.options = {validate: () => { calls.push('a'); return [{code: 'custom'}] }}
     form.b.options = {validate: () => { calls.push('b'); return [{code: 'custom', message: 'invalid'}] }}
@@ -188,6 +189,79 @@ describe('HF-013 dependent validation', () => {
     calls.length = 0
     form.a.validate(form)
     expect(calls).toEqual(['a'])
+  })
+
+  it('keeps selected targets on the new runner without clearing server or manual errors', () => {
+    const {form, calls} = graph()
+    form.b.options = {validate: () => { calls.push('b'); return [{code: 'app.client'}] }}
+    replaceNodeErrors(form.b, 'server', [{code: 'app.server'}])
+    form.b.setErrors([{code: 'app.manual'}])
+
+    form.batch(() => {
+      form.a.rawValue = 'first'
+      form.a.rawValue = 'final'
+    })
+    expect(calls).toEqual(['a', 'b', 'c', 'd'])
+    expect(form.b.errors.map(({source, code}) => [source, code])).toEqual([
+      ['custom', 'app.client'], ['server', 'app.server'], ['manual', 'app.manual'],
+    ])
+    expect(form.b.isValid).toBe(false)
+  })
+
+  it('coalesces a nested graph with an automatic full ancestor pass', () => {
+    class Parent extends Form {
+      rows = new ArrayFormField(Credentials, {}, [{}])
+      status = new Field(StringType, 'initial')
+    }
+    const parent = new Parent()
+    const row = parent.rows.forms[0]
+    row.enableDependencies()
+    const password = vi.spyOn(row.password, 'validate')
+    const confirmation = vi.spyOn(row.confirmation, 'validate')
+    const unrelated = vi.spyOn(row.unrelated, 'validate')
+    parent.batch(() => {
+      row.password.rawValue = 'new'
+      parent.setFields({status: 'updated'})
+    })
+    expect(password).toHaveBeenCalledTimes(1)
+    expect(confirmation).toHaveBeenCalledTimes(1)
+    expect(unrelated).toHaveBeenCalledTimes(1)
+    expect(row.confirmation.errors[0].message).toBe('Passwords differ')
+
+    parent.batch(() => {
+      row.password.rawValue = 'old'
+      row.validate()
+      expect(confirmation).toHaveBeenCalledTimes(2)
+    })
+    expect(confirmation).toHaveBeenCalledTimes(3)
+    expect(unrelated).toHaveBeenCalledTimes(2)
+    expect(row.isValid).toBe(true)
+  })
+
+  it('reconciles replaced direct fields when setFields supplies the new values', () => {
+    const form = new Credentials()
+    form.enableDependencies()
+    form.password = new Field(StringType, 'replacement')
+    const source = vi.spyOn(form.password, 'validate')
+    const target = vi.spyOn(form.confirmation, 'validate')
+    form.setFields({password: 'current'})
+    expect(source).toHaveBeenCalledExactlyOnceWith(form)
+    expect(target).toHaveBeenCalledExactlyOnceWith(form)
+    expect(form.confirmation.isValid).toBe(false)
+  })
+
+  it('leaves unchanged empty collections alone in a selective setFields', () => {
+    const validate = vi.fn(() => [])
+    class Mixed extends Credentials {
+      tags = new ArrayField((value?: string) => new Field(StringType, value), {validate})
+    }
+    const form = new Mixed()
+    form.enableDependencies()
+    form.setFields({tags: []})
+    expect(validate).not.toHaveBeenCalled()
+    expect(form.tags.isValid).toBe(false)
+    form.setFields({tags: ['new']})
+    expect(validate).toHaveBeenCalledExactlyOnceWith(['new'], form)
   })
 
   it('deduplicates duplicate dependency declarations', () => {
@@ -246,6 +320,20 @@ describe('HF-013 dependent validation', () => {
     form.a.options = {dependsOn: []}
     form.a.rawValue = 'recovered'
     expect(calls).toEqual(['a', 'b', 'c', 'd'])
+  })
+
+  it('does not retain an earlier successful Form result after a configuration failure', () => {
+    const form = new Credentials()
+    form.enableDependencies()
+    expect(form.validate().valid).toBe(true)
+    // Only dependency metadata changes, so the validated values remain the same.
+    expect(() => {
+      form.confirmation.options = {dependsOn: [{path: ['missing']}]}
+    }).toThrow(DependencyConfigurationError)
+    expect(() => form.validate()).toThrow(DependencyConfigurationError)
+    expect(form.isValid).toBe(false)
+    form.confirmation.options = {dependsOn: [{path: ['password']}]}
+    expect(form.validate().valid).toBe(true)
   })
 
   it('resolves final dependency options only once after a batch', () => {

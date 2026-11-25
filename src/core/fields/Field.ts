@@ -18,7 +18,7 @@ export class Field<T = any, O extends object = FieldOptions> extends ErrorNode<F
   getErrors(): readonly ValidationError[] { return this.getOwnErrors() }
 
   get isValid(): boolean | null {
-    return this.errors.length ? false : this.clientChecked ? true : null
+    return this.errors.length ? false : this.clientChecked === true ? true : null
   }
   private _isTouched: boolean = false
 
