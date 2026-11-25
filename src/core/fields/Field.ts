@@ -192,6 +192,7 @@ export class Field<T = any, O extends object = FieldOptions> extends ErrorNode<F
 
   reset(): void {
     return this.update(() => {
+      this.resetErrorRevision()
       const raw = copyValue(this._rawValue), clean = copyValue(this._valueClear)
       if (this.defaultValue !== null && this.defaultValue !== undefined) {
         // Restore the default through the same plugin pipeline without validating it.

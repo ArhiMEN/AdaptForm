@@ -1,6 +1,7 @@
 import type {ValidationError, ValidationErrorInput, ValidationErrorSource} from '../ValidationError'
 import {ObservableNode} from './ObservableNode'
 import {ErrorStore} from './ErrorStore'
+import {advanceServerRevision, refreshChildPositions, registerServerNode, resetServerRevision, type RegisteredChild} from '../server/nodes'
 
 export interface ClearErrorsOptions {
   readonly sources?: readonly ValidationErrorSource[]
@@ -25,11 +26,32 @@ export abstract class ErrorNode<TSnapshot> extends ObservableNode<TSnapshot> {
 
   constructor() {
     super()
+    registerServerNode(this, {
+      errors: this.errorStore,
+      children: () => this.registeredErrorChildren(),
+      parents: () => this.errorParents,
+      connect: () => this.syncErrorChildren(false, this.registeredErrorChildren().map(([, node]) => node)),
+      form: () => this.isServerErrorForm,
+    })
     sourceWriters.set(this, (source, errors) => this.update(() => {
       this.errorStore.replace(source, errors)
       if (source === 'type' || source === 'custom') this.clientChecked = false
     }))
   }
+
+  protected get isServerErrorForm(): boolean { return false }
+
+  protected registeredErrorChildren(): readonly RegisteredChild[] {
+    const nodes = this.stateChildren()
+    const children: RegisteredChild[] = []
+    for (let index = 0; index < nodes.length; index++) {
+      const descriptor = Object.getOwnPropertyDescriptor(nodes, index)
+      if (descriptor && 'value' in descriptor && descriptor.value instanceof ErrorNode) children.push([index, descriptor.value])
+    }
+    return children
+  }
+
+  protected resetErrorRevision(): void { resetServerRevision(this) }
 
   get errors(): readonly ValidationError[] { return this.getOwnErrors() }
   getOwnErrors(): readonly ValidationError[] { return this.errorStore.read() }
@@ -59,8 +81,9 @@ export abstract class ErrorNode<TSnapshot> extends ObservableNode<TSnapshot> {
   }
 
   /** Reconcile ownership after construction or a supported membership change. */
-  protected syncErrorChildren(recursive = true, children = this.stateChildren()): void {
+  protected syncErrorChildren(recursive = true, children = this.stateChildren(), structural = false): void {
     const next = new Set(children.filter((child): child is ErrorNode<unknown> => child instanceof ErrorNode))
+    if (structural) refreshChildPositions(this.errorChildren, next)
     for (const child of this.errorChildren) if (!next.has(child)) child.errorParents.delete(this)
     for (const child of next) {
       child.errorParents.add(this)
@@ -71,24 +94,27 @@ export abstract class ErrorNode<TSnapshot> extends ObservableNode<TSnapshot> {
 
   protected requestOwnValidation(): void {}
 
-  protected inputChanged(validateStructure = false): void {
+  protected inputChanged(validateStructure = false, structural = false): void {
+    const kind = structural ? 'structure' : 'input'
+    advanceServerRevision(this, kind)
     this.errorStore.clear()
     this.clientChecked = false
     if (this.errorParents.size) this.markStateChanged()
-    this.propagateInputChange(new Set([this]), validateStructure)
+    this.propagateInputChange(new Set([this]), validateStructure, kind)
   }
 
-  private propagateInputChange(seen: Set<ErrorNode<unknown>>, validateStructure: boolean): void {
+  private propagateInputChange(seen: Set<ErrorNode<unknown>>, validateStructure: boolean, kind: 'input' | 'structure'): void {
     for (const parent of this.errorParents) {
       if (seen.has(parent)) continue
       seen.add(parent)
       parent.update(() => {
+        advanceServerRevision(parent, kind)
         if (parent.clearsOnDescendantChange) {
           parent.errorStore.clear()
           parent.clientChecked = false
           if (validateStructure) parent.requestOwnValidation()
         }
-        parent.propagateInputChange(seen, validateStructure)
+        parent.propagateInputChange(seen, validateStructure, kind)
       })
     }
   }

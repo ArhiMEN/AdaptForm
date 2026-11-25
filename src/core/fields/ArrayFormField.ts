@@ -85,8 +85,8 @@ export class ArrayFormField<T extends Form = Form> extends ErrorNode<ArrayFormSn
       if (!this._forms.length && forms.length === 0) return
       this._forms = assembleCollection(forms, data => this.createForm(data, true))
       if (this._forms.length) this.isTouched = true
-      this.syncErrorChildren()
-      this.inputChanged(validate)
+      this.syncErrorChildren(true, this._forms, true)
+      this.inputChanged(validate, true)
       if (validate) this.validateAfterMutation(form => this.validate(form), undefined, true)
     })
   }
@@ -124,8 +124,8 @@ export class ArrayFormField<T extends Form = Form> extends ErrorNode<ArrayFormSn
       const form = duringValidationAssembly(() => this.createForm(data, true))
       this.isTouched = true
       this._forms.splice(index, 0, form)
-      this.syncErrorChildren()
-      this.inputChanged(validate)
+      this.syncErrorChildren(true, this._forms, true)
+      this.inputChanged(validate, true)
       if (validate) {
         this.requestOwnValidation()
         this.validateNodeAfterMutation(form, () => form.validate())
@@ -142,8 +142,8 @@ export class ArrayFormField<T extends Form = Form> extends ErrorNode<ArrayFormSn
     this.update(() => {
       const [node] = this._forms.splice(from, 1)
       this._forms.splice(to, 0, node)
-      this.syncErrorChildren()
-      this.inputChanged(true)
+      this.syncErrorChildren(false, this._forms, true)
+      this.inputChanged(true, true)
       this.requestOwnValidation()
     })
   }
@@ -153,8 +153,8 @@ export class ArrayFormField<T extends Form = Form> extends ErrorNode<ArrayFormSn
     if (!isValidArrayIndex(index, this._forms.length)) return
     return this.update(() => {
       this._forms.splice(index, 1)
-      this.syncErrorChildren()
-      this.inputChanged(true)
+      this.syncErrorChildren(false, this._forms, true)
+      this.inputChanged(true, true)
       this.requestOwnValidation()
       })
   }
@@ -164,14 +164,15 @@ export class ArrayFormField<T extends Form = Form> extends ErrorNode<ArrayFormSn
     if (!this._forms.length) return
     return this.update(() => {
       this._forms = []
-      this.syncErrorChildren()
-      this.inputChanged(true)
+      this.syncErrorChildren(false, this._forms, true)
+      this.inputChanged(true, true)
       this.requestOwnValidation()
       })
   }
 
   reset(): void {
     return this.update(() => {
+      this.resetErrorRevision()
       this._forms.forEach(form => form.reset())
       this.clearErrors()
       this.clientChecked = false

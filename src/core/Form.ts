@@ -1,5 +1,13 @@
 import {prefixErrors, type LocatedValidationError, type ValidationResult} from './ValidationError'
 import {ErrorNode} from './state/ErrorNode'
+import {ancestors, notificationPaths, targetIndex, type RegisteredChild} from './server/nodes'
+import {beginServerOperation, prepareApply} from './server/operations'
+import {clearErrorReports, readErrorReports, subscribeErrorReports} from './server/notifications'
+import type {ParsedServerErrors} from './server/schemaTypes'
+import type {
+  ApplyServerErrorsOptions, ApplyServerErrorsResult, BeginServerErrorsOptions, ErrorNotificationReport, ServerErrorOperation,
+} from './server/applyTypes'
+import {withServerPartitions} from './state/ErrorStore'
 import {ObservableNode} from "@core/state/ObservableNode"
 import {hasStandardGetters, snapshotValue, type FormSnapshot} from "@core/state/snapshot"
 import {Field} from "@core/fields/Field"
@@ -7,7 +15,7 @@ import {ArrayField} from "@core/fields/ArrayField"
 import {ArrayFormField} from "@core/fields/ArrayFormField"
 
 import {DependencyGraph} from "@core/state/DependencyGraph"
-import {assertValidationAllowed, assertValidationMutationAllowed, duringValidationAssembly, isAssemblingValidationNodes} from "@core/state/validationExecution"
+import {assertValidationAllowed, assertValidationMutationAllowed, duringValidationAssembly, isAssemblingValidationNodes, validationCallback} from "@core/state/validationExecution"
 
 export type FormFieldValue<TField> =
   TField extends Field<infer TValue, infer _Options> ? TValue | null :
@@ -73,9 +81,46 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
     return Object.values(this._fields)
   }
 
+  protected get isServerErrorForm(): boolean { return true }
+
+  protected registeredErrorChildren(): readonly RegisteredChild[] {
+    return Object.entries(this._fields)
+  }
+
   batch<TResult>(callback: () => TResult & (TResult extends PromiseLike<unknown> ? never : unknown)): TResult {
     return this.batchUpdate(callback, () => this.validate())
   }
+
+  beginServerErrorOperation(options?: BeginServerErrorsOptions): ServerErrorOperation {
+    return beginServerOperation(this, options)
+  }
+
+  applyServerErrors(batch: ParsedServerErrors, options: ApplyServerErrorsOptions): ApplyServerErrorsResult {
+    assertValidationAllowed()
+    const commit = validationCallback(() => {
+      const prepared = prepareApply(this, batch, options)
+      const paths = notificationPaths(prepared.index)
+      const affected = new Set([...prepared.changed].flatMap(node => [...ancestors(node)]))
+      const publish = withServerPartitions(prepared.plans, () => this.prepareServerSnapshots(this, affected, paths,
+        () => notificationPaths(targetIndex(this))))
+      prepared.recheck()
+      const {applied, ignored, unresolved} = prepared
+      return () => {
+        for (const plan of prepared.plans) plan.install()
+        prepared.consume()
+        return Object.freeze({committed: true as const, applied, ignored, unresolved, notification: publish()})
+      }
+    })
+    return commit()
+  }
+
+  subscribeErrorNotifications(listener: (report: ErrorNotificationReport) => void): () => void {
+    return subscribeErrorReports(this, listener)
+  }
+
+  getErrorNotificationReports(): readonly ErrorNotificationReport[] { return readErrorReports(this) }
+
+  clearErrorNotificationReports(): void { clearErrorReports(this) }
 
   /** All errors in field order, then own global errors; paths are relative to this Form. */
   getErrors(): readonly LocatedValidationError[] {
@@ -85,10 +130,11 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
 
   protected get _fields(): Record<string, Field<any> | ArrayField<any> | ArrayFormField<any>> {
     if (this._snapshotFields) return this._snapshotFields
-    const fields: Record<string, Field<any> | ArrayField<any> | ArrayFormField<any>> = {}
+    const fields: Record<string, Field<any> | ArrayField<any> | ArrayFormField<any>> = Object.create(null)
 
     for (const key of Object.keys(this)) {
-      const property = (this as any)[key]
+      const descriptor = Object.getOwnPropertyDescriptor(this, key)
+      const property: unknown = descriptor && 'value' in descriptor ? descriptor.value : undefined
       if (property instanceof Field || property instanceof ArrayField || property instanceof ArrayFormField) {
         fields[key] = property
       }
@@ -130,7 +176,7 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
       else if (field instanceof ArrayField) valueClear = field.itemsValue
       else if (field instanceof ArrayFormField) valueClear = field.formsFieldsValue
       else console.error(`Invalid field "${key}" type`)
-      data[key] = valueClear
+      Object.defineProperty(data, key, {value: valueClear, enumerable: true, writable: true, configurable: true})
     }
 
     return data as FormFieldsValue<this>
@@ -183,6 +229,7 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
 
   reset(): void {
     return this.update(() => {
+      this.resetErrorRevision()
       const fields = this._fields
       for (const key of Object.keys(fields)) {
         fields[key].reset()
@@ -245,13 +292,8 @@ export abstract class Form extends ErrorNode<FormSnapshot> {
 
   // Get all values in JSON-compatible form.
   toJSON(): Record<string, unknown> {
-    const json: Record<string, unknown> = {}
-
-    for (const [key, value] of Object.entries(this.fieldsValue)) {
-      json[key] = this.serializeJsonValue(value)
-    }
-
-    return json
+    return Object.fromEntries(Object.entries(this.fieldsValue).map(([key, value]) =>
+      [key, this.serializeJsonValue(value)]))
   }
 
   private serializeJsonValue(value: unknown): unknown {

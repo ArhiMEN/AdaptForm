@@ -1,10 +1,14 @@
 import type {Form} from '../Form'
+import type {ValidationPath} from '../ValidationError'
+import {ErrorNotificationCycle} from '../server/notifications'
+import type {ErrorNotificationReport} from '../server/applyTypes'
 import {equalValue} from './value'
 import {freezeSnapshot} from './snapshot'
-import {assertValidationMutationAllowed, isAssemblingValidationNodes} from './validationExecution'
+import {assertValidationMutationAllowed, isAssemblingValidationNodes, validationCallback} from './validationExecution'
 import {commitDependencies, DependencyConfigurationError, dependencyOwner, noteDependencyMutation} from './dependencyScheduling'
 
 let mutationDepth = 0
+let mutationVersion = 0
 let automaticFullCheckDepth = 0
 let flushing = false
 let publishing = false
@@ -24,34 +28,106 @@ interface ValidationRequest {
 const validations = new Map<Node, ValidationRequest>()
 const batchRoots = new Map<Node, FullCheck>()
 const pending = new Set<SnapshotStore>()
+const snapshotOwners = new WeakMap<Node, SnapshotStore>()
+
+function snapshotPaths(paths: ReadonlyMap<Node, ValidationPath>): readonly (readonly [SnapshotStore, ValidationPath])[] {
+  const entries: Array<readonly [SnapshotStore, ValidationPath]> = []
+  for (const [node, path] of paths) {
+    const store = snapshotOwners.get(node)
+    if (store) entries.push([store, path])
+  }
+  return entries
+}
+
+type SnapshotWave = ReadonlyMap<SnapshotStore, unknown>
+let staging: Map<SnapshotStore, unknown> | undefined
+
+interface ServerSnapshotPlan {
+  readonly stores: ReadonlySet<SnapshotStore>
+  readonly candidates: SnapshotWave
+  readonly paths: ReadonlyMap<SnapshotStore, ValidationPath>
+  readonly pathReaders: ReadonlyMap<Form, () => ReadonlyMap<Node, ValidationPath>>
+  readonly version: number
+  readonly cycle: ErrorNotificationCycle
+}
+let serverWave: ServerSnapshotPlan | undefined
+
+function captureWave(stores: Iterable<SnapshotStore>): SnapshotWave {
+  const previous = staging
+  const wave = new Map<SnapshotStore, unknown>()
+  staging = wave
+  try {
+    for (const store of stores) store.read()
+    return wave
+  } finally {
+    staging = previous
+  }
+}
 
 function flush(): void {
   if (mutationDepth || flushing) return
   flushing = true
   let failure: unknown
   let failed = false
+  const reject = (error: unknown) => {
+    if (!failed) { failure = error; failed = true }
+  }
   try {
-    while (pending.size) {
+    while (pending.size || serverWave) {
+      const wave = serverWave
+      serverWave = undefined
       const stores = [...pending]
       const before = stores.map(store => store.committed())
+      let paths = wave?.paths
       pending.clear()
-      // Parent captures can refresh children: compare against all pre-flush snapshots.
-      // A library mutation also refreshes externally edited values.
-      // Probe each reachable store once for this wave, including clean siblings.
-      pulling = true
-      pullEpoch++
-      try {
-        for (const store of stores) store.refresh()
-      } finally {
-        pulling = false
+      if (wave) {
+        let candidates = wave.candidates
+        if (wave.version !== mutationVersion) {
+          try {
+            const next = validationCallback(() => ({
+              candidates: captureWave(stores),
+              paths: new Map([...wave.pathReaders.values()].flatMap(read => snapshotPaths(read()))),
+            }))
+            candidates = next.candidates
+            paths = next.paths
+          } catch (error) {
+            wave.cycle.record('finalization', Object.freeze([]), error)
+            reject(error)
+          }
+        }
+        // The preflight snapshot is the last complete generation if a later batch write fails capture.
+        for (const [store, snapshot] of candidates) store.installCandidate(snapshot)
+      } else {
+        // A library mutation also refreshes externally edited values.
+        pulling = true
+        pullEpoch++
+        try {
+          for (const store of stores) store.refresh()
+        } finally {
+          pulling = false
+        }
       }
       const changed = new Set(stores.filter((store, index) => before[index] !== store.committed()))
       publishing = true
       try {
-        for (const store of SnapshotStore.notificationOrder(stores, changed)) {
-          try { store.notify() } catch (error) {
-            if (!failed) { failure = error; failed = true }
+        const ordered = paths
+          ? [...[...paths.keys()].filter(store => changed.has(store)),
+            ...SnapshotStore.notificationOrder(stores, changed).filter(store => !paths!.has(store))]
+          : SnapshotStore.notificationOrder(stores, changed)
+        for (const store of ordered) {
+          const path = paths?.get(store)
+          if (wave && path) store.notify((error, subscriber) => wave.cycle.record('subscriber', path, error, subscriber))
+          else {
+            try { store.notify() } catch (error) { reject(error) }
           }
+        }
+        if (wave && paths) {
+          for (const receiver of wave.pathReaders.keys()) {
+            const store = snapshotOwners.get(receiver)
+            const path = store && paths.get(store)
+            if (path) wave.cycle.add(receiver, path)
+          }
+          wave.cycle.deliver()
         }
       } finally {
         publishing = false
@@ -95,7 +171,26 @@ class SnapshotStore {
     }
   }
 
+  addWithParents(stores: Set<SnapshotStore>): void {
+    if (stores.has(this)) return
+    stores.add(this)
+    for (const parent of this.parents) parent.addWithParents(stores)
+  }
+
+  installCandidate(snapshot: unknown): void {
+    this.snapshot = snapshot
+    this.initialized = true
+    this.dirty = false
+  }
+
   read(): unknown {
+    if (staging) {
+      if (!staging.has(this)) {
+        const next = freezeSnapshot(this.capture())
+        staging.set(this, this.initialized && equalValue(this.snapshot, next) ? this.snapshot : next)
+      }
+      return staging.get(this)
+    }
     if (!mutationDepth && !publishing) {
       if (captureDepth) this.refresh()
       else {
@@ -167,13 +262,14 @@ class SnapshotStore {
     return ordered
   }
 
-  notify(): void {
+  notify(report?: (error: unknown, subscriber: number) => void): void {
     let failure: unknown
     let failed = false
-    for (const listener of [...this.listeners]) {
+    for (const [subscriber, listener] of [...this.listeners].entries()) {
       if (!this.listeners.has(listener)) continue
       try { listener() } catch (error) {
-        if (!failed) { failure = error; failed = true }
+        if (report) report(error, subscriber)
+        else if (!failed) { failure = error; failed = true }
       }
     }
     if (failed) throw failure
@@ -186,6 +282,8 @@ export abstract class ObservableNode<TSnapshot> {
     () => this.captureState(),
     () => this.stateChildren().map(child => child._stateStore),
   )
+
+  constructor() { snapshotOwners.set(this, this._stateStore) }
 
   protected abstract captureState(): TSnapshot
 
@@ -334,9 +432,42 @@ export abstract class ObservableNode<TSnapshot> {
   /** Queue this node before propagating a value change to containing nodes. */
   protected markStateChanged(): void { this._stateStore.changed() }
 
+  /** Stage candidates under the server partition overlay before touching a live store. */
+  protected prepareServerSnapshots(
+    receiver: Form, affected: Iterable<Node>, paths: ReadonlyMap<Node, ValidationPath>,
+    readPaths: () => ReadonlyMap<Node, ValidationPath>,
+  ): () => ErrorNotificationReport {
+    const stores = new Set(pending)
+    for (const node of affected) node._stateStore.addWithParents(stores)
+    const candidates = captureWave(stores)
+    const registeredPaths = new Map([...serverWave?.paths ?? [], ...snapshotPaths(paths)])
+    const pathReaders = new Map(serverWave?.pathReaders)
+    pathReaders.set(receiver, readPaths)
+    const cycle = serverWave?.cycle ?? new ErrorNotificationCycle()
+    const wave = {stores, candidates, paths: registeredPaths, pathReaders, version: mutationVersion, cycle}
+    const receiverPath = paths.get(receiver) ?? Object.freeze([])
+    return () => {
+      for (const store of wave.stores) pending.add(store)
+      cycle.add(receiver, receiverPath)
+      serverWave = wave
+      try {
+        flush()
+      } catch (error) {
+        // A subsequent reentrant wave cannot turn an installed Apply into a rejection.
+        if (cycle.report.status === 'delivered') cycle.retainFollowingFailure(error)
+        else {
+          cycle.record('finalization', receiverPath, error)
+          cycle.deliver()
+        }
+      }
+      return cycle.report
+    }
+  }
+
   protected update<TResult>(callback: () => TResult): TResult {
     assertValidationMutationAllowed()
     noteDependencyMutation(this)
+    mutationVersion++
     mutationDepth++
     let failed = false
     try {
@@ -345,19 +476,29 @@ export abstract class ObservableNode<TSnapshot> {
       failed = true
       throw error
     } finally {
-      this._stateStore.changed()
-      mutationDepth--
+      let notificationFailed = false
+      let notificationFailure: unknown
+      try {
+        this._stateStore.changed()
+      } catch (error) {
+        notificationFailed = true
+        notificationFailure = error
+      } finally {
+        mutationDepth--
+      }
       // Preserve the mutation's exception if finalization also throws.
       const finalize = () => {
-        if (mutationDepth) return
+        if (mutationDepth) {
+          if (notificationFailed) throw notificationFailure
+          return
+        }
         mutationDepth++
-        let failed = false
-        let failure: unknown
+        let failed = notificationFailed
+        let failure: unknown = notificationFailure
         try {
           ObservableNode.commitValidations()
         } catch (error) {
-          failed = true
-          failure = error
+          if (!failed) { failed = true; failure = error }
         }
         try {
           commitDependencies()
@@ -367,7 +508,8 @@ export abstract class ObservableNode<TSnapshot> {
           mutationDepth--
         }
         if (failed) {
-          try { flush() } catch { /* Preserve the validation failure. */ }
+          serverWave?.cycle.record('finalization', Object.freeze([]), failure)
+          try { flush() } catch { /* Preserve the original finalization failure. */ }
           throw failure
         }
         flush()

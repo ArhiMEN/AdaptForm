@@ -92,8 +92,8 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
       if (!this._items.length && items.length === 0) return
       this._items = assembleCollection(items, value => this.createItem(value as T))
       if (this._items.length) this.isTouched = true
-      this.syncErrorChildren()
-      this.inputChanged(validate)
+      this.syncErrorChildren(true, this._items, true)
+      this.inputChanged(validate, true)
       if (validate) this.validateAfterMutation(form => this.validate(form), undefined, true)
     })
   }
@@ -130,8 +130,8 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
       const field = duringValidationAssembly(() => this.createItem(value))
       this.isTouched = true
       this._items.splice(index, 0, field)
-      this.syncErrorChildren()
-      this.inputChanged(validate)
+      this.syncErrorChildren(true, this._items, true)
+      this.inputChanged(validate, true)
       if (validate) {
         this.requestOwnValidation()
         this.validateNodeAfterMutation(field, context => field.validate(context))
@@ -148,8 +148,8 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
     this.update(() => {
       const [node] = this._items.splice(from, 1)
       this._items.splice(to, 0, node)
-      this.syncErrorChildren()
-      this.inputChanged(true)
+      this.syncErrorChildren(false, this._items, true)
+      this.inputChanged(true, true)
       this.requestOwnValidation()
     })
   }
@@ -159,8 +159,8 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
     if (!isValidArrayIndex(index, this._items.length)) return
     return this.update(() => {
       this._items.splice(index, 1)
-      this.syncErrorChildren()
-      this.inputChanged(true)
+      this.syncErrorChildren(false, this._items, true)
+      this.inputChanged(true, true)
       this.requestOwnValidation()
       })
   }
@@ -170,8 +170,8 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
     if (!this._items.length) return
     return this.update(() => {
       this._items = []
-      this.syncErrorChildren()
-      this.inputChanged(true)
+      this.syncErrorChildren(false, this._items, true)
+      this.inputChanged(true, true)
       this.requestOwnValidation()
       })
   }
@@ -211,6 +211,7 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
 
   reset(): void {
     return this.update(() => {
+      this.resetErrorRevision()
       this._items.forEach(item => item.reset())
       this.clearErrors()
       this.clientChecked = false
