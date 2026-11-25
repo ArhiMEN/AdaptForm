@@ -8,14 +8,6 @@ export interface ClearErrorsOptions {
   readonly recursive?: boolean
 }
 
-// Internal ingress for the future server Apply owner; absent from package exports.
-const sourceWriters = new WeakMap<object, (source: ValidationErrorSource, errors: readonly ValidationErrorInput[]) => void>()
-export function replaceNodeErrors(node: object, source: ValidationErrorSource, errors: readonly ValidationErrorInput[]): void {
-  const write = sourceWriters.get(node)
-  if (!write) throw new TypeError('Unknown error node')
-  write(source, errors)
-}
-
 /** Shared storage and client-check knowledge, independent of snapshot subscriptions. */
 export abstract class ErrorNode<TSnapshot> extends ObservableNode<TSnapshot> {
   private readonly errorStore = new ErrorStore()
@@ -33,10 +25,6 @@ export abstract class ErrorNode<TSnapshot> extends ObservableNode<TSnapshot> {
       connect: () => this.syncErrorChildren(false, this.registeredErrorChildren().map(([, node]) => node)),
       form: () => this.isServerErrorForm,
     })
-    sourceWriters.set(this, (source, errors) => this.update(() => {
-      this.errorStore.replace(source, errors)
-      if (source === 'type' || source === 'custom') this.clientChecked = false
-    }))
   }
 
   protected get isServerErrorForm(): boolean { return false }

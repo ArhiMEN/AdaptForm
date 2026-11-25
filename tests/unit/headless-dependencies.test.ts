@@ -1,5 +1,5 @@
 import {errorMessages, ownMessagesByCode} from '../helpers/errorViews'
-import {replaceNodeErrors} from '../../src/core/state/ErrorNode'
+import {installServerErrors} from '../helpers/serverErrors'
 import {describe, expect, it, vi} from 'vitest'
 import {
   ArrayField, ArrayFormField, DependencyConfigurationError, Field, Form, NumberType, StringType,
@@ -194,7 +194,7 @@ describe('HF-013 dependent validation', () => {
   it('keeps selected targets on the new runner without clearing server or manual errors', () => {
     const {form, calls} = graph()
     form.b.options = {validate: () => { calls.push('b'); return [{code: 'app.client'}] }}
-    replaceNodeErrors(form.b, 'server', [{code: 'app.server'}])
+    installServerErrors(form.b, [{code: 'app.server'}])
     form.b.setErrors([{code: 'app.manual'}])
 
     form.batch(() => {

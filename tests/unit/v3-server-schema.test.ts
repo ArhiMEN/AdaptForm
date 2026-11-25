@@ -1,8 +1,6 @@
 import {describe, expect, it, vi} from 'vitest'
-import {ErrorContractError, Field, StringType, ValidationMutationError} from '../../src'
-import {ErrorsSchema, serverEntries} from '../../src/core/server/ErrorsSchema'
-import {ErrorsMapping} from '../../src/core/server/ErrorsMapping'
-import type {ParsedServerErrors} from '../../src/core/server/schemaTypes'
+import {ErrorContractError, ErrorsMapping, ErrorsSchema, Field, StringType, ValidationMutationError, type ParsedServerErrors} from '../../src'
+import {serverEntries} from '../../src/core/server/ErrorsSchema'
 
 const records = (mapping?: ErrorsMapping) => new ErrorsSchema({
   kind: 'records', path: {at: ['path']}, code: {at: ['code']},

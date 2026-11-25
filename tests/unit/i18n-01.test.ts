@@ -5,7 +5,7 @@ import {ArrayField, ArrayFormField, Field, Form, NumberType, StringType,
   type FieldOptions, type StringOptions, type NumberOptions, type BooleanOptions,
   type DateOptions, type DecimalOptions, type ArrayFieldOptions, type ArrayFormFieldOptions,
   type ValidationErrorInput} from '../../src'
-import {replaceNodeErrors} from '../../src/core/state/ErrorNode'
+import {installServerErrors} from '../helpers/serverErrors'
 
 class Row extends Form { name = new Field(StringType, 'valid') }
 const item = (value?: string) => new Field(StringType, value)
@@ -105,7 +105,7 @@ describe('I18N-01 application-owned messages', () => {
   it('preserves manual/server messages through client checks and rejects partial replacement', () => {
     const field = new Field(StringType, 'valid')
     field.setErrors([{code: 'manual', message: ''}])
-    replaceNodeErrors(field, 'server', [{code: 'server', message: 'Server text'}])
+    installServerErrors(field, [{code: 'server', message: 'Server text'}])
     expect(field.validate().valid).toBe(false)
     const before = field.errors
     field.options = {validate: () => [{code: 'ok'}, {code: 'bad', params: {value: Infinity}}]}

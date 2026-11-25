@@ -1,4 +1,4 @@
-import {replaceNodeErrors} from '../../src/core/state/ErrorNode'
+import {installServerErrors} from '../helpers/serverErrors'
 import {describe, expect, expectTypeOf, it, vi} from 'vitest'
 import {DateTime} from 'luxon'
 import {DateLuxonType} from '../../src/luxon'
@@ -339,7 +339,7 @@ describe('ODR-02 ErrorParams domain', () => {
     failure(() => field.setErrors([{code: 'bad', params: {value: Infinity}}]), 'nonfinite_number')
     class Root extends Form { value = field }
     const root = new Root()
-    failure(() => replaceNodeErrors(root.value, 'server', [{code: 'bad', params: {value: Infinity}}]), 'nonfinite_number')
+    failure(() => installServerErrors(root.value, [{code: 'bad', params: {value: Infinity}}]), 'nonfinite_number')
     expect(field.getErrors()).toEqual([])
   })
 })

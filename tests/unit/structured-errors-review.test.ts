@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from 'vitest'
 import {ArrayField, ArrayFormField, ErrorsSchema, Field, Form, StringType, type ValidationErrorInput} from '../../src'
-import {replaceNodeErrors} from '../../src/core/state/ErrorNode'
+import {installServerErrors} from '../helpers/serverErrors'
 
 describe('structured error ownership review regressions', () => {
   it('keeps incidental manual writes in another node manual', () => {
@@ -12,7 +12,7 @@ describe('structured error ownership review regressions', () => {
       }
     }
     const field = new Custom(StringType, 'x')
-    replaceNodeErrors(field, 'server', [{code: 'remote'}])
+    installServerErrors(field, [{code: 'remote'}])
     field.setErrors([{code: 'review'}])
     expect(field.errors.map(error => error.source)).toEqual(['server', 'manual'])
     expect(other.errors[0].source).toBe('manual')
@@ -28,7 +28,7 @@ describe('structured error ownership review regressions', () => {
       }
     }
     const root = new Root()
-    replaceNodeErrors(root, 'server', [{code: 'remote'}])
+    installServerErrors(root, [{code: 'remote'}])
     root.setErrors([{code: 'review'}])
     expect(root.errors.map(error => error.source)).toEqual(['server', 'manual'])
     expect(inner.errors[0].source).toBe('manual')
@@ -42,7 +42,7 @@ describe('structured error ownership review regressions', () => {
       }
     }
     const field = new Custom(StringType, 'x')
-    replaceNodeErrors(field, 'server', [{code: 'remote'}])
+    installServerErrors(field, [{code: 'remote'}])
     field.setErrors([{code: 'manual'}])
     expect(field.errors).toEqual([{code: 'remote', source: 'server'}, {code: 'manual', source: 'manual', message: 'Again'}])
   })
@@ -51,7 +51,7 @@ describe('structured error ownership review regressions', () => {
     class Row extends Form { value = new Field(StringType, 'x') }
     const collections = [new ArrayField(value => new Field(StringType, value), {}, ['x']), new ArrayFormField(Row, {}, [{}])]
     for (const collection of collections) {
-      replaceNodeErrors(collection, 'server', [{code: 'remote'}])
+      installServerErrors(collection, [{code: 'remote'}])
       collection.setErrors([{code: 'manual'}])
       collection.validate()
       expect(collection.errors.map(error => error.source)).toEqual(['server', 'manual'])
@@ -61,9 +61,9 @@ describe('structured error ownership review regressions', () => {
   it('keeps repeated server source replacement silent when the final state is equivalent', () => {
     const field = new Field(StringType, 'x'), notify = vi.fn()
     field.subscribe(notify)
-    replaceNodeErrors(field, 'server', [{code: 'same'}, {code: 'same'}])
+    installServerErrors(field, [{code: 'same'}, {code: 'same'}])
     const snapshot = field.getSnapshot()
-    replaceNodeErrors(field, 'server', [{code: 'same'}, {code: 'same'}])
+    installServerErrors(field, [{code: 'same'}, {code: 'same'}])
     expect(field.getSnapshot()).toBe(snapshot)
     expect(notify).toHaveBeenCalledTimes(1)
   })
@@ -72,7 +72,7 @@ describe('structured error ownership review regressions', () => {
     const field = new Field(StringType, 'x')
     let calls = 0
     field.subscribe(() => { if (++calls === 1) field.setErrors([{code: 'subscriber'}]) })
-    replaceNodeErrors(field, 'server', [{code: 'remote'}])
+    installServerErrors(field, [{code: 'remote'}])
     expect(field.errors.map(error => error.source)).toEqual(['server', 'manual'])
     expect(calls).toBe(2)
   })
@@ -92,14 +92,19 @@ describe('structured error ownership review regressions', () => {
   it('retains prototype-name safety in the separately staged parser', () => {
     const previous = Object.getOwnPropertyDescriptor(Object, 'error')
     const input = Object.fromEntries([['constructor', 'remote'], ['__proto__', 'remote'], ['toString', 'remote']])
-    const schema = new ErrorsSchema().fallback(key => key)
-    expect(Object.keys(schema.parseErrors(input))).toEqual(['constructor', '__proto__', 'toString'])
-    expect(Object.keys(schema.parseErrorsDetailed(input))).toEqual(['constructor', '__proto__', 'toString'])
+    const schema = new ErrorsSchema({
+      kind: 'tree', leaf: value => typeof value === 'string' ? [{code: 'app', message: value}] : undefined,
+    })
+    expect(schema.parse(input).entries.map(({path}) => path[0])).toEqual(['constructor', '__proto__', 'toString'])
     expect(Object.getOwnPropertyDescriptor(Object, 'error')).toEqual(previous)
   })
 
-  it('retains immutable output from the separately staged schema override', () => {
-    class Custom extends ErrorsSchema { parseErrors() { return {value: 'remote'} } }
-    expect(Object.isFrozen(new Custom().parseValidationErrors({}))).toBe(true)
+  it('freezes results from a custom adapter without mutating adapter-owned data', () => {
+    const entry = {path: ['value'], code: 'app', message: 'remote'}
+    const schema = new ErrorsSchema({kind: 'adapter', extract: () => [entry]})
+    const parsed = schema.parse({})
+    expect(Object.isFrozen(parsed.entries)).toBe(true)
+    expect(Object.isFrozen(parsed.entries[0].error)).toBe(true)
+    expect(Object.isFrozen(entry)).toBe(false)
   })
 })

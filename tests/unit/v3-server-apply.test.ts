@@ -1,8 +1,8 @@
 import {describe, expect, it, vi} from 'vitest'
-import {ArrayField, ArrayFormField, Field, Form, StringType, ValidationMutationError} from '../../src'
-import {ErrorsSchema} from '../../src/core/server/ErrorsSchema'
-import type {ParsedServerErrors, ServerErrorInput} from '../../src/core/server/schemaTypes'
-import type {ErrorNotificationReport} from '../../src/core/server/applyTypes'
+import {
+  ArrayField, ArrayFormField, ErrorsSchema, Field, Form, StringType, ValidationMutationError,
+  type ErrorNotificationReport, type ParsedServerErrors, type ServerErrorInput,
+} from '../../src'
 
 const schema = new ErrorsSchema({
   kind: 'records', path: {at: ['path']}, code: {at: ['code']},

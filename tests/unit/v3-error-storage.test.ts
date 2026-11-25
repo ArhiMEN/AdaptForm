@@ -2,7 +2,7 @@ import {describe, expect, it, vi} from 'vitest'
 import {ArrayField, ArrayFormField, ErrorContractError, Field, Form, NumberType, StringType,
   type ValidationErrorInput, type ValidationErrorSource} from '../../src'
 import {ErrorStore} from '../../src/core/state/ErrorStore'
-import {replaceNodeErrors} from '../../src/core/state/ErrorNode'
+import {installServerErrors} from '../helpers/serverErrors'
 
 const sources: readonly ValidationErrorSource[] = ['type', 'custom', 'server', 'manual']
 const error = (code: string): readonly ValidationErrorInput[] => [{code}]
@@ -15,8 +15,7 @@ class Root extends Form {
   rows = new ArrayFormField(Row, {}, [{}, {}])
 }
 
-// Server ingress is deliberately internal until tokenized Apply is implemented.
-const server = (node: object, code = 'remote') => replaceNodeErrors(node, 'server', error(code))
+const server = (node: object, code = 'remote') => installServerErrors(node, error(code))
 
 describe('V3 source storage', () => {
   it('orders independent sources and keeps duplicate codes and insertion order', () => {

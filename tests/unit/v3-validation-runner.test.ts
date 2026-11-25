@@ -3,7 +3,7 @@ import {
   ArrayField, ArrayFormField, ErrorContractError, Field, Form, StringType,
   type FieldValidator, type ValidationErrorInput, type ValidationResult,
 } from '../../src'
-import {replaceNodeErrors} from '../../src/core/state/ErrorNode'
+import {installServerErrors} from '../helpers/serverErrors'
 
 class Row extends Form {
   name = new Field(StringType)
@@ -22,7 +22,7 @@ describe('V3 validation runner', () => {
     expect(root.validate()).toEqual({valid: true})
 
     for (const node of [root.scalar, root.tags, root.rows, root.rows.forms[0], root]) {
-      replaceNodeErrors(node, 'server', [{code: 'server'}])
+      installServerErrors(node, [{code: 'server'}])
       node.setErrors([{code: 'manual'}])
       expect(node.validate()).toEqual({valid: false})
       expect(node.errors.map(error => error.source)).toEqual(['server', 'manual'])
@@ -68,7 +68,7 @@ describe('V3 validation runner', () => {
     ])
     const field = new Field(Type, null, {validate: validator})
     field.setRawValue('text', false)
-    replaceNodeErrors(field, 'server', [{code: 'app.server'}])
+    installServerErrors(field, [{code: 'app.server'}])
     field.setErrors([{code: 'app.manual'}])
     field.validate()
     const errors = field.errors

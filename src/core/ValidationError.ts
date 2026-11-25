@@ -23,12 +23,6 @@ export interface ValidationResult {
   readonly valid: boolean
 }
 
-export function isValidationError(value: unknown): value is ValidationErrorInput {
-  if (value === null || typeof value !== 'object') return false
-  const descriptor = Object.getOwnPropertyDescriptor(value, 'code')
-  return !!descriptor && 'value' in descriptor && typeof descriptor.value === 'string' && descriptor.value.length > 0
-}
-
 function inputData(input: object, key: string): PropertyDescriptor | undefined {
   const descriptor = Object.getOwnPropertyDescriptor(input, key)
   if (descriptor && !('value' in descriptor)) throw new ErrorContractError('unsafe_descriptor', [key])

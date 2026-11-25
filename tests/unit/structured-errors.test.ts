@@ -1,8 +1,8 @@
-import {replaceNodeErrors} from '../../src/core/state/ErrorNode'
+import {installServerErrors} from '../helpers/serverErrors'
 import {DateTime} from 'luxon'
 import {DateLuxonType} from '../../src/luxon'
 import {describe, expect, expectTypeOf, it, vi} from 'vitest'
-import {ArrayField, ArrayFormField, BooleanType, DateType, DecimalType, ErrorContractError, ErrorsSchema, Field, FieldType, Form,
+import {ArrayField, ArrayFormField, BooleanType, DateType, DecimalType, ErrorContractError, ErrorsMapping, ErrorsSchema, Field, FieldType, Form,
   NumberType, StringType, type FieldSnapshot, type ValidationError, type ValidationErrorInput,
   type FieldOptions, type LocatedValidationError} from '../../src'
 
@@ -186,54 +186,76 @@ describe('built-in codes', () => {
 })
 
 describe('server schema parsing and node ownership', () => {
-  it('keeps old parser output separate from node storage', () => {
-    const schema = new ErrorsSchema().fallback(key => key)
-    expect(schema.parseErrors({email: ['first', 'second'], 'tags.0': 'item'})).toEqual({email: '["first","second"]', 'tags.0': 'item'})
-    expect(schema.parseValidationErrors({'rows.0.name': 'nested'})).toMatchObject([{message: 'nested', path: ['rows', 0, 'name'], source: 'server'}])
+  const tree = (mapping?: ErrorsMapping) => new ErrorsSchema({
+    kind: 'tree', mapping,
+    leaf: value => {
+      if (typeof value === 'string') return [{code: 'app.server', message: value}]
+      if (Array.isArray(value) && value.every(entry => typeof entry === 'string')) {
+        return value.map(message => ({code: 'app.server', message}))
+      }
+      if (Array.isArray(value) && value.every(entry => entry && typeof entry === 'object' && 'code' in entry)) {
+        return value as readonly ValidationErrorInput[]
+      }
+      return undefined
+    },
   })
 
-  it('imports strings and structured arrays without collapsing duplicate codes', () => {
-    const schema = new ErrorsSchema().fallback(key => key)
-    const parsed = schema.parseValidationErrors({email: [...duplicate, {code: 'unavailable'}]})
-    expect(parsed.map(error => error.code)).toEqual(['rule', 'rule', 'unavailable'])
-    expect(parsed.map(error => error.path)).toEqual([['email'], ['email'], ['email']])
-    expect(schema.parseValidationErrors({email: ['first', 'second']}).map(error => error.message)).toEqual(['first', 'second'])
+  it('keeps parsed output separate from node storage and preserves literal keys', () => {
+    const form = new Root()
+    const before = form.getSnapshot()
+    const parsed = tree().parse({email: ['first', 'second'], 'tags.0': 'item', rows: [{name: 'nested'}]})
+    expect(parsed.entries.map(({path, error}) => [path, error.message])).toEqual([
+      [['email'], 'first'], [['email'], 'second'], [['tags.0'], 'item'], [['rows', 0, 'name'], 'nested'],
+    ])
+    expect(form.getSnapshot()).toBe(before)
+  })
+
+  it('decodes strings and structured arrays without collapsing duplicate codes', () => {
+    const parsed = tree().parse({email: [...duplicate, {code: 'unavailable'}]})
+    expect(parsed.entries.map(({error}) => error.code)).toEqual(['rule', 'rule', 'unavailable'])
+    expect(parsed.entries.map(({path}) => path)).toEqual([['email'], ['email'], ['email']])
   })
 
   it('retains many server keys mapped to one target in input order', () => {
-    const schema = new ErrorsSchema().staticKey('a', 'email').staticKey('b', 'email')
-    expect(schema.parseErrors({a: 'first', b: 'second'})).toEqual({email: 'second'})
-    expect(schema.parseValidationErrors({a: 'first', b: 'second'}).map(error => error.message)).toEqual(['first', 'second'])
+    const parsed = tree(ErrorsMapping.fromObject({a: ['email'], b: ['email']})).parse({a: 'first', b: 'second'})
+    expect(parsed.entries.map(({path, error}) => [path, error.message])).toEqual([
+      [['email'], 'first'], [['email'], 'second'],
+    ])
   })
 
-  it('preserves transformer order, callback values, schema composition and custom parser overrides', () => {
-    const transform = vi.fn((value: unknown) => Array.isArray(value) ? value[0] : value)
-    const mapping = vi.fn((_key: string, _value: unknown) => 'email')
-    const schema = new ErrorsSchema().transformValue(transform).fallback(mapping).clone().merge(new ErrorsSchema())
-    expect(schema.parseValidationErrors({email: duplicate})).toMatchObject([{message: 'First'}])
+  it('forwards transformed metadata to mapping callbacks and supports custom adapters', () => {
+    const transform = vi.fn((value: ValidationErrorInput) => ({...value, message: value.message?.toUpperCase() ?? ''}))
+    const fallback = vi.fn(() => ['email'])
+    const mapping = new ErrorsMapping({transform: [transform], fallback}).clone().merge(new ErrorsMapping({}))
+    const custom = new ErrorsSchema({kind: 'adapter', mapping, extract: () => [{path: ['original'], code: 'app', message: 'custom'}]})
+    expect(custom.parse({other: 'ignored'}).entries[0]).toMatchObject({path: ['email'], error: {message: 'CUSTOM'}})
     expect(transform).toHaveBeenCalledTimes(1)
-    expect(mapping).toHaveBeenCalledWith('email', duplicate[0])
-    class LegacySchema extends ErrorsSchema { parseErrors() { return {email: 'Custom parser'} } }
-    expect(new LegacySchema().parseValidationErrors({other: 'ignored'})).toMatchObject([{message: 'Custom parser'}])
+    expect(fallback).toHaveBeenCalledWith({path: ['original'], code: 'app', message: 'CUSTOM'})
   })
 
-  it('passes old arrays of message objects to transformers before interpreting collection containers', () => {
-    const schema = new ErrorsSchema().fallback(key => key)
-      .transformValue(value => Array.isArray(value) ? value[0] : value)
-      .transformValue(value => value && typeof value === 'object' && 'message' in value ? value.message : value)
-    expect(schema.parseValidationErrors({email: [{message: 'Old format'}, {message: 'Second'}]})).toMatchObject([{message: 'Old format'}])
-    expect(schema.parseErrors({email: [{message: 'Old format'}]})).toEqual({email: 'Old format'})
+  it('passes arrays of message objects to the leaf decoder before descent', () => {
+    const schema = new ErrorsSchema({
+      kind: 'tree',
+      leaf: value => {
+        if (!Array.isArray(value) || !value[0] || typeof value[0].message !== 'string') return undefined
+        return [{code: 'app.message', message: value[0].message}]
+      },
+    })
+    expect(schema.parse({email: [{message: 'Old format'}, {message: 'Second'}]}).entries[0])
+      .toMatchObject({path: ['email'], error: {message: 'Old format'}})
   })
 
-  it('supports forArray, nested objects and actual arrays of forms', () => {
-    const schema = ErrorsSchema.forArray(ErrorsSchema.fromObject({remote: 'name'}), 'rows')
-    expect(schema.parseValidationErrors({'rows[1].remote': duplicate}).map(error => error.path)).toEqual([['rows', 1, 'name'], ['rows', 1, 'name']])
-    expect(new ErrorsSchema().fallback(key => key).parseValidationErrors({rows: [{name: duplicate}, {name: {code: 'remote'}}]}).map(error => error.code)).toEqual(['rule', 'rule', 'remote'])
+  it('supports array mapping and actual arrays of nested forms', () => {
+    const mapping = ErrorsMapping.forArray(ErrorsMapping.fromObject({remote: ['name']}), {sourcePrefix: ['rows']})
+    const parsed = tree(mapping).parse({rows: [{remote: duplicate}, {remote: [{code: 'remote'}]}]})
+    expect(parsed.entries.map(({path, error}) => [path, error.code])).toEqual([
+      [['rows', 0, 'name'], 'rule'], [['rows', 0, 'name'], 'rule'], [['rows', 1, 'name'], 'remote'],
+    ])
   })
 
-  it('aggregates internally installed server errors at scalar item paths', () => {
+  it('aggregates applied server errors at scalar item paths', () => {
     const form = new Root()
-    replaceNodeErrors(form.tags.items[1], 'server', [{code: 'taken'}, {code: 'taken', message: 'Again'}])
+    installServerErrors(form.tags.items[1], [{code: 'taken'}, {code: 'taken', message: 'Again'}])
     expect(form.tags.getErrors().map(error => error.path)).toEqual([[1], [1]])
     expect(form.getErrors().map(error => error.path)).toEqual([['tags', 1], ['tags', 1]])
     expect(form.isValid).toBe(false)
@@ -243,18 +265,18 @@ describe('server schema parsing and node ownership', () => {
     const form = new Root()
     form.setErrors([...duplicate, {code: 'missing'}])
     expect(form.getErrors().map(error => error.path)).toEqual([[], [], []])
-    const parsed = new ErrorsSchema().fallback(key => key).parseValidationErrors({'rows.99.name': {code: 'missing'}, unknown: duplicate})
-    expect(parsed.map(error => error.path)).toEqual([['rows', 99, 'name'], ['unknown'], ['unknown']])
+    const parsed = tree().parse({rows: Array.from({length: 100}, (_, i) => i === 99 ? {name: 'missing'} : {}), unknown: duplicate})
+    expect(parsed.entries.map(error => error.path)).toEqual([['rows', 99, 'name'], ['unknown'], ['unknown']])
   })
 
   it('preserves invalidation for writes, explicit validation, global errors and reset', () => {
     const form = new Root()
-    replaceNodeErrors(form.email, 'server', [{code: 'taken'}])
+    installServerErrors(form.email, [{code: 'taken'}])
     form.setErrors([{code: 'unauthorized'}])
     form.email.setRawValue('new', false)
     expect(form.email.errors).toEqual([])
     expect(form.email.isValid).toBeNull()
-    replaceNodeErrors(form.email, 'server', [{code: 'taken'}])
+    installServerErrors(form.email, [{code: 'taken'}])
     expect(form.email.validate().valid).toBe(false)
     expect(form.email.errors).toMatchObject([{code: 'taken'}])
     expect(form.validate().valid).toBe(false)
@@ -285,11 +307,11 @@ describe('snapshots, ownership and scheduling', () => {
     const before = form.getSnapshot()
     form.email.setErrors([{code: 'two', message: 'same', params: {min: 1}}])
     form.email.setErrors([{code: 'two', message: 'same', params: {min: 2}}])
-    replaceNodeErrors(form.email, 'server', [{code: 'two', message: 'same', params: {min: 2}}])
+    installServerErrors(form.email, [{code: 'two', message: 'same', params: {min: 2}}])
     expect(notify).toHaveBeenCalledTimes(4)
     expect(before.fields.email.errors).toMatchObject([{code: 'one', params: {min: 1}}])
     const stable = form.getSnapshot()
-    replaceNodeErrors(form.email, 'server', [{code: 'two', message: 'same', params: {min: 2}}])
+    installServerErrors(form.email, [{code: 'two', message: 'same', params: {min: 2}}])
     expect(form.getSnapshot()).toBe(stable)
     expect(notify).toHaveBeenCalledTimes(4)
   })
@@ -298,7 +320,7 @@ describe('snapshots, ownership and scheduling', () => {
     const form = new Root(), child = form.rows.forms[0]
     const childNotify = vi.fn(), rootNotify = vi.fn()
     child.subscribe(childNotify); form.subscribe(rootNotify)
-    replaceNodeErrors(child, 'server', [{code: 'authorization'}])
+    installServerErrors(child, [{code: 'authorization'}])
     expect(childNotify).toHaveBeenCalledTimes(1)
     expect(rootNotify).toHaveBeenCalledTimes(1)
     expect(child.getSnapshot().errors).toMatchObject([{code: 'authorization'}])
@@ -349,7 +371,7 @@ describe('snapshots, ownership and scheduling', () => {
     expect(tags.getErrors().map(error => error.path)).toEqual([[0], [1]])
     tags.remove(1)
     expect(tags.getErrors().map(error => error.path)).toEqual([[0]])
-    replaceNodeErrors(retained, 'server', [{code: 'server'}])
+    installServerErrors(retained, [{code: 'server'}])
     tags.add('c')
     expect(retained.getErrors()[0].source).toBe('custom')
   })
@@ -507,8 +529,8 @@ describe('error-only batch boundaries', () => {
     form.subscribe(notify)
     const before = form.getSnapshot()
     form.batch(() => {
-      replaceNodeErrors(form.target, 'server', [{code: 'first'}])
-      replaceNodeErrors(form.target, 'server', [{code: 'final'}])
+      installServerErrors(form.target, [{code: 'first'}])
+      installServerErrors(form.target, [{code: 'final'}])
       expect(form.getSnapshot()).toBe(before)
     })
     expect(validate).not.toHaveBeenCalled()
@@ -518,9 +540,9 @@ describe('error-only batch boundaries', () => {
     expect(form.isDirty).toBe(false)
   })
 
-  it('keeps manual provenance after a rejected internal server write', () => {
+  it('keeps manual provenance after a rejected server parse', () => {
     const field = new Field(StringType, 'x')
-    expect(() => replaceNodeErrors(field, 'server', [{code: ''}])).toThrow(TypeError)
+    expect(() => installServerErrors(field, [{code: ''}])).toThrow(TypeError)
     field.setErrors([{code: 'manual'}])
     expect(field.errors[0].source).toBe('manual')
   })
