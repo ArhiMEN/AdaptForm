@@ -10,19 +10,11 @@ export interface DependencyScheduler {
 const owners = new WeakMap<ObservableNode<unknown>, DependencyScheduler>()
 const pending = new Set<DependencyScheduler>()
 let validationDepth = 0
-let callbackDepth = 0
 
 export class DependencyConfigurationError extends Error {
   constructor(message: string) {
     super(message)
     this.name = 'DependencyConfigurationError'
-  }
-}
-
-export class ValidationMutationError extends Error {
-  constructor() {
-    super('Graph-enabled validators must not mutate library state')
-    this.name = 'ValidationMutationError'
   }
 }
 
@@ -54,20 +46,9 @@ export function commitDependencies(): void {
   if (failed) throw failure
 }
 
-export function assertValidationMutationAllowed(): void {
-  if (callbackDepth) throw new ValidationMutationError()
-}
-
 export function dependencyValidation<TResult>(callback: () => TResult): TResult {
   validationDepth++
   try { return callback() } finally { validationDepth-- }
-}
-
-/** Only user rule execution is guarded; the engine still writes validation metadata. */
-export function validationCallback<TResult>(callback: () => TResult): TResult {
-  if (!validationDepth) return callback()
-  callbackDepth++
-  try { return callback() } finally { callbackDepth-- }
 }
 
 export function noteDependencyMutation(node: ObservableNode<unknown>): void {

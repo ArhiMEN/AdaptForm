@@ -7,7 +7,8 @@ export * from './plugins'
 export * from './types'
 export type {SnapshotValue, NodeSnapshot, FieldSnapshot, FormSnapshot, ArrayFieldSnapshot, ArrayFormSnapshot} from './state/snapshot'
 
-export {DependencyConfigurationError, ValidationMutationError} from './state/dependencyScheduling'
+export {DependencyConfigurationError} from './state/dependencyScheduling'
+export {ValidationMutationError} from './state/validationExecution'
 
 export type {ValidationError, LocatedValidationError, ValidationErrorInput, ValidationErrorSource, ValidationPath, ValidationResult} from './ValidationError'
 

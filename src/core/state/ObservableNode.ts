@@ -1,6 +1,7 @@
 import {equalValue} from './value'
 import {freezeSnapshot} from './snapshot'
-import {assertValidationMutationAllowed, commitDependencies, DependencyConfigurationError, dependencyOwner, noteDependencyMutation} from './dependencyScheduling'
+import {assertValidationMutationAllowed} from './validationExecution'
+import {commitDependencies, DependencyConfigurationError, dependencyOwner, noteDependencyMutation} from './dependencyScheduling'
 
 let mutationDepth = 0
 let flushing = false
@@ -119,6 +120,7 @@ class SnapshotStore {
     this.listeners.add(registration)
     this.reconcile()
     return () => {
+      assertValidationMutationAllowed()
       this.listeners.delete(registration)
       this.reconcile()
     }
@@ -197,6 +199,7 @@ export abstract class ObservableNode<TSnapshot> {
   }
 
   protected batchUpdate<TResult>(callback: () => TResult, validate: () => unknown): TResult {
+    assertValidationMutationAllowed()
     // Capture committed state before the first write, including descendants.
     this.getSnapshot()
     return this.update(() => {
@@ -244,6 +247,7 @@ export abstract class ObservableNode<TSnapshot> {
   }
 
   subscribe(listener: () => void): () => void {
+    assertValidationMutationAllowed()
     return this._stateStore.subscribe(listener)
   }
 

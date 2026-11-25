@@ -7,7 +7,7 @@ import type {FieldTypeContract, FieldTypeConstructor} from "@core/types/FieldTyp
 import {Form} from "@core/Form"
 import {copyValue, equalValue} from "@core/state/value"
 
-import {validationCallback} from '@core/state/dependencyScheduling'
+import {validationCallback} from '@core/state/validationExecution'
 
 export class Field<T = any, O extends object = FieldOptions> extends ErrorNode<FieldSnapshot> {
   protected _rawValue: any = null

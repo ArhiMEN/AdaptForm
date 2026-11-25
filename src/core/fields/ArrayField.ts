@@ -1,4 +1,5 @@
 import {prefixErrors, type LocatedValidationError, type ValidationResult} from '../ValidationError'
+import {assertValidationMutationAllowed, validationCallback} from '../state/validationExecution'
 import {ErrorNode} from '../state/ErrorNode'
 import type {ObservableNode} from "@core/state/ObservableNode"
 import {hasStandardGetters, snapshotValue, type ArrayFieldSnapshot} from "@core/state/snapshot"
@@ -115,6 +116,7 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
 
   /** Insert before index (length appends). Invalid indexes do nothing. */
   insert(index: number, value?: T, force_check: boolean = true): Field<T> | undefined {
+    assertValidationMutationAllowed()
     if (!isValidArrayIndex(index, this._items.length + 1)) return undefined
     return this.insertAt(index, value, force_check)
   }
@@ -135,6 +137,7 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
 
   /** Move a retained node to its final index; invalid/equal indexes do nothing. */
   move(from: number, to: number): void {
+    assertValidationMutationAllowed()
     if (!isValidArrayIndex(from, this._items.length) ||
       !isValidArrayIndex(to, this._items.length) || from === to) return
     this.update(() => {
@@ -158,6 +161,7 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
   }
 
   clear(): void {
+    assertValidationMutationAllowed()
     if (!this._items.length) return
     return this.update(() => {
       this._items = []
@@ -170,14 +174,8 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
   // ===== validation =====
 
   private isRequired(form?: Form): boolean {
-    let isRequired
-    if (typeof this.options.isRequired === 'function') {
-      isRequired = this.options.isRequired(form ?? undefined)
-    } else {
-      isRequired = this.options.isRequired ?? false
-    }
-
-    return isRequired
+    const rule = this.options.isRequired
+    return typeof rule === 'function' ? validationCallback(() => rule.call(this.options, form)) : rule ?? false
   }
 
   validate(form?: Form): ValidationResult {
@@ -202,7 +200,8 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
         field.validate(form)
       }
 
-      const custom = this.options.validate ? this.options.validate(this.itemsValue, form) : []
+      const validate = this.options.validate
+      const custom = validate ? validationCallback(() => validate.call(this.options, this.itemsValue, form)) : []
       this.completeClientCheck([], custom)
       return {valid: this.isValid}
     })

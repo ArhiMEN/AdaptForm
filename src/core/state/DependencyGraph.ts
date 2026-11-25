@@ -3,9 +3,10 @@ import type {Form} from '../Form'
 import type {ObservableNode} from './ObservableNode'
 import {copyValue, equalValue} from './value'
 import {
-  assertValidationMutationAllowed, cancelDependencies, dependencyOwner, DependencyConfigurationError, dependencyValidation,
+  cancelDependencies, dependencyOwner, DependencyConfigurationError, dependencyValidation,
   ownDependencies, releaseDependencies, scheduleDependencies, type DependencyScheduler,
 } from './dependencyScheduling'
+import {assertValidationMutationAllowed} from './validationExecution'
 
 type Node = ObservableNode<unknown>
 type Fields = Readonly<Record<string, Node>>

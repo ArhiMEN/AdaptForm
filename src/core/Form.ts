@@ -7,7 +7,7 @@ import {ArrayField} from "@core/fields/ArrayField"
 import {ArrayFormField} from "@core/fields/ArrayFormField"
 
 import {DependencyGraph} from "@core/state/DependencyGraph"
-import {assertValidationMutationAllowed} from "@core/state/dependencyScheduling"
+import {assertValidationMutationAllowed} from "@core/state/validationExecution"
 
 export type FormFieldValue<TField> =
   TField extends Field<infer TValue, infer _Options> ? TValue | null :
