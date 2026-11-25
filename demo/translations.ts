@@ -3,7 +3,6 @@ export const russian: Readonly<Record<string, string>> = {
   "AdaptForm — Interactive Demo": "AdaptForm — интерактивное демо",
   "Try AdaptForm 3.0: validation, reactive state, snapshots, batching, nested forms, server errors, and serialization.": "Попробуйте AdaptForm 3.0: валидацию, реактивное состояние, снимки, batch-обновления, вложенные формы, серверные ошибки и сериализацию.",
   "AdaptForm home": "Главная AdaptForm",
-  "3.0 · preview": "3.0 · предварительная версия",
   "Project links": "Ссылки проекта",
   "Documentation": "Документация",
   "Language": "Язык",

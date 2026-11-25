@@ -1,6 +1,6 @@
 {
   "name": "adaptform",
-  "version": "2.2.0",
+  "version": "3.0.0",
   "description": "Library of adaptive forms of validation",
   "keywords": [
     "form",
@@ -39,16 +39,6 @@
         "types": "./dist/luxon.d.cts",
         "default": "./dist/luxon.cjs"
       }
-    }
-  },
-  "typesVersions": {
-    "*": {
-      ".": [
-        "./dist/index.d.ts"
-      ],
-      "luxon": [
-        "./dist/luxon.d.ts"
-      ]
     }
   },
   "files": [

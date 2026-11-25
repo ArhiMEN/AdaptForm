@@ -62,4 +62,8 @@ void result.notification
 - Start a token before dispatch. A newer overlapping token, input edits, reset or affected collection moves make an older response stale. Tokens are single use. A failed preflight preserves an otherwise current token.
 - Notification failures have a separate report. Inside a batch or a reentrant delivery, the report stays pending until its delivery cycle completes. `getErrorNotificationReports()` retrieves retained failures. Use `clearErrorNotificationReports()` after processing them.
 
+## Package entry points
+
+Use NodeNext, Node16 or Bundler module resolution with TypeScript. Package exports provide ESM and CommonJS declarations for `adaptform` and `adaptform/luxon`. Install Luxon when using the optional entry point.
+
 [Complete migration ledger](PLAN.md) · [V3 contracts and limits](../../ai/V3_ARCHITECTURE.md)
