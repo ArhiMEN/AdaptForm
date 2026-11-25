@@ -2,6 +2,19 @@
 
 [English](HANDOFF.md) · [Русский](HANDOFF.ru.md)
 
+## AdaptForm 3.0.0 release candidate — 2026-11-25
+
+**READY_FOR_OWNER_REVIEW**. The `feature/v3-runtime` candidate builds `adaptform@3.0.0`. [PR #32](https://github.com/ArhiMEN/AdaptForm/pull/32) records the review SHA and CI.
+
+- V3-04 adds explicit records/tree/adapter extraction, bounded detached JSON, immutable mapping composition, and branded `ErrorsSchema.parse()` results. Form operations fence overlapping requests, input and structure revisions, reset, and token reuse. Apply stages source partitions and snapshots before installing them, retains manual/client errors, and reports post-commit subscriber failures separately.
+- The release surface follows ODR-04. Removed boolean validation, display facades, mutable or string error APIs, parser aliases, the shared default schema, legacy error imports and the older optional package-resolution mapping. The package check rejects removed identifiers in generated declarations. Core and Luxon have separate ESM/CJS export conditions.
+- V3-05 updates the bilingual README and changelog, [migration guide](../roadmap/v3.0.0/MIGRATION.md), and the live demo. Focused V3 extraction, mapping, Apply, and package tests replace the obsolete V2 parser behavior tests.
+- V3-06 measurements and reproducible commands are in the [performance review](../roadmap/v3.0.0/PERFORMANCE.md). On one host, unchanged snapshots and nested add/remove showed about 13% and 20% higher medians than the V3 client baseline. The PERF-01 regression tests passed.
+
+Local checks passed on Node 24.19.0, including clean install, moderate npm audit (0 vulnerabilities), lint, 843 tests in 42 files, source/test/demo type checks, package and demo builds, package surface inspection (21 files), and Git whitespace checks. The packed 3.0.0 package passed external ESM/CJS runs on Node 16.20.2 and 24.19.0, with core alone and with optional Luxon. Strict NodeNext `.mts` and `.cts` consumers passed on TypeScript 5.0.4 and 5.9.3 with `skipLibCheck:false` and `exactOptionalPropertyTypes:true`.
+
+The registry preflight confirms 3.0.0 is available for publication. The next release gate is owner review and authorization for the master merge that can trigger the OIDC publish workflow. The current repository publication variable is unavailable to the integration. Direct edits to caller-owned objects remain outside supported revision tracking.
+
 ## V3-03.4–V3-03.8 — 2026-11-25
 
 **READY_FOR_OWNER_REVIEW**. Implementation starts at `69dc49825b4bb0a0561d1538367d9cc53be68234` on `feature/v3-runtime`. [Draft PR #32](https://github.com/ArhiMEN/AdaptForm/pull/32) records the final SHA and its CI checks.
