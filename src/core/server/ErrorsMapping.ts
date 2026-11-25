@@ -17,7 +17,7 @@ interface Scope {
 }
 
 interface StaticRule { readonly scope: Scope; readonly from: ValidationPath; readonly to: StaticErrorMapping['to'] }
-interface DynamicRule {
+interface CompiledDynamicMapping {
   readonly scope: Scope
   readonly source: string
   readonly flags: string
@@ -29,7 +29,7 @@ interface DynamicRule {
 interface Program {
   readonly scopes: readonly Scope[]
   readonly statics: readonly StaticRule[]
-  readonly dynamics: readonly DynamicRule[]
+  readonly dynamics: readonly CompiledDynamicMapping[]
   readonly fallbackOrder: readonly Scope[]
 }
 
@@ -80,7 +80,7 @@ function compiled(config: ErrorsMappingConfig): Program {
   if (transforms.some(callback => typeof callback !== 'function') ||
     config.fallback !== undefined && typeof config.fallback !== 'function') invalid('invalid_mapping')
   const scope: Scope = {source: empty, target: empty, transforms, fallback: config.fallback}
-  const statics: StaticRule[] = [], dynamics: DynamicRule[] = []
+  const statics: StaticRule[] = [], dynamics: CompiledDynamicMapping[] = []
   const registered = new Set<string>()
   for (const rule of config.mappings ?? []) {
     if (!rule || typeof rule !== 'object') invalid('invalid_mapping')

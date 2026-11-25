@@ -101,15 +101,15 @@ export class ArrayFormField<T extends Form = Form> extends ErrorNode<ArrayFormSn
 
   // ===== actions =====
 
-  add(data?: unknown, force_check: boolean = true): T {
-    return this.insertAt(this._forms.length, data, force_check)
+  add(data?: unknown, validate: boolean = true): T {
+    return this.insertAt(this._forms.length, data, validate)
   }
 
   /** Insert before index (length appends). Invalid indexes do nothing. */
-  insert(index: number, data?: unknown, force_check: boolean = true): T | undefined {
+  insert(index: number, data?: unknown, validate: boolean = true): T | undefined {
     assertValidationMutationAllowed()
     if (!isValidArrayIndex(index, this._forms.length + 1)) return undefined
-    return this.insertAt(index, data, force_check)
+    return this.insertAt(index, data, validate)
   }
 
   private createForm(data: unknown, captureBaseline = false): T {

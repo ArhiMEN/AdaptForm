@@ -108,15 +108,15 @@ export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
 
   // ===== actions =====
 
-  add(value?: T, force_check: boolean = true): Field<T> {
-    return this.insertAt(this._items.length, value, force_check)
+  add(value?: T, validate: boolean = true): Field<T> {
+    return this.insertAt(this._items.length, value, validate)
   }
 
   /** Insert before index (length appends). Invalid indexes do nothing. */
-  insert(index: number, value?: T, force_check: boolean = true): Field<T> | undefined {
+  insert(index: number, value?: T, validate: boolean = true): Field<T> | undefined {
     assertValidationMutationAllowed()
     if (!isValidArrayIndex(index, this._items.length + 1)) return undefined
-    return this.insertAt(index, value, force_check)
+    return this.insertAt(index, value, validate)
   }
 
   private createItem(value?: T): Field<T> {

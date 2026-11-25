@@ -8,7 +8,7 @@ import {ArrayField, BooleanType, DateType, DecimalType, ErrorContractError, Fiel
   type LocatedValidationError, type ValidationError, type ValidationErrorInput, type ValidationErrorSource,
   type ValidationPath, type ValidationResult} from '../../src'
 import {normalizeErrorParams} from '../../src/core/ErrorParams'
-import {validationError} from '../../src/core/ValidationError'
+import {normalizePath, prefixErrors, validationError} from '../../src/core/ValidationError'
 
 class Slug implements FieldTypeContract<string, {prefix?: string}> {
   readonly typeId: string = 'app.slug'
@@ -159,16 +159,16 @@ describe('V3 foundational contracts', () => {
 
   it('detaches located paths and rejects malformed path data without executing accessors', () => {
     const path = ['tags', 0]
-    const error = validationError({code: 'app.rule'}, 'manual', path)
+    const error = prefixErrors([validationError({code: 'app.rule'}, 'manual')], normalizePath(path))[0]
     path.push('later')
     expect(error.path).toEqual(['tags', 0])
     expect(Object.isFrozen(error.path)).toBe(true)
     for (const path of [[-1], [NaN], [Infinity], [1.5], [Number.MAX_SAFE_INTEGER + 1], [null], [{}]]) {
-      failure(() => validationError({code: 'x'}, 'server', path as ValidationPath), 'invalid_path')
+      failure(() => normalizePath(path), 'invalid_path')
     }
     const getter = vi.fn(() => 'tags')
     const accessor = Object.defineProperty([0], '0', {get: getter})
-    failure(() => validationError({code: 'x'}, 'server', accessor), 'unsafe_descriptor')
+    failure(() => normalizePath(accessor), 'unsafe_descriptor')
     expect(getter).not.toHaveBeenCalled()
   })
 

@@ -50,10 +50,7 @@ export function normalizePath(path: unknown, maxSegments = Infinity, at: Validat
   return Object.freeze(copy)
 }
 
-export function validationError(input: ValidationErrorInput, source: ValidationErrorSource): ValidationError
-export function validationError(input: ValidationErrorInput, source: ValidationErrorSource, path: ValidationPath): LocatedValidationError
-export function validationError(input: ValidationErrorInput, source: ValidationErrorSource,
-  path?: ValidationPath): ValidationError | LocatedValidationError {
+export function validationError(input: ValidationErrorInput, source: ValidationErrorSource): ValidationError {
   if (input === null || typeof input !== 'object') throw new ErrorContractError('invalid_code', ['code'])
   const code = inputData(input, 'code')?.value as unknown
   if (typeof code !== 'string' || !code.length) throw new ErrorContractError('invalid_code', ['code'])
@@ -61,10 +58,9 @@ export function validationError(input: ValidationErrorInput, source: ValidationE
   if (message && typeof message.value !== 'string') throw new ErrorContractError('invalid_message', ['message'])
   const params = inputData(input, 'params')
   if (!['type', 'custom', 'server', 'manual'].includes(source)) throw new ErrorContractError('invalid_source', ['source'])
-  const error: ValidationError = Object.freeze({code,
+  return Object.freeze({code,
     ...(message ? {message: message.value as string} : {}),
     ...(params ? {params: normalizeErrorParams(params.value)} : {}), source})
-  return path === undefined ? error : Object.freeze({...error, path: normalizePath(path)})
 }
 
 export function prefixErrors(errors: readonly ValidationError[], prefix: ValidationPath): LocatedValidationError[] {
