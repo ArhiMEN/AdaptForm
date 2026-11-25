@@ -5,11 +5,25 @@ export type JsonValue = string | number | boolean | null | readonly JsonValue[] 
 export interface JsonObject { readonly [key: string]: JsonValue }
 export type ErrorParams = JsonObject
 
-// ODR-02 hard budgets, per params root. Keep independent from value snapshots.
-const maxDepth = 32
-const maxNodes = 10000
-const maxBytes = 1048576
-const maxStringLength = 65536
+interface JsonLimits {
+  readonly maxDepth: number
+  readonly maxNodes: number
+  readonly maxBytes: number
+  readonly maxStringLength: number
+}
+
+const paramsLimits: JsonLimits = {maxDepth: 32, maxNodes: 10000, maxBytes: 1048576, maxStringLength: 65536}
+
+export function invalid(reason: string, path: ValidationPath = []): never {
+  throw new ErrorContractError(reason, path)
+}
+
+/** Own enumerable data only. Missing and present undefined remain distinguishable. */
+export function dataProperty(object: object, key: string | number, path: ValidationPath): PropertyDescriptor | undefined {
+  const descriptor = Object.getOwnPropertyDescriptor(object, key)
+  if (descriptor && (!('value' in descriptor) || !descriptor.enumerable)) invalid('unsafe_descriptor', path)
+  return descriptor
+}
 
 /** UTF-8 length, including replacement bytes for unpaired UTF-16 surrogates. */
 function utf8Length(value: string): number {
@@ -27,69 +41,98 @@ function utf8Length(value: string): number {
   return bytes
 }
 
-/** Validate, detach and deeply freeze one params root without executing accessors. */
-export function normalizeErrorParams(input: unknown): ErrorParams {
-  let nodes = 0, bytes = 0
+/** Counts logical output and optionally charges a larger enclosing parser budget. */
+export class JsonBudget {
+  private nodes = 0
+  private bytes = 0
+
+  constructor(private readonly limits: JsonLimits, private readonly enclosing?: JsonBudget, private readonly offset = 0) {}
+
+  get remainingNodes(): number { return this.limits.maxNodes - this.nodes }
+
+  checkNodes(count: number, path: ValidationPath): void {
+    if (count > this.remainingNodes) invalid('limit_exceeded', path)
+    this.enclosing?.checkNodes(count, path)
+  }
+
+  node(depth: number, path: ValidationPath): void {
+    if (depth > this.limits.maxDepth || ++this.nodes > this.limits.maxNodes) invalid('limit_exceeded', path)
+    this.enclosing?.node(depth + this.offset, path)
+  }
+
+  charge(amount: number, path: ValidationPath): void {
+    this.bytes += amount
+    if (this.bytes > this.limits.maxBytes) invalid('limit_exceeded', path)
+    this.enclosing?.charge(amount, path)
+  }
+
+  private checkString(value: string, path: ValidationPath): void {
+    if (value.length > this.limits.maxStringLength) invalid('limit_exceeded', path)
+    this.enclosing?.checkString(value, path)
+  }
+
+  string(value: string, path: ValidationPath): void {
+    this.checkString(value, path)
+    this.charge(utf8Length(value), path)
+  }
+}
+
+/** Validate, detach and freeze JSON data without getters, iterators or toJSON. */
+export function normalizeJson(
+  input: unknown, budget: JsonBudget, root: ValidationPath = [], kind = 'json',
+  record?: (copy: object) => void, startDepth = 0,
+): JsonValue {
   const active = new WeakSet<object>()
-  const fail = (reason: string, path: ValidationPath): never => { throw new ErrorContractError(reason, path) }
-  const charge = (amount: number, path: ValidationPath) => {
-    if (bytes + amount > maxBytes) fail('limit_exceeded', path)
-    bytes += amount
-  }
-  const string = (value: string, path: ValidationPath) => {
-    if (value.length > maxStringLength) fail('limit_exceeded', path)
-    charge(utf8Length(value), path)
-  }
-  const data = (object: object, key: PropertyKey, path: ValidationPath): unknown => {
-    const descriptor = Object.getOwnPropertyDescriptor(object, key)
-    if (!descriptor || !('value' in descriptor) || !descriptor.enumerable) fail('unsafe_descriptor', path)
-    return descriptor!.value
-  }
   const visit = (value: unknown, depth: number, path: ValidationPath): JsonValue => {
-    if (depth > maxDepth || ++nodes > maxNodes) fail('limit_exceeded', path)
-    if (value === null || typeof value === 'boolean') { charge(1, path); return value }
-    if (typeof value === 'string') { string(value, path); return value }
+    budget.node(depth, path)
+    if (value === null || typeof value === 'boolean') { budget.charge(1, path); return value }
+    if (typeof value === 'string') { budget.string(value, path); return value }
     if (typeof value === 'number') {
-      if (!Number.isFinite(value)) fail('nonfinite_number', path)
-      charge(8, path)
+      if (!Number.isFinite(value)) invalid('nonfinite_number', path)
+      budget.charge(8, path)
       return value === 0 ? 0 : value
     }
-    if (typeof value !== 'object') return fail('invalid_params_type', path)
+    if (typeof value !== 'object') return invalid(`invalid_${kind}_type`, path)
     const array = Array.isArray(value)
     const prototype = Object.getPrototypeOf(value)
     if (array ? prototype !== Array.prototype : prototype !== Object.prototype && prototype !== null) {
-      return fail('invalid_params_type', path)
+      return invalid(`invalid_${kind}_type`, path)
     }
-    if (active.has(value)) return fail('cyclic_params', path)
-    charge(2, path)
+    if (active.has(value)) return invalid(`cyclic_${kind}`, path)
+    budget.charge(2, path)
     active.add(value)
     try {
       const keys = Reflect.ownKeys(value)
       if (array) {
-        // Ordinary array length is an own data property. No getters or iteration hooks.
         const length = Object.getOwnPropertyDescriptor(value, 'length')!.value as number
-        if (length > maxNodes - nodes) fail('limit_exceeded', path)
-        if (keys.length !== length + 1) fail('unsafe_descriptor', path)
+        budget.checkNodes(length, path)
+        if (keys.length !== length + 1) invalid('unsafe_descriptor', path)
         const output: JsonValue[] = []
         for (let index = 0; index < length; index++) {
           const childPath = [...path, index]
-          output.push(visit(data(value, String(index), childPath), depth + 1, childPath))
+          const descriptor = dataProperty(value, index, childPath)
+          if (!descriptor) invalid('unsafe_descriptor', childPath)
+          output.push(visit(descriptor.value, depth + 1, childPath))
         }
+        record?.(output)
         return Object.freeze(output)
       }
+      budget.checkNodes(keys.length, path)
       const output: Record<string, JsonValue> = Object.create(null)
       for (const key of keys) {
-        if (typeof key !== 'string') fail('invalid_params_type', path)
-        const childPath = [...path, key as string]
-        string(key as string, childPath)
-        const child = data(value, key, childPath)
-        output[key as string] = visit(child, depth + 1, childPath)
+        if (typeof key !== 'string') invalid(`invalid_${kind}_type`, path)
+        const childPath = [...path, key]
+        budget.string(key, childPath)
+        output[key] = visit(dataProperty(value, key, childPath)!.value, depth + 1, childPath)
       }
+      record?.(output)
       return Object.freeze(output)
     } finally { active.delete(value) }
   }
-  if (input === null || typeof input !== 'object' || Array.isArray(input)) {
-    return fail('invalid_params_type', ['params'])
-  }
-  return visit(input, 0, ['params']) as ErrorParams
+  return visit(input, startDepth, root)
+}
+
+export function normalizeErrorParams(input: unknown, enclosing?: JsonBudget, path: ValidationPath = ['params']): ErrorParams {
+  if (input === null || typeof input !== 'object' || Array.isArray(input)) invalid('invalid_params_type', path)
+  return normalizeJson(input, new JsonBudget(paramsLimits, enclosing, 1), path, 'params') as ErrorParams
 }

@@ -35,22 +35,23 @@ function inputData(input: object, key: string): PropertyDescriptor | undefined {
   return descriptor
 }
 
-function normalizePath(path: ValidationPath): ValidationPath {
+export function normalizePath(path: unknown, maxSegments = Infinity, at: ValidationPath = ['path']): ValidationPath {
   if (!Array.isArray(path) || Object.getPrototypeOf(path) !== Array.prototype) {
-    throw new ErrorContractError('invalid_path', ['path'])
+    throw new ErrorContractError('invalid_path', at)
   }
-  if (Reflect.ownKeys(path).length !== path.length + 1) throw new ErrorContractError('unsafe_descriptor', ['path'])
+  if (path.length > maxSegments) throw new ErrorContractError('limit_exceeded', at)
+  if (Reflect.ownKeys(path).length !== path.length + 1) throw new ErrorContractError('unsafe_descriptor', at)
   const copy: (string | number)[] = []
   for (let index = 0; index < path.length; index++) {
     const descriptor = Object.getOwnPropertyDescriptor(path, String(index))
     if (!descriptor || !('value' in descriptor) || !descriptor.enumerable) {
-      throw new ErrorContractError('unsafe_descriptor', ['path', index])
+      throw new ErrorContractError('unsafe_descriptor', [...at, index])
     }
     const segment: unknown = descriptor.value
     if (typeof segment !== 'string' && !(typeof segment === 'number' && Number.isSafeInteger(segment) && segment >= 0)) {
-      throw new ErrorContractError('invalid_path', ['path', index])
+      throw new ErrorContractError('invalid_path', [...at, index])
     }
-    copy.push(segment as string | number)
+    copy.push(typeof segment === 'number' && segment === 0 ? 0 : segment as string | number)
   }
   return Object.freeze(copy)
 }
