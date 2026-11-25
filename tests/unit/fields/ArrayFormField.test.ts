@@ -1,3 +1,4 @@
+import {errorMessages} from '../../helpers/errorViews'
 import { describe, it, expect, vi } from 'vitest'
 import { ArrayFormField } from '@core/fields/ArrayFormField'
 import { Form } from '@core/Form'
@@ -44,7 +45,7 @@ describe('ArrayFormField', () => {
     })
 
     it('should run nested field validators once when replacing forms', () => {
-      const validate = vi.fn(() => true)
+      const validate = vi.fn(() => [])
       class ValidatedForm extends Form {
         name = new Field(StringType, null, { validate })
       }
@@ -119,7 +120,7 @@ describe('ArrayFormField', () => {
         { name: 'John' },
         { name: 'Jane' }
       ])
-      expect(arrayFormField.isValid).toBe(true)
+      expect(arrayFormField.validate().valid).toBe(true)
       
       arrayFormField.add({ name: null })
       expect(arrayFormField.isValid).toBe(false)
@@ -134,8 +135,10 @@ describe('ArrayFormField', () => {
     })
 
     it('should not rerun custom validation when reading isValid', () => {
-      const validate = vi.fn(() => true)
+      const validate = vi.fn(() => [])
       const arrayFormField = new ArrayFormField(TestForm, { validate }, [{ name: 'John' }])
+      expect(validate).not.toHaveBeenCalled()
+      arrayFormField.validate()
       expect(validate).toHaveBeenCalledTimes(1)
 
       expect(arrayFormField.isValid).toBe(true)
@@ -148,11 +151,11 @@ describe('ArrayFormField', () => {
       expect(arrayFormField.isValid).toBe(false)
       
       arrayFormField.add({ name: 'John' })
-      arrayFormField.checkValid()
+      arrayFormField.validate()
       expect(arrayFormField.isValid).toBe(false)
       
       arrayFormField.add({ name: 'Jane' })
-      arrayFormField.checkValid()
+      arrayFormField.validate()
       expect(arrayFormField.isValid).toBe(true)
     })
 
@@ -164,15 +167,15 @@ describe('ArrayFormField', () => {
 
     it('should support custom validation', () => {
       const arrayFormField = new ArrayFormField(TestForm, {
-        validate: (forms) => forms.length > 1 || 'Need more than 1 form'
+        validate: (forms) => forms.length > 1 ? [] : [{code: 'custom', message: 'Need more than 1 form'}]
       })
       
       arrayFormField.add({ name: 'John' })
-      arrayFormField.checkValid()
+      arrayFormField.validate()
       expect(arrayFormField.isValid).toBe(false)
       
       arrayFormField.add({ name: 'Jane' })
-      arrayFormField.checkValid()
+      arrayFormField.validate()
       expect(arrayFormField.isValid).toBe(true)
     })
   })
@@ -197,15 +200,16 @@ describe('ArrayFormField', () => {
       const arrayFormField = new ArrayFormField(TestForm, { minForms: 1 })
 
       expect(arrayFormField.isValid).toBe(false)
-      expect(arrayFormField.errors).not.toEqual([])
+      arrayFormField.validate()
+      expect(errorMessages(arrayFormField)).not.toEqual([])
 
       arrayFormField.reset()
 
-      expect(arrayFormField.errors).toEqual([])
+      expect(errorMessages(arrayFormField)).toEqual([])
       expect(arrayFormField.isValid).toBe(false)
 
-      expect(arrayFormField.checkValid()).toBe(false)
-      expect(arrayFormField.errors).not.toEqual([])
+      expect(arrayFormField.validate().valid).toBe(false)
+      expect(errorMessages(arrayFormField)).not.toEqual([])
     })
   })
 })

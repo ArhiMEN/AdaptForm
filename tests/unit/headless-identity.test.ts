@@ -1,3 +1,4 @@
+import {errorMessages, errorsByPath} from '../helpers/errorViews'
 import {describe, expect, expectTypeOf, it, vi} from 'vitest'
 import {ArrayField, ArrayFormField, Field, Form, StringType} from '../../src'
 
@@ -79,11 +80,11 @@ describe('HF-011 retained collection identities', () => {
     expect(root.rows.forms[1]).toBe(moved)
     expect(moved.tags.items[0]).toBe(nestedItem)
     expect(moved.tags.getSnapshot().itemIds![0]).toBe(nestedId)
-    root.errors = {'rows.1.name': 'server at current index'}
-    expect(moved.name.error).toBe('server at current index')
-    expect(root.rows.forms[0].name.error).toBe('')
-    expect(root.allErrors.rows).toEqual(['Форма 2, name: server at current index'])
-    expect(root.getSnapshot().allErrors.rows).toEqual(root.allErrors.rows)
+    moved.name.setErrors([{code: 'manual', message: 'server at current index'}])
+    expect((errorMessages(moved.name)[0] ?? '')).toBe('server at current index')
+    expect((errorMessages(root.rows.forms[0].name)[0] ?? '')).toBe('')
+    expect(errorsByPath(root)['rows.1.name']).toEqual(['server at current index'])
+    expect(root.rows.getSnapshot().forms[1].fields.name.errors).toEqual(moved.name.errors)
     const calls = parent.mock.calls.length
     moved.tags.items[0].rawValue = 'changed'
     expect(parent).toHaveBeenCalledTimes(calls + 1)
@@ -92,18 +93,19 @@ describe('HF-011 retained collection identities', () => {
 
   it('keeps per-item errors on surviving scalar nodes after an index shift', () => {
     const values = new ArrayField((value?: string) => new Field(StringType, value, {
-      validate: value => value === 'bad' ? 'bad item' : true,
+      validate: value => value === 'bad' ? [{code: 'custom', message: 'bad item'}] : [],
     }), {}, ['good', 'bad'])
+    values.validate()
     const bad = values.items[1]
     const identity = ids(values)![1]
     values.remove(0)
     expect(values.items[0]).toBe(bad)
     expect(ids(values)).toEqual([identity])
-    expect(values.getSnapshot().items[0].errors).toEqual(['bad item'])
+    expect(errorMessages(values.getSnapshot().items[0])).toEqual(['bad item'])
   })
 
   it('coalesces structural changes and validates once with final values and parent context', () => {
-    const validate = vi.fn(() => true)
+    const validate = vi.fn(() => [])
     class Batched extends Form {
       values = new ArrayField((value?: string) => new Field(StringType, value), {validate}, ['a', 'b'])
     }
@@ -195,7 +197,7 @@ describe('HF-011 retained collection identities', () => {
   })
 
   it('finalizes nested structural batches on exceptions and keeps retained form identity', () => {
-    const validate = vi.fn(() => true)
+    const validate = vi.fn(() => [])
     class Batched extends Form {
       rows = new ArrayFormField(Row, {validate}, [{name: 'a'}, {name: 'b'}])
     }

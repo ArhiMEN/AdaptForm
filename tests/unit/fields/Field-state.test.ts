@@ -1,3 +1,4 @@
+import {errorMessages} from '../../helpers/errorViews'
 import {describe, expect, it, vi} from 'vitest'
 import {Field} from '@core/fields/Field'
 import {StringType} from '@core/types/StringType'
@@ -10,8 +11,8 @@ import {DateTime} from 'luxon'
 
 class StructuredType extends FieldType<unknown> {
   cast(value: unknown) { return value }
-  validate() { return [] }
-  getTypeName() { return 'structured' }
+  validateErrors() { return [] }
+  readonly typeId = 'structured'
 }
 
 describe('HF-006 Field baseline', () => {
@@ -27,25 +28,25 @@ describe('HF-006 Field baseline', () => {
   })
 
   it('compares cached cast values without extra casts or validation', () => {
-    const validate = vi.fn(() => true)
+    const validate = vi.fn(() => [])
     const cast = vi.spyOn(NumberType.prototype, 'cast')
     const field = new Field(NumberType, 42, {validate})
     field.setRawValue('042', false)
     const calls = cast.mock.calls.length
     for (let i = 0; i < 5; i++) expect(field.isDirty).toBe(false)
     expect(cast).toHaveBeenCalledTimes(calls)
-    expect(validate).toHaveBeenCalledTimes(1)
+    expect(validate).not.toHaveBeenCalled()
     cast.mockRestore()
   })
 
   it('commits independently of touched, errors, validity and reset target', () => {
     const field = new Field(NumberType, 1)
     field.rawValue = 2
-    field.error = 'server'
+    field.setErrors([{code: 'manual', message: 'server'}])
     field.commitBaseline()
     expect(field.isDirty).toBe(false)
     expect(field.isTouched).toBe(true)
-    expect(field.errors).toEqual(['server'])
+    expect(errorMessages(field)).toEqual(['server'])
     expect(field.isValid).toBe(false)
     field.reset()
     expect(field.valueClear).toBe(1)
@@ -56,7 +57,7 @@ describe('HF-006 Field baseline', () => {
     const field = new Field(NumberType)
     field.rawValue = 'invalid'
     expect(field.isDirty).toBe(false)
-    field.checkValid()
+    field.validate()
     expect(field.isDirty).toBe(false)
     field.rawValue = 0
     expect(field.isDirty).toBe(true)

@@ -6,7 +6,7 @@
 
 .language-picker{display:flex;align-items:center;gap:8px;font-size:11px}.language-picker select{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px;cursor:pointer}.language-picker select:focus-visible{outline:2px solid var(--accent);outline-offset:3px}@media(max-width:650px){.language-picker>span{display:none}.top-links{gap:8px}.brand{font-size:16px}}
 
-/* Headless v2.2.0 demo */
+/* Headless demo */
 .headless-playground .form-field input{height:42px}
 .headless-playground .form-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
 .headless-playground .inspector-note{margin-top:14px}

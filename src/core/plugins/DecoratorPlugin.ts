@@ -1,3 +1,4 @@
+import {assertValidationMutationAllowed} from '../state/validationExecution'
 import {Field} from "@core/fields/Field"
 import {BasePlugin} from "@core/plugins/FieldPlugin"
 import {PluginOptions} from "@core/options"
@@ -48,6 +49,7 @@ export class DecoratorPlugin<T = any> extends BasePlugin<T> {
     symbol: string | null = null,
     options: SymbolOptions = {}
   ) {
+    assertValidationMutationAllowed()
     const block: DecoratorBlock = {
       symbol,
 
@@ -71,6 +73,7 @@ export class DecoratorPlugin<T = any> extends BasePlugin<T> {
     regex: RegExp,
     transform?: (char: string) => string
   ) {
+    assertValidationMutationAllowed()
     if (!this.currentBlock) {
       throw new Error('accept() requires symbol() before it')
     }
@@ -87,6 +90,7 @@ export class DecoratorPlugin<T = any> extends BasePlugin<T> {
     regex: RegExp | string[] | number[],
     fallback?: string
   ) {
+    assertValidationMutationAllowed()
     if (!this.currentBlock) {
       throw new Error('pattern() requires symbol() before it')
     }
@@ -112,6 +116,7 @@ export class DecoratorPlugin<T = any> extends BasePlugin<T> {
   }
 
   replace(search: RegExp, replace: string) {
+    assertValidationMutationAllowed()
     this.replaces.push({
       search,
       replace

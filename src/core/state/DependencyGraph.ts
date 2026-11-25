@@ -3,9 +3,10 @@ import type {Form} from '../Form'
 import type {ObservableNode} from './ObservableNode'
 import {copyValue, equalValue} from './value'
 import {
-  assertValidationMutationAllowed, cancelDependencies, dependencyOwner, DependencyConfigurationError, dependencyValidation,
+  cancelDependencies, dependencyOwner, DependencyConfigurationError, withoutDependencyScheduling,
   ownDependencies, releaseDependencies, scheduleDependencies, type DependencyScheduler,
 } from './dependencyScheduling'
+import {assertValidationMutationAllowed} from './validationExecution'
 
 type Node = ObservableNode<unknown>
 type Fields = Readonly<Record<string, Node>>
@@ -52,16 +53,19 @@ export class DependencyGraph implements DependencyScheduler {
   selects(node: Node): boolean { return node === this.form || this.fields.includes(node as Field<unknown>) }
 
   request(node: Node): boolean {
-    if (!this.selective || !(node instanceof Field) || !this.fields.includes(node)) return false
+    if (!this.selective || !(node instanceof Field)) return false
+    if (!this.fields.includes(node) && !Object.values(this.getFields()).includes(node)) return false
     this.requested.add(node)
     scheduleDependencies(this)
     return true
   }
 
-  /** Explicit full checks remain immediate, but may not bypass invalid configuration. */
-  check<TResult>(callback: () => TResult): TResult {
+  runFullCheck<TResult>(callback: () => TResult, automatic: boolean): TResult {
+    // This full automatic pass already covers every direct field of this Form.
+    // Explicit calls remain independent of queued automatic work.
+    if (automatic) this.requested.clear()
     this.compile()
-    return this.selective ? dependencyValidation(callback) : callback()
+    return withoutDependencyScheduling(callback)
   }
 
   private compile(): void {
@@ -155,12 +159,12 @@ export class DependencyGraph implements DependencyScheduler {
           sources.push(target)
         }
       }
-      dependencyValidation(() => {
-        for (const field of this.order) if (selected.has(field)) field.checkAndSetValid(this.form)
+      withoutDependencyScheduling(() => {
+        for (const field of this.order) if (selected.has(field)) field.validate(this.form)
       })
     } finally {
       this.rememberValues()
-      dependencyValidation(this.invalidate)
+      withoutDependencyScheduling(this.invalidate)
     }
   }
 }

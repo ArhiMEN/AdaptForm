@@ -1,58 +1,6 @@
-import type {ValidationResult} from './ValidationError'
+import type {Form} from './Form'
+import type {ValidationErrorInput} from './ValidationError'
 import {FieldPlugin} from "@core/plugins"
-
-// Region: validation messages
-
-export interface messagesOptions {
-  isRequired?: string
-  validate?: string
-  type?: string
-  invalid?: string
-}
-
-export interface messagesStringOptions extends messagesOptions {
-  minLength?: string
-  maxLength?: string
-  pattern?: string
-}
-
-export interface messagesNumberOptions extends messagesOptions {
-  gt?: string
-  ge?: string
-  lt?: string
-  le?: string
-}
-
-export interface messagesBooleanOptions extends messagesOptions {
-  mustBeTrue?: string
-  mustBeFalse?: string
-}
-
-export interface messagesDateOptions extends messagesOptions {
-  minDate?: string
-  maxDate?: string
-}
-
-export interface messagesDecimalOptions extends messagesOptions {
-  gt?: string
-  ge?: string
-  lt?: string
-  le?: string
-  decimalPlaces?: string
-  maxDigits?: string
-}
-
-export interface messagesArrayFieldOptions extends messagesOptions {
-  minItems?: string
-  maxItems?: string
-}
-
-export interface messagesArrayFormFieldOptions extends messagesOptions {
-  minForms?: string
-  maxForms?: string
-}
-
-// End region
 
 // Region: field types
 
@@ -62,68 +10,74 @@ export interface DependencyRef {
   readonly path: DependencyPath
 }
 
-export interface FieldOptions {
+export type FieldValidator<T, F extends Form = Form> = (
+  value: T,
+  form?: F,
+) => readonly ValidationErrorInput[]
+
+export type RequiredRule<F extends Form = Form> = boolean | ((form?: F) => boolean)
+
+// Options also accept callbacks annotated with a specific owning Form class.
+// Standalone validation still supplies undefined as the custom callback context.
+type ValidatorOption<T, F extends Form> = {
+  validate(value: T, form?: F): ReturnType<FieldValidator<T, F>>
+}['validate']
+type RequiredOption<F extends Form> = boolean | { required(form?: F): boolean }['required']
+
+export interface FieldOptions<T = any, F extends Form = Form> {
   readonly dependsOn?: readonly DependencyRef[]
-  isRequired?: boolean | ((form?: any) => boolean)
-  messages?: messagesOptions
-  validate?: (value: any, form?: any) => ValidationResult
+  isRequired?: RequiredOption<F>
+  validate?: ValidatorOption<T, F>
   plugins?: FieldPlugin[]
 }
 
-export interface StringOptions extends FieldOptions {
+export interface StringOptions extends FieldOptions<string> {
   minLength?: number
   maxLength?: number
   pattern?: RegExp
-  messages?: messagesStringOptions
 }
 
-export interface NumberOptions extends FieldOptions {
+export interface NumberOptions extends FieldOptions<number> {
   gt?: number // greater than
   ge?: number // greater than or equal to
   lt?: number // less than
   le?: number // less than or equal to
-  messages?: messagesNumberOptions
 }
 
-export interface BooleanOptions extends FieldOptions {
+export interface BooleanOptions extends FieldOptions<boolean> {
   mustBeTrue?: boolean   // when true, the value must be true
   mustBeFalse?: boolean// when true, the value must be false
-  messages?: messagesBooleanOptions
 }
 
-export interface DateOptions extends FieldOptions {
+export interface DateOptions extends FieldOptions<Date> {
   minDate?: Date
   maxDate?: Date
   isDatetime?: boolean
-  messages?: messagesDateOptions
 }
 
-export interface DecimalOptions extends FieldOptions {
+export interface DecimalOptions extends FieldOptions<number | string> {
   gt?: number
   ge?: number
   lt?: number
   le?: number
   decimalPlaces?: number  // number of decimal places
   maxDigits?: number  // maximum total number of digits
-  messages?: messagesDecimalOptions
 }
 
 // End region
 
 // Region: additional fields
 
-export interface ArrayFieldOptions {
-  isRequired?: boolean | ((form?: any) => boolean)
-  messages?: messagesArrayFieldOptions
-  validate?: (value: any[], form?: any) => ValidationResult
+export interface ArrayFieldOptions<T = any, F extends Form = Form> {
+  isRequired?: RequiredOption<F>
+  validate?: ValidatorOption<(T | null)[], F>
   minItems?: number
   maxItems?: number
 }
 
-export interface ArrayFormFieldOptions {
-  isRequired?: boolean | ((form?: any) => boolean)
-  messages?: messagesArrayFormFieldOptions
-  validate?: (value: any[], form?: any) => ValidationResult
+export interface ArrayFormFieldOptions<T extends Form = Form, F extends Form = Form> {
+  isRequired?: RequiredOption<F>
+  validate?: ValidatorOption<T[], F>
   minForms?: number
   maxForms?: number
 }

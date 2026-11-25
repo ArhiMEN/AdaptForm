@@ -1,3 +1,4 @@
+import {errorsByPath, ownMessagesByCode} from '../helpers/errorViews'
 import { describe, it, expect } from 'vitest'
 import { Form } from '@core/Form'
 import { Field } from '@core/fields/Field'
@@ -32,7 +33,7 @@ describe('Integration Tests', () => {
         agreed: 'true'
       }
       
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(true)
     })
 
@@ -46,10 +47,10 @@ describe('Integration Tests', () => {
         agreed: 'true'
       }
       
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(false)
-      expect(form.allErrors.login).toBeDefined()
-      expect(form.allErrors.login!.length).toBeGreaterThan(0)
+      expect(errorsByPath(form).login).toBeDefined()
+      expect(errorsByPath(form).login!.length).toBeGreaterThan(0)
     })
 
     it('should be invalid with invalid email', () => {
@@ -62,9 +63,9 @@ describe('Integration Tests', () => {
         agreed: 'true'
       }
       
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(false)
-      expect(form.allErrors.email).toContain('Неверный формат')
+      expect(form.email.getErrors()).toEqual([{code: 'pattern', source: 'type'}])
     })
 
     it('should be invalid with short password', () => {
@@ -77,10 +78,10 @@ describe('Integration Tests', () => {
         agreed: 'true'
       }
       
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(false)
-      expect(form.allErrors.password).toBeDefined()
-      expect(form.allErrors.password!.length).toBeGreaterThan(0)
+      expect(errorsByPath(form).password).toBeDefined()
+      expect(errorsByPath(form).password!.length).toBeGreaterThan(0)
     })
 
     it('should validate password confirmation', () => {
@@ -95,13 +96,13 @@ describe('Integration Tests', () => {
       }
       
       // Custom validation
-      form.passwordConfirm.options.validate = (value, form) => {
-        return value === form?.password?.valueClear || 'Passwords do not match'
+      form.passwordConfirm.options.validate = (value, form?: RegistrationForm) => {
+        return value === form?.password?.valueClear ? [] : [{code: 'custom', message: 'Passwords do not match'}]
       }
       
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(false)
-      expect(form.allErrors.passwordConfirm).toContain('Passwords do not match')
+      expect(errorsByPath(form).passwordConfirm).toContain('Passwords do not match')
     })
 
     it('should be invalid with invalid age', () => {
@@ -114,10 +115,10 @@ describe('Integration Tests', () => {
         agreed: 'true'
       }
       
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(false)
-      expect(form.allErrors.age).toBeDefined()
-      expect(form.allErrors.age!.length).toBeGreaterThan(0)
+      expect(errorsByPath(form).age).toBeDefined()
+      expect(errorsByPath(form).age!.length).toBeGreaterThan(0)
     })
 
     it('should serialize to JSON', () => {
@@ -130,7 +131,7 @@ describe('Integration Tests', () => {
         agreed: 'true'
       }
       
-      form.checkValid()
+      form.validate()
       const json = form.toJSON()
       
       expect(json).toEqual({
@@ -152,15 +153,15 @@ describe('Integration Tests', () => {
         total: 1000
       }
       
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(true)
     })
 
     it('should be invalid with empty items', () => {
       const form = new OrderForm()
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(false)
-      expect(form.allErrors.items).toContain('Добавьте хотя бы один элемент')
+      expect(form.items.errors).toEqual([{code: 'required', source: 'type'}])
     })
 
     it('should be invalid with negative total', () => {
@@ -170,16 +171,16 @@ describe('Integration Tests', () => {
         total: -100
       }
       
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(false)
-      expect(form.allErrors.total).toContain('Значение должно быть больше 0')
+      expect(form.total.getErrors()).toEqual([{code: 'min_value', params: {min: 0, exclusive: true}, source: 'type'}])
     })
 
     it('should add items dynamically', () => {
       const form = new OrderForm()
       
       form.items.add('New Item')
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(true)
       expect(form.items.itemsValue.length).toBe(1)
       expect(form.items.itemsValue).toEqual(['New Item'])
@@ -192,11 +193,11 @@ describe('Integration Tests', () => {
         total: 1000
       }
       
-      form.checkValid()
+      form.validate()
       expect(form.isValid).toBe(true)
       
       form.items.remove(1)
-      form.checkValid()
+      form.validate()
       expect(form.items.itemsValue).toEqual(['Item 1', 'Item 3'])
       expect(form.isValid).toBe(true)
     })
@@ -216,30 +217,28 @@ describe('Integration Tests', () => {
       }
       
       // Simulate server error
-      form.errors = {
-        login: 'Account not found',
-        password: 'Invalid password'
-      }
+      form.login.setErrors([{code: 'app.login', message: 'Account not found'}])
+      form.password.setErrors([{code: 'app.password', message: 'Invalid password'}])
       
       expect(form.isValid).toBe(false)
-      expect(form.allErrors.login).toContain('Account not found')
-      expect(form.allErrors.password).toContain('Invalid password')
+      expect(errorsByPath(form).login).toContain('Account not found')
+      expect(errorsByPath(form).password).toContain('Invalid password')
     })
 
     it('should use setGlobalError', () => {
       const form = new ServerErrorForm()
-      form.setGlobalError('auth', 'Authentication failed')
+      form.setErrors([...form.getOwnErrors(), {code: 'auth', message: 'Authentication failed'}])
       
-      expect(form.globalErrors['auth']).toBe('Authentication failed')
+      expect(ownMessagesByCode(form)['auth']).toBe('Authentication failed')
       expect(form.isValid).toBe(false)
     })
 
     it('should clear global errors', () => {
       const form = new ServerErrorForm()
-      form.setGlobalError('auth', 'Error')
-      form.clearGlobalErrors()
+      form.setErrors([...form.getOwnErrors(), {code: 'auth', message: 'Error'}])
+      form.clearErrors()
       
-      expect(form.globalErrors).toEqual({})
+      expect(ownMessagesByCode(form)).toEqual({})
     })
   })
 

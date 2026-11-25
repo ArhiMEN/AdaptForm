@@ -1,3 +1,4 @@
+import {errorMessages} from './errorViews'
 import { expect } from 'vitest'
 import type { Field } from '@core/fields/Field'
 import type { Form } from '@core/Form'
@@ -6,21 +7,21 @@ import type { Form } from '@core/Form'
  * Assert that a field is valid.
  */
 export function expectValid(field: Field, form?: Form) {
-  const isValid = field.checkAndSetValid(form)
+  const isValid = field.validate(form).valid
   expect(isValid).toBe(true)
   expect(field.isValid).toBe(true)
-  expect(field.errors).toEqual([])
-  expect(field.error).toBe('')
+  expect(errorMessages(field)).toEqual([])
+  expect((errorMessages(field)[0] ?? '')).toBe('')
 }
 
 /**
  * Assert that a field is invalid.
  */
 export function expectInvalid(field: Field, expectedErrors: string[] = [], form?: Form) {
-  const isValid = field.checkAndSetValid(form)
+  const isValid = field.validate(form).valid
   expect(isValid).toBe(false)
   expect(field.isValid).toBe(false)
-  expect(field.errors).toEqual(expectedErrors)
+  expect(errorMessages(field)).toEqual(expectedErrors)
 }
 
 /**
@@ -44,7 +45,7 @@ export function expectReset(field: Field, defaultValue?: any) {
   field.reset()
   expect(field.isTouched).toBe(false)
   expect(field.isValid).toBe(null)
-  expect(field.errors).toEqual([])
+  expect(errorMessages(field)).toEqual([])
   if (defaultValue !== undefined) {
     expect(field.rawValue).toBe(defaultValue)
   }
@@ -76,7 +77,7 @@ export function createTestForm<T extends Form>(FormConstructor: new () => T): T 
  */
 export function expectFormValid(form: Form) {
   expect(form.isValid).toBe(true)
-  expect(form.checkValid()).toBe(true)
+  expect(form.validate().valid).toBe(true)
 }
 
 /**
@@ -84,5 +85,5 @@ export function expectFormValid(form: Form) {
  */
 export function expectFormInvalid(form: Form) {
   expect(form.isValid).toBe(false)
-  expect(form.checkValid()).toBe(false)
+  expect(form.validate().valid).toBe(false)
 }

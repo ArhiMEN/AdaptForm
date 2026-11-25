@@ -1,3 +1,5 @@
+import {errorMessages, ownMessagesByCode} from '../helpers/errorViews'
+import {installServerErrors} from '../helpers/serverErrors'
 import {describe, expect, it, vi} from 'vitest'
 import {
   ArrayField, ArrayFormField, DependencyConfigurationError, Field, Form, NumberType, StringType,
@@ -8,7 +10,7 @@ class Credentials extends Form {
   password = new Field(StringType, 'old')
   confirmation = new Field(StringType, 'old', {
     dependsOn: [{path: ['password']}],
-    validate: (value: string, form?: Credentials) => !form || value === form.password.valueClear || 'Passwords differ',
+    validate: (value: string, form?: Credentials) => !form || value === form.password.valueClear ? [] : [{code: 'custom', message: 'Passwords differ'}],
   })
   unrelated = new Field(StringType, 'untouched')
 }
@@ -17,7 +19,7 @@ function graph() {
   const calls: string[] = []
   const options = (name: string, sources: string[] = []) => ({
     dependsOn: sources.map(source => ({path: [source] as const})),
-    validate: () => { calls.push(name); return true },
+    validate: () => { calls.push(name); return [] },
   })
   class Diamond extends Form {
     // Traversal order deliberately differs from topological order.
@@ -40,9 +42,9 @@ describe('HF-013 dependent validation', () => {
     const disable = form.enableDependencies()
     expect(form.getSnapshot()).toBe(before)
     expect(form.enableDependencies()).toBe(disable)
-    const unrelated = vi.spyOn(form.unrelated, 'checkAndSetValid')
+    const unrelated = vi.spyOn(form.unrelated, 'validate')
     form.password.rawValue = 'new'
-    expect(form.confirmation.error).toBe('Passwords differ')
+    expect((errorMessages(form.confirmation)[0] ?? '')).toBe('Passwords differ')
     expect(form.confirmation.isTouched).toBe(false)
     expect(form.confirmation.isDirty).toBe(false)
     expect(unrelated).not.toHaveBeenCalled()
@@ -55,13 +57,13 @@ describe('HF-013 dependent validation', () => {
       country = new Field(StringType, 'CA')
       postal = new Field(StringType, 'A1A', {
         dependsOn: [{path: ['country']}],
-        validate: (value: string, form?: Address) => !form || form.country.valueClear !== 'US' || /^\d{5}$/.test(value) || 'Use five digits',
+        validate: (value: string, form?: Address) => !form || form.country.valueClear !== 'US' || /^\d{5}$/.test(value) ? [] : [{code: 'custom', message: 'Use five digits'}],
       })
     }
     const form = new Address()
     form.enableDependencies()
     form.country.rawValue = 'US'
-    expect(form.postal.error).toBe('Use five digits')
+    expect((errorMessages(form.postal)[0] ?? '')).toBe('Use five digits')
     form.batch(() => { form.country.rawValue = 'CA'; form.country.rawValue = 'US'; form.postal.rawValue = '12345' })
     expect(form.postal.isValid).toBe(true)
   })
@@ -90,8 +92,8 @@ describe('HF-013 dependent validation', () => {
   it('uses changed cleaned values and still honors direct validation requests', () => {
     const calls: string[] = []
     class Numeric extends Form {
-      a = new Field(NumberType, 1, {validate: () => { calls.push('a'); return true }})
-      b = new Field(StringType, 'b', {dependsOn: [{path: ['a']}], validate: () => { calls.push('b'); return true }})
+      a = new Field(NumberType, 1, {validate: () => { calls.push('a'); return [] }})
+      b = new Field(StringType, 'b', {dependsOn: [{path: ['a']}], validate: () => { calls.push('b'); return [] }})
     }
     const form = new Numeric()
     form.enableDependencies()
@@ -147,14 +149,14 @@ describe('HF-013 dependent validation', () => {
     expect(calls).toEqual([])
   })
 
-  it('continues downstream after ordinary false/string results', () => {
+  it('continues downstream after ordinary structured errors', () => {
     const {form, calls} = graph()
-    form.a.options = {validate: () => { calls.push('a'); return false }}
-    form.b.options = {validate: () => { calls.push('b'); return 'invalid' }}
+    form.a.options = {validate: () => { calls.push('a'); return [{code: 'custom'}] }}
+    form.b.options = {validate: () => { calls.push('b'); return [{code: 'custom', message: 'invalid'}] }}
     form.a.rawValue = 'changed'
     expect(calls).toEqual(['a', 'b', 'c', 'd'])
     expect(form.a.isValid).toBe(false)
-    expect(form.b.error).toBe('invalid')
+    expect((errorMessages(form.b)[0] ?? '')).toBe('invalid')
   })
 
   it('treats dependencies as covering required rules too, including empty targets', () => {
@@ -177,16 +179,89 @@ describe('HF-013 dependent validation', () => {
     const {form, calls} = graph()
     form.batch(() => {
       form.a.rawValue = 'changed'
-      form.b.checkAndSetValid(form)
+      form.b.validate(form)
       expect(calls).toEqual(['b'])
     })
     expect(calls).toEqual(['b', 'a', 'b', 'c', 'd'])
     calls.length = 0
-    form.checkValid()
+    form.validate()
     expect(calls).toEqual(['d', 'b', 'c', 'a', 'other'])
     calls.length = 0
-    form.a.checkAndSetValid(form)
+    form.a.validate(form)
     expect(calls).toEqual(['a'])
+  })
+
+  it('keeps selected targets on the new runner without clearing server or manual errors', () => {
+    const {form, calls} = graph()
+    form.b.options = {validate: () => { calls.push('b'); return [{code: 'app.client'}] }}
+    installServerErrors(form.b, [{code: 'app.server'}])
+    form.b.setErrors([{code: 'app.manual'}])
+
+    form.batch(() => {
+      form.a.rawValue = 'first'
+      form.a.rawValue = 'final'
+    })
+    expect(calls).toEqual(['a', 'b', 'c', 'd'])
+    expect(form.b.errors.map(({source, code}) => [source, code])).toEqual([
+      ['custom', 'app.client'], ['server', 'app.server'], ['manual', 'app.manual'],
+    ])
+    expect(form.b.isValid).toBe(false)
+  })
+
+  it('coalesces a nested graph with an automatic full ancestor pass', () => {
+    class Parent extends Form {
+      rows = new ArrayFormField(Credentials, {}, [{}])
+      status = new Field(StringType, 'initial')
+    }
+    const parent = new Parent()
+    const row = parent.rows.forms[0]
+    row.enableDependencies()
+    const password = vi.spyOn(row.password, 'validate')
+    const confirmation = vi.spyOn(row.confirmation, 'validate')
+    const unrelated = vi.spyOn(row.unrelated, 'validate')
+    parent.batch(() => {
+      row.password.rawValue = 'new'
+      parent.setFields({status: 'updated'})
+    })
+    expect(password).toHaveBeenCalledTimes(1)
+    expect(confirmation).toHaveBeenCalledTimes(1)
+    expect(unrelated).toHaveBeenCalledTimes(1)
+    expect(row.confirmation.errors[0].message).toBe('Passwords differ')
+
+    parent.batch(() => {
+      row.password.rawValue = 'old'
+      row.validate()
+      expect(confirmation).toHaveBeenCalledTimes(2)
+    })
+    expect(confirmation).toHaveBeenCalledTimes(3)
+    expect(unrelated).toHaveBeenCalledTimes(2)
+    expect(row.isValid).toBe(true)
+  })
+
+  it('reconciles replaced direct fields when setFields supplies the new values', () => {
+    const form = new Credentials()
+    form.enableDependencies()
+    form.password = new Field(StringType, 'replacement')
+    const source = vi.spyOn(form.password, 'validate')
+    const target = vi.spyOn(form.confirmation, 'validate')
+    form.setFields({password: 'current'})
+    expect(source).toHaveBeenCalledExactlyOnceWith(form)
+    expect(target).toHaveBeenCalledExactlyOnceWith(form)
+    expect(form.confirmation.isValid).toBe(false)
+  })
+
+  it('leaves unchanged empty collections alone in a selective setFields', () => {
+    const validate = vi.fn(() => [])
+    class Mixed extends Credentials {
+      tags = new ArrayField((value?: string) => new Field(StringType, value), {validate})
+    }
+    const form = new Mixed()
+    form.enableDependencies()
+    form.setFields({tags: []})
+    expect(validate).not.toHaveBeenCalled()
+    expect(form.tags.isValid).toBe(false)
+    form.setFields({tags: ['new']})
+    expect(validate).toHaveBeenCalledExactlyOnceWith(['new'], form)
   })
 
   it('deduplicates duplicate dependency declarations', () => {
@@ -216,7 +291,7 @@ describe('HF-013 dependent validation', () => {
     }
     const form = new Literal()
     form.enableDependencies()
-    const check = vi.spyOn(form.target, 'checkAndSetValid')
+    const check = vi.spyOn(form.target, 'validate')
     form['a.b'].rawValue = 'changed'
     expect(check).toHaveBeenCalledTimes(1)
   })
@@ -241,10 +316,24 @@ describe('HF-013 dependent validation', () => {
     expect(calls).toEqual([])
     expect(form.getSnapshot().fieldsValue.a).toBe('retained')
     expect(notify).toHaveBeenCalledTimes(1)
-    expect(() => form.checkValid()).toThrow(DependencyConfigurationError)
+    expect(() => form.validate()).toThrow(DependencyConfigurationError)
     form.a.options = {dependsOn: []}
     form.a.rawValue = 'recovered'
     expect(calls).toEqual(['a', 'b', 'c', 'd'])
+  })
+
+  it('does not retain an earlier successful Form result after a configuration failure', () => {
+    const form = new Credentials()
+    form.enableDependencies()
+    expect(form.validate().valid).toBe(true)
+    // Only dependency metadata changes, so the validated values remain the same.
+    expect(() => {
+      form.confirmation.options = {dependsOn: [{path: ['missing']}]}
+    }).toThrow(DependencyConfigurationError)
+    expect(() => form.validate()).toThrow(DependencyConfigurationError)
+    expect(form.isValid).toBe(false)
+    form.confirmation.options = {dependsOn: [{path: ['password']}]}
+    expect(form.validate().valid).toBe(true)
   })
 
   it('resolves final dependency options only once after a batch', () => {
@@ -260,8 +349,8 @@ describe('HF-013 dependent validation', () => {
   it('routes already queued legacy requests when dependencies are added in a batch', () => {
     const calls: string[] = []
     class Dynamic extends Form {
-      a = new Field(StringType, 'a', {validate: () => { calls.push('a'); return true }})
-      b = new Field(StringType, 'b', {validate: () => { calls.push('b'); return true }})
+      a = new Field(StringType, 'a', {validate: () => { calls.push('a'); return [] }})
+      b = new Field(StringType, 'b', {validate: () => { calls.push('b'); return [] }})
     }
     const form = new Dynamic()
     form.enableDependencies()
@@ -292,7 +381,7 @@ describe('HF-013 dependent validation', () => {
     disable()
     disable()
     form.password.rawValue = 'new'
-    expect(form.confirmation.isValid).toBe(true)
+    expect(form.confirmation.isValid).toBeNull()
     const again = form.enableDependencies()
     expect(again).not.toBe(disable)
     form.password.rawValue = 'newer'
@@ -339,7 +428,7 @@ describe('HF-013 dependent validation', () => {
     expect(() => form.enableDependencies()).toThrow(DependencyConfigurationError)
     form.confirmation.options = {dependsOn: [{path: ['password']}]}
     form.enableDependencies()
-    const check = vi.spyOn(form.confirmation, 'checkAndSetValid')
+    const check = vi.spyOn(form.confirmation, 'validate')
     form.batch(() => { form.tags.add('tag'); form.password.rawValue = 'new' })
     expect(form.tags.itemsValue).toEqual(['tag'])
     expect(check).toHaveBeenCalledTimes(1)
@@ -352,9 +441,9 @@ describe('HF-013 dependent validation', () => {
     }
     const form = new Mixed()
     form.enableDependencies()
-    const first = vi.spyOn(form.first, 'checkAndSetValid')
-    const second = vi.spyOn(form.second, 'checkAndSetValid')
-    const confirmation = vi.spyOn(form.confirmation, 'checkAndSetValid')
+    const first = vi.spyOn(form.first, 'validate')
+    const second = vi.spyOn(form.second, 'validate')
+    const confirmation = vi.spyOn(form.confirmation, 'validate')
     form.batch(() => {
       form.setFields({password: 'new', first: ['one'], second: ['two']})
     })
@@ -400,7 +489,7 @@ describe('HF-013 dependent validation', () => {
     const off = form.subscribe(() => { throw new Error('subscriber') })
     expect(() => form.batch(() => { form.a.rawValue = 'next'; throw failure })).toThrow(failure)
     off()
-    form.a.options = {validate: () => true}
+    form.a.options = {validate: () => []}
     form.a.rawValue = 'recovered'
     expect(form.a.isValid).toBe(true)
   })
@@ -414,7 +503,7 @@ describe('HF-013 dependent validation', () => {
     expect(calls).toEqual(['a', 'b'])
     expect(form.getSnapshot().fieldsValue.a).toBe('changed')
     expect(notify).toHaveBeenCalledTimes(1)
-    form.b.options = {validate: () => true}
+    form.b.options = {validate: () => []}
     form.a.rawValue = 'recovered'
     expect(form.d.isValid).toBe(true)
   })
@@ -425,20 +514,20 @@ describe('HF-013 dependent validation', () => {
     const actions: Record<string, () => void> = {
       raw: () => { form.unrelated.rawValue = 'changed' },
       options: () => { form.unrelated.options = {isRequired: true} },
-      error: () => { form.unrelated.error = 'changed' },
+      error: () => { form.unrelated.setErrors([{code: 'manual', message: 'changed'}]) },
       touched: () => { form.unrelated.isTouched = true },
       baseline: () => { form.password.commitBaseline() },
       reset: () => { form.reset() },
-      form: () => { form.setGlobalError('server', 'changed') },
+      form: () => { form.setErrors([...form.getOwnErrors(), {code: 'server', message: 'changed'}]) },
       activation: () => { form.enableDependencies() },
       disposal: disable,
     }
-    form.confirmation.options = {validate: () => { actions[kind](); return true }}
+    form.confirmation.options = {validate: () => { actions[kind](); return [] }}
     expect(() => { form.password.rawValue = 'new' }).toThrow(ValidationMutationError)
     expect(form.unrelated.valueClear).toBe('untouched')
-    expect(form.unrelated.error).toBe('')
+    expect((errorMessages(form.unrelated)[0] ?? '')).toBe('')
     expect(form.unrelated.isTouched).toBe(false)
-    expect(form.globalErrors).toEqual({})
+    expect(ownMessagesByCode(form)).toEqual({})
     expect(form.password.isDirty).toBe(true)
   })
 
@@ -453,9 +542,9 @@ describe('HF-013 dependent validation', () => {
 
   it('guards custom FieldType validation before it can mutate another node', () => {
     class MutatingType extends StringType {
-      validate(value: string, form?: Form): string[] {
-        form?.setGlobalError('forbidden', 'mutation')
-        return super.validate(value)
+      validateErrors(value: string, form?: Form) {
+        form?.setErrors([{code: 'forbidden', message: 'mutation'}])
+        return super.validateErrors(value)
       }
     }
     class Example extends Form {
@@ -465,7 +554,7 @@ describe('HF-013 dependent validation', () => {
     const form = new Example()
     form.enableDependencies()
     expect(() => { form.source.rawValue = 'changed' }).toThrow(ValidationMutationError)
-    expect(form.globalErrors).toEqual({})
+    expect(ownMessagesByCode(form)).toEqual({})
   })
 
   it('continues dependent validation when a source cannot be cast', () => {
@@ -476,7 +565,7 @@ describe('HF-013 dependent validation', () => {
         dependsOn: [{path: ['source']}],
         validate: (_value: string, form?: Example) => {
           if (form) observed.push(form.source.valueClear)
-          return form?.source.valueClear !== null || 'Invalid source'
+          return form?.source.valueClear !== null ? [] : [{code: 'custom', message: 'Invalid source'}]
         },
       })
     }
@@ -485,18 +574,18 @@ describe('HF-013 dependent validation', () => {
     form.source.rawValue = 'invalid number'
     expect(form.source.valueClear).toBeNull()
     expect(form.source.isValid).toBe(false)
-    expect(form.target.error).toBe('Invalid source')
+    expect((errorMessages(form.target)[0] ?? '')).toBe('Invalid source')
     expect(observed).toEqual([null])
   })
 
   it('preserves the legacy options receiver of required rule methods', () => {
     const options = {
-      messages: {isRequired: 'required'},
-      isRequired() { return this.messages.isRequired === 'required' },
+      requiredEnabled: true,
+      isRequired() { return this.requiredEnabled },
     }
     const field = new Field(StringType, null, options)
-    expect(field.checkAndSetValid()).toBe(false)
-    expect(field.error).toBe('required')
+    expect(field.validate().valid).toBe(false)
+    expect(field.errors).toEqual([{code: 'required', source: 'type'}])
   })
 
   it('commits all snapshots before notification and separates reentrant transactions', () => {
@@ -515,8 +604,8 @@ describe('HF-013 dependent validation', () => {
     const form = new Credentials()
     form.confirmation.options = {dependsOn: [{path: ['missing']}]}
     form.password.rawValue = 'new'
-    expect(form.confirmation.isValid).toBe(true)
-    const checks = vi.spyOn(form.unrelated, 'checkAndSetValid')
+    expect(form.confirmation.isValid).toBeNull()
+    const checks = vi.spyOn(form.unrelated, 'validate')
     form.batch(() => { form.password.rawValue = 'another' })
     expect(checks).toHaveBeenCalledTimes(1)
     expect(form.confirmation.isValid).toBe(false)

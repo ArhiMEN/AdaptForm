@@ -1,53 +1,43 @@
-import {ErrorState, customErrors, manualErrorSource, prefixErrors, type ValidationError, type ValidationErrorInput, type ValidationErrorSource} from '../ValidationError'
-import {ObservableNode} from "@core/state/ObservableNode"
+import {prefixErrors, type LocatedValidationError, type ValidationResult} from '../ValidationError'
+import {assertValidationAllowed, assertValidationMutationAllowed, duringValidationAssembly, evaluateRequired, validationCallback} from '../state/validationExecution'
+import {ErrorNode} from '../state/ErrorNode'
+import type {ObservableNode} from "@core/state/ObservableNode"
 import {hasStandardGetters, snapshotValue, type ArrayFieldSnapshot} from "@core/state/snapshot"
 import {copyValue, equalValue} from "@core/state/value"
 import {ArrayFieldOptions} from "@core/options"
 import {Field} from "@core/fields/Field"
 import {Form} from "@core/Form"
 import {collectionItemId} from "@core/fields/collectionIdentity"
-import {isValidArrayIndex} from "@core/fields/arrayUtils"
+import {assembleCollection, collectionTypeErrors, isValidArrayIndex} from "@core/fields/arrayUtils"
 
-export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
+export class ArrayField<T = any> extends ErrorNode<ArrayFieldSnapshot> {
   private _snapshot?: ArrayFieldSnapshot
 
   protected captureState(): ArrayFieldSnapshot {
+    this.syncErrorChildren(false, this._items)
     const items = this._items.map(child => child.getSnapshot())
     const itemIds = this._items.map(collectionItemId)
     const isValid = this.isValid, isTouched = this.isTouched, isDirty = this.isDirty
-    const validationErrors = this._errorState.getErrors(this._errors)
+    const errors = this.getOwnErrors()
     const previous = this._snapshot
     if (previous && this.captureState === ArrayField.prototype.captureState &&
       hasStandardGetters(this, ArrayField.prototype, ['itemsValue']) &&
-      previous.validationErrors === validationErrors && previous.isValid === isValid && previous.isTouched === isTouched && previous.isDirty === isDirty &&
+      previous.errors === errors && previous.isValid === isValid && previous.isTouched === isTouched && previous.isDirty === isDirty &&
       previous.items.length === items.length && items.every((child, index) => previous.items[index] === child) &&
-      itemIds.every((id, index) => previous.itemIds?.[index] === id) &&
-      previous.errors.length === this._errors.length && previous.errors.every((error, index) => error === this._errors[index]) &&
+      itemIds.every((id, index) => previous.itemIds[index] === id) &&
       this._items.every(child => hasStandardGetters(child, Field.prototype, ['valueClear']))) return previous
     return this._snapshot = {itemsValue: snapshotValue(this.itemsValue) as ArrayFieldSnapshot['itemsValue'],
-      itemIds, items, errors: [...this._errors], validationErrors, isValid, isTouched, isDirty}
+      itemIds, items, errors, isValid, isTouched, isDirty}
   }
 
-  protected options: ArrayFieldOptions
+  protected options: ArrayFieldOptions<T>
   protected _items: Field<T>[] = []
-  protected _errors: string[] = []
-  private readonly _errorState = new ErrorState(this._errors)
-
-  /** Own structured errors, without collection descendants. */
-  getOwnErrors(): readonly ValidationError[] { return this._errorState.getErrors(this._errors) }
+  protected clearsOnDescendantChange = true
 
   /** Structured errors relative to this node; collection indexes reflect current order. */
-  getErrors(): readonly ValidationError[] {
-    return Object.freeze([...this._errorState.getErrors(this._errors),
+  getErrors(): readonly LocatedValidationError[] {
+    return Object.freeze([...prefixErrors(this.getOwnErrors(), []),
       ...this._items.flatMap((child, index) => prefixErrors(child.getErrors(), [index]))])
-  }
-
-  /** Replace this node's own errors; children are unaffected. */
-  setErrors(errors: readonly ValidationErrorInput[], source: ValidationErrorSource = 'external'): void {
-    this.update(() => {
-      this._errors = this._errorState.set(errors, source)
-      this._hasValidationResult = errors.length > 0
-    })
   }
 
   protected stateChildren(): readonly ObservableNode<unknown>[] {
@@ -55,7 +45,6 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
   }
 
   private _baseline: unknown = []
-  private _hasValidationResult = false
 
   private _isTouched: boolean = false
 
@@ -66,18 +55,19 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
 
   constructor(
     protected factory: (value?: T) => Field<T>,
-    options: ArrayFieldOptions = {},
+    options: ArrayFieldOptions<T> = {},
     initial: (T | null)[] = []
   ) {
     super()
     this.options = {
       isRequired: true,
-      messages: {},
       ...options
-    } as ArrayFieldOptions
-    this._items = initial.map(value => this.factory(value as T))
-    this.validateAfterMutation(() => this.checkValid())
-    this.commitBaseline()
+    }
+    duringValidationAssembly(() => {
+      this._items = assembleCollection(initial, value => this.factory(value as T))
+      this.syncErrorChildren()
+      this.commitBaseline()
+    })
   }
 
   get isDirty(): boolean {
@@ -98,16 +88,14 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
   }
 
   setItemsValue(items: (T | null)[], validate: boolean = true): void {
-    return this.update(() => {
-      this._items = []
-      this.error = null
-
-      for (const item of items) {
-        this.add(item as T, false)
-      }
-
-      if (validate) this.validateAfterMutation(() => this.checkValid())
-      })
+    this.update(() => {
+      if (!this._items.length && items.length === 0) return
+      this._items = assembleCollection(items, value => this.createItem(value as T))
+      if (this._items.length) this.isTouched = true
+      this.syncErrorChildren(true, this._items, true)
+      this.inputChanged(validate, true)
+      if (validate) this.validateAfterMutation(form => this.validate(form), undefined, true)
+    })
   }
 
   get itemsValue(): (T | null)[] {
@@ -120,149 +108,113 @@ export class ArrayField<T = any> extends ObservableNode<ArrayFieldSnapshot> {
 
   // ===== actions =====
 
-  add(value?: T, force_check: boolean = true): Field<T> {
-    return this.insertAt(this._items.length, value, force_check)
+  add(value?: T, validate: boolean = true): Field<T> {
+    return this.insertAt(this._items.length, value, validate)
   }
 
   /** Insert before index (length appends). Invalid indexes do nothing. */
-  insert(index: number, value?: T, force_check: boolean = true): Field<T> | undefined {
+  insert(index: number, value?: T, validate: boolean = true): Field<T> | undefined {
+    assertValidationMutationAllowed()
     if (!isValidArrayIndex(index, this._items.length + 1)) return undefined
-    return this.insertAt(index, value, force_check)
+    return this.insertAt(index, value, validate)
   }
 
-  private insertAt(index: number, value: T | undefined, force_check: boolean): Field<T> {
+  private createItem(value?: T): Field<T> {
+    const field = this.factory(value)
+    field.commitBaseline()
+    return field
+  }
+
+  private insertAt(index: number, value: T | undefined, validate: boolean): Field<T> {
     return this.update(() => {
-      const field = this.factory(value)
+      const field = duringValidationAssembly(() => this.createItem(value))
       this.isTouched = true
       this._items.splice(index, 0, field)
-
-      if (force_check) this.validateAfterMutation(() => this.checkValid())
-
+      this.syncErrorChildren(true, this._items, true)
+      this.inputChanged(validate, true)
+      if (validate) {
+        this.requestOwnValidation()
+        this.validateNodeAfterMutation(field, context => field.validate(context))
+      }
       return field
-      })
+    })
   }
 
   /** Move a retained node to its final index; invalid/equal indexes do nothing. */
   move(from: number, to: number): void {
+    assertValidationMutationAllowed()
     if (!isValidArrayIndex(from, this._items.length) ||
       !isValidArrayIndex(to, this._items.length) || from === to) return
     this.update(() => {
       const [node] = this._items.splice(from, 1)
       this._items.splice(to, 0, node)
-      this.validateAfterMutation(() => this.checkValid())
+      this.syncErrorChildren(false, this._items, true)
+      this.inputChanged(true, true)
+      this.requestOwnValidation()
     })
   }
 
   remove(index: number): void {
+    assertValidationMutationAllowed()
+    if (!isValidArrayIndex(index, this._items.length)) return
     return this.update(() => {
-      if (!isValidArrayIndex(index, this._items.length)) return
-
       this._items.splice(index, 1)
-      this.validateAfterMutation(() => this.checkValid())
+      this.syncErrorChildren(false, this._items, true)
+      this.inputChanged(true, true)
+      this.requestOwnValidation()
       })
   }
 
   clear(): void {
+    assertValidationMutationAllowed()
+    if (!this._items.length) return
     return this.update(() => {
       this._items = []
-      this.validateAfterMutation(() => this.checkValid())
+      this.syncErrorChildren(false, this._items, true)
+      this.inputChanged(true, true)
+      this.requestOwnValidation()
       })
   }
 
   // ===== validation =====
 
-  private isRequired(form?: Form): boolean {
-    let isRequired
-    if (typeof this.options.isRequired === 'function') {
-      isRequired = this.options.isRequired(form ?? null)
-    } else {
-      isRequired = this.options.isRequired ?? false
-    }
-
-    return isRequired
+  validate(form?: Form): ValidationResult {
+    return this.validateSelection(form, () => {
+      for (const item of this._items) item.validate(form)
+    })
   }
 
-  checkValid(form?: Form): boolean {
+  protected requestOwnValidation(): void {
+    this.validateOwnAfterMutation((form, visitChildren) => this.validateSelection(form, visitChildren))
+  }
+
+  private validateSelection(form: Form | undefined, visitChildren: () => void): ValidationResult {
+    assertValidationAllowed()
     return this.update(() => {
-      this._hasValidationResult = true
-      this._errors = this._errorState.set([], 'external')
-
-      if (this.isRequired(form) && this._items.length === 0) {
-        this._errors = this._errorState.add({code: 'required', message: this.options.messages?.isRequired ??
-          "Добавьте хотя бы один элемент"}, 'client')
-        return false
-      }
-
-      if (this.options.minItems != null && this._items.length < this.options.minItems) {
-        this._errors = this._errorState.add({code: 'min_items', message: this.options.messages?.minItems ??
-          `Значений должно быть не меньше ${this.options.minItems}`, params: {min: this.options.minItems}}, 'client')
-        return false
-      }
-
-      if (this.options.maxItems != null && this._items.length > this.options.maxItems) {
-        this._errors = this._errorState.add({code: 'max_items', message: this.options.messages?.maxItems ??
-          `Значений должно быть не больше ${this.options.maxItems}`, params: {max: this.options.maxItems}}, 'client')
-        return false
-      }
-
-      let valid = true
-
-      for (const field of this._items) {
-        const ok = field.checkAndSetValid(form)
-        if (!ok) valid = false
-      }
-
-      if (this.options.validate) {
-        const values = this._items.map(item => item.valueClear)
-        const result = this.options.validate(values, form)
-
-        const errors = customErrors(result, this.options.messages?.validate ?? 'Ошибка валидации')
-        if (errors.length) {
-          this._errors = this._errorState.set(errors, 'custom')
-          return false
-        }
-      }
-
-      return valid && this._errors.length === 0
-      })
-  }
-
-  checkAndSetValid(form?: Form): boolean {
-    return this.checkValid(form)
+      this.clientChecked = false
+      const type = collectionTypeErrors(this._items.length, evaluateRequired(this.options, false, form),
+        this.options.minItems, this.options.maxItems)
+      visitChildren()
+      const validate = this.options.validate
+      const custom = !type.length && validate ? validationCallback(() => validate.call(this.options, this.itemsValue, form)) : []
+      this.completeClientCheck(type, custom)
+      return {valid: this.isValid}
+    })
   }
 
   get isValid(): boolean {
-    if (!this._hasValidationResult) return false
-    if (this._errorState.getErrors(this._errors).length > 0) return false
+    if (this.clientChecked !== true) return false
+    if (this.errors.length > 0) return false
 
     return this._items.every(item => item.isValid === true)
   }
 
-  get error(): string {
-    return this._errors[0] ?? ''
-  }
-
-  set error(message: string | null) {
-    this.update(() => {
-      if (message) {
-        this._errors = this._errorState.set([{code: manualErrorSource(this), message}], manualErrorSource(this))
-        this._hasValidationResult = true
-      } else {
-        this._errors = this._errorState.set([], 'external')
-        this._hasValidationResult = false
-      }
-      })
-  }
-
-  get errors(): string[] {
-    return this._errors
-  }
-
   reset(): void {
     return this.update(() => {
+      this.resetErrorRevision()
       this._items.forEach(item => item.reset())
-      this._errors = this._errorState.set([], 'external')
-      this._hasValidationResult = false
+      this.clearErrors()
+      this.clientChecked = false
       this.isTouched = false
       })
   }

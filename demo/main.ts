@@ -6,79 +6,81 @@ import {
   ArrayFormField,
   BooleanType,
   DateType,
+  ErrorsMapping,
+  ErrorsSchema,
   Field,
   Form,
   MaskPlugin,
   NumberType,
   StringType,
+  type ValidationError,
 } from '../src/index'
+
+// Display configuration belongs to this application, outside engine options.
+const displayMessages = new WeakMap<object, Readonly<Record<string, string>>>()
+function withDisplay<T extends object>(field: T, messages: Readonly<Record<string, string>>): T {
+  displayMessages.set(field, messages)
+  return field
+}
 
 type ProfileKey = 'name' | 'email' | 'age' | 'birthDate' | 'country' | 'region' | 'terms'
 
 class ProfileForm extends Form {
-  name = new Field(StringType, null, {
+  name = withDisplay(new Field(StringType, null, {
     isRequired: true,
     minLength: 3,
     maxLength: 40,
-    messages: {
-      isRequired: 'Enter your full name.',
-      minLength: 'Use at least 3 characters.',
-      maxLength: 'Use no more than 40 characters.',
-    },
+  }), {
+    isRequired: 'Enter your full name.',
+    minLength: 'Use at least 3 characters.',
+    maxLength: 'Use no more than 40 characters.',
   })
 
-  email = new Field(StringType, null, {
+  email = withDisplay(new Field(StringType, null, {
     isRequired: true,
     pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    messages: {
-      isRequired: 'Enter your email address.',
-      pattern: 'Enter a valid email address.',
-    },
+  }), {
+    isRequired: 'Enter your email address.',
+    pattern: 'Enter a valid email address.',
   })
 
-  age = new Field(NumberType, null, {
+  age = withDisplay(new Field(NumberType, null, {
     isRequired: true,
     ge: 18,
     le: 120,
-    messages: {
-      isRequired: 'Enter your age.',
-      invalid: 'Enter a whole number.',
-      ge: 'You must be at least 18.',
-      le: 'Enter an age of 120 or less.',
-    },
+  }), {
+    isRequired: 'Enter your age.',
+    invalid: 'Enter a whole number.',
+    ge: 'You must be at least 18.',
+    le: 'Enter an age of 120 or less.',
   })
 
-  birthDate = new Field(DateType, null, {
+  birthDate = withDisplay(new Field(DateType, null, {
     isDatetime: false,
     maxDate: new Date(),
-    messages: { maxDate: 'The date of birth cannot be in the future.' },
-  })
+  }), { maxDate: 'The date of birth cannot be in the future.' })
 
   country = new Field(StringType, 'US', { isRequired: true })
 
-  region = new Field(StringType, null, {
+  region = withDisplay(new Field(StringType, null, {
     isRequired: (form?: ProfileForm) => form?.country.valueClear === 'US',
-    messages: { isRequired: 'Enter a state or region when the country is United States.' },
-  })
+  }), { isRequired: 'Enter a state or region when the country is United States.' })
 
-  terms = new Field(BooleanType, false, {
+  terms = withDisplay(new Field(BooleanType, false, {
     mustBeTrue: true,
-    messages: { mustBeTrue: 'You must accept the terms to continue.' },
-  })
+  }), { mustBeTrue: 'You must accept the terms to continue.' })
 }
 
 class AddressForm extends Form {
-  city = new Field(StringType, null, {
+  city = withDisplay(new Field(StringType, null, {
     isRequired: true,
     minLength: 2,
-    messages: { isRequired: 'Enter a city.', minLength: 'Use at least 2 characters.' },
-  })
+  }), { isRequired: 'Enter a city.', minLength: 'Use at least 2 characters.' })
 
-  postalCode = new Field(StringType, null, {
+  postalCode = withDisplay(new Field(StringType, null, {
     isRequired: true,
     pattern: /^\d{5}$/,
-    messages: { isRequired: 'Enter a postal code.', pattern: 'Use exactly 5 digits.' },
-  })
+  }), { isRequired: 'Enter a postal code.', pattern: 'Use exactly 5 digits.' })
 }
 
 const $ = <T extends HTMLElement>(selector: string): T => {
@@ -98,36 +100,29 @@ const escapeHtml = (value: unknown): string =>
 
 const pretty = (value: unknown): string => JSON.stringify(value, null, 2)
 const profile = new ProfileForm()
-const tags = new ArrayField(
-  (value?: string) => new Field(StringType, value ?? null, {
+const tags = withDisplay(new ArrayField(
+  (value?: string) => withDisplay(new Field(StringType, value ?? null, {
     isRequired: true,
     minLength: 2,
-    messages: {
-      isRequired: 'A tag cannot be empty.',
-      minLength: 'Each tag needs at least 2 characters.',
-    },
+  }), {
+    isRequired: 'A tag cannot be empty.',
+    minLength: 'Each tag needs at least 2 characters.',
   }),
-  {
-    isRequired: true,
-    minItems: 1,
-    maxItems: 4,
-    messages: {
-      isRequired: 'Add at least one tag.',
-      minItems: 'Add at least one tag.',
-      maxItems: 'Use no more than 4 tags.',
-    },
-  },
+  {isRequired: true, minItems: 1, maxItems: 4},
   ['typescript', 'forms'],
-)
-const addresses = new ArrayFormField(AddressForm, {
+), {
+  isRequired: 'Add at least one tag.',
+  minItems: 'Add at least one tag.',
+  maxItems: 'Use no more than 4 tags.',
+})
+const addresses = withDisplay(new ArrayFormField(AddressForm, {
   isRequired: true,
   minForms: 1,
   maxForms: 3,
-  messages: {
-    isRequired: 'Add at least one address.',
-    minForms: 'Add at least one address.',
-    maxForms: 'Use no more than 3 addresses.',
-  },
+}), {
+  isRequired: 'Add at least one address.',
+  minForms: 'Add at least one address.',
+  maxForms: 'Use no more than 3 addresses.',
 })
 const phone = new Field(StringType, null, {
   plugins: [new MaskPlugin({
@@ -153,11 +148,38 @@ let activeSerializationTab: 'json' | 'formdata' = 'json'
 const profileKeys: ProfileKey[] = ['name', 'email', 'age', 'birthDate', 'country', 'region', 'terms']
 
 const getField = (key: ProfileKey) => profile[key]
-const formFieldError = (key: ProfileKey): string[] => getField(key).errors
+// Application-owned display: the library supplies structured data, never translations.
+interface DisplayField {
+  getErrors(): readonly ValidationError[]
+}
+function displayError(error: ValidationError, field?: DisplayField): string {
+  const keys: Record<string, string> = {
+    required: 'isRequired', min_length: 'minLength', max_length: 'maxLength', pattern: 'pattern',
+    invalid_type: 'invalid', integer: 'invalid', must_be_true: 'mustBeTrue', must_be_false: 'mustBeFalse',
+    min_date: 'minDate', max_date: 'maxDate',
+    min_items: field === addresses ? 'minForms' : 'minItems',
+    max_items: field === addresses ? 'maxForms' : 'maxItems',
+    min_value: error.params?.exclusive ? 'gt' : 'ge', max_value: error.params?.exclusive ? 'lt' : 'le',
+  }
+  const messages = field ? displayMessages.get(field) : undefined
+  const key = Object.prototype.hasOwnProperty.call(keys, error.code) ? keys[error.code] : undefined
+  return error.message ?? (key ? messages?.[key] : undefined) ?? error.code
+}
+const fieldMessages = (field: DisplayField): string[] => field.getErrors().map(error => displayError(error, field))
+const formFieldError = (key: ProfileKey): string[] => fieldMessages(getField(key))
+function profileErrors(): Record<string, string[]> {
+  const entries = new Map<string, string[]>()
+  for (const error of profile.getErrors()) {
+    const key = error.path.join('.')
+    const field = profileKeys.includes(key as ProfileKey) ? getField(key as ProfileKey) : undefined
+    entries.set(key, [...(entries.get(key) ?? []), displayError(error, field)])
+  }
+  return Object.fromEntries(entries)
+}
 
 function updateProfileInspector(): void {
   $('#profile-values').textContent = pretty(profile.fieldsValue)
-  $('#profile-errors').textContent = pretty(Object.fromEntries(Object.entries(profile.allErrors).map(([key, messages]) => [key, messages.map(t)])))
+  $('#profile-errors').textContent = pretty(Object.fromEntries(Object.entries(profileErrors()).map(([key, messages]) => [key, messages.map(t)])))
 
   const valid = profile.isValid
   const status = $('#profile-status')
@@ -252,7 +274,7 @@ function syncProfileFromInputs(event?: Event): void {
     }, false)
   }
 
-  if (validatedProfile) profile.checkValid()
+  if (validatedProfile) profile.validate()
   renderProfile()
 }
 
@@ -261,7 +283,7 @@ $('#profile-form').addEventListener('change', event => syncProfileFromInputs(eve
 $('#profile-form').addEventListener('submit', event => {
   event.preventDefault()
   validatedProfile = true
-  profile.checkValid()
+  profile.validate()
   renderProfile()
 })
 $('#reset-profile').addEventListener('click', () => {
@@ -284,11 +306,11 @@ function renderTags(): void {
   $('#tags-list').innerHTML = tags.items.map((item, index) => `
     <div class="dynamic-item ${item.errors.length ? 'has-error' : ''}">
       <span class="item-index">${String(index + 1).padStart(2, '0')}</span>
-      <div class="dynamic-input-wrap"><input aria-label="${t('Tag')} ${index + 1}" data-tag-index="${index}" value="${escapeHtml(item.rawValue)}" placeholder="Enter a tag" /><small class="inline-error">${escapeHtml(item.errors.map(t).join(' '))}</small></div>
+      <div class="dynamic-input-wrap"><input aria-label="${t('Tag')} ${index + 1}" data-tag-index="${index}" value="${escapeHtml(item.rawValue)}" placeholder="Enter a tag" /><small class="inline-error">${escapeHtml(fieldMessages(item).map(t).join(' '))}</small></div>
       <button type="button" class="icon-button" data-remove-tag="${index}" aria-label="${t('Remove tag')} ${index + 1}" title="${t('Remove tag')}">×</button>
     </div>
   `).join('')
-  $('#tags-error').textContent = tagsInteracted ? tags.errors.map(t).join(' ') : ''
+  $('#tags-error').textContent = tagsInteracted ? tags.errors.map(error => t(displayError(error, tags))).join(' ') : ''
   $('#tags-values').textContent = pretty(tags.itemsValue)
   const addButton = $('#add-tag') as HTMLButtonElement
   addButton.disabled = tags.items.length >= 4
@@ -301,7 +323,7 @@ $('#tags-list').addEventListener('input', event => {
   const index = Number(target.dataset.tagIndex)
   tagsInteracted = true
   tags.items[index]?.setRawValue(target.value, false)
-  tags.checkValid()
+  tags.validate()
   renderTags()
   const next = document.querySelector<HTMLInputElement>(`[data-tag-index="${index}"]`)
   next?.focus()
@@ -331,11 +353,11 @@ function renderAddresses(): void {
   $('#addresses-list').innerHTML = addresses.forms.map((form, index) => `
     <div class="nested-form">
       <div class="nested-form-heading"><strong>${t('Address')} ${index + 1}</strong><button type="button" class="text-button" data-remove-address="${index}">Remove</button></div>
-      <div class="form-field ${form.city.errors.length ? 'has-error' : ''}"><label for="address-city-${index}">City</label><input id="address-city-${index}" data-address-city="${index}" value="${escapeHtml(form.city.rawValue)}" placeholder="e.g. Berlin" /><p class="field-error">${escapeHtml(form.city.errors.map(t).join(' '))}</p></div>
-      <div class="form-field ${form.postalCode.errors.length ? 'has-error' : ''}"><label for="address-postal-${index}">Postal code</label><input id="address-postal-${index}" data-address-postal="${index}" value="${escapeHtml(form.postalCode.rawValue)}" inputmode="numeric" placeholder="12345" /><p class="field-error">${escapeHtml(form.postalCode.errors.map(t).join(' '))}</p></div>
+      <div class="form-field ${form.city.errors.length ? 'has-error' : ''}"><label for="address-city-${index}">City</label><input id="address-city-${index}" data-address-city="${index}" value="${escapeHtml(form.city.rawValue)}" placeholder="e.g. Berlin" /><p class="field-error">${escapeHtml(fieldMessages(form.city).map(t).join(' '))}</p></div>
+      <div class="form-field ${form.postalCode.errors.length ? 'has-error' : ''}"><label for="address-postal-${index}">Postal code</label><input id="address-postal-${index}" data-address-postal="${index}" value="${escapeHtml(form.postalCode.rawValue)}" inputmode="numeric" placeholder="12345" /><p class="field-error">${escapeHtml(fieldMessages(form.postalCode).map(t).join(' '))}</p></div>
     </div>
   `).join('')
-  $('#addresses-error').textContent = addressesValidated ? addresses.errors.map(t).join(' ') : ''
+  $('#addresses-error').textContent = addressesValidated ? addresses.errors.map(error => t(displayError(error, addresses))).join(' ') : ''
   $('#addresses-values').textContent = pretty(addresses.formsFieldsValue)
   ;($('#add-address') as HTMLButtonElement).disabled = addresses.forms.length >= 3
   translatePage()
@@ -352,7 +374,7 @@ $('#addresses-list').addEventListener('input', event => {
   addressesValidated = true
   if (cityIndex !== undefined) form.city.setRawValue(target.value, false)
   if (postalIndex !== undefined) form.postalCode.setRawValue(target.value, false)
-  addresses.checkValid()
+  addresses.validate()
   renderAddresses()
   const selector = cityIndex !== undefined ? `[data-address-city="${index}"]` : `[data-address-postal="${index}"]`
   const next = document.querySelector<HTMLInputElement>(selector)
@@ -375,7 +397,7 @@ $('#add-address').addEventListener('click', () => {
 })
 $('#validate-addresses').addEventListener('click', () => {
   addressesValidated = true
-  addresses.checkValid()
+  addresses.validate()
   renderAddresses()
 })
 
@@ -385,27 +407,41 @@ const serverPayload = {
   profile_id: 'The profile could not be updated.',
 }
 
+const serverCodes: Record<keyof typeof serverPayload, string> = {
+  email: 'app.email_taken',
+  region: 'app.region_unavailable',
+  profile_id: 'app.profile',
+}
+const serverSchema = new ErrorsSchema<typeof serverPayload>({
+  kind: 'adapter',
+  extract: response => (Object.keys(serverCodes) as Array<keyof typeof serverPayload>).map(key => ({
+    path: [key], code: serverCodes[key], message: response[key],
+  })),
+  mapping: ErrorsMapping.fromObject({email: ['email'], region: ['region'], profile_id: []}),
+})
+
 $('#apply-server-errors').addEventListener('click', () => {
   syncProfileFromInputs()
-  profile.errors = serverPayload
+  const operation = profile.beginServerErrorOperation()
+  profile.applyServerErrors(serverSchema.parse(serverPayload), {operation})
   serverErrorsApplied = true
   renderProfile()
   $('#server-result').className = 'form-result result-error'
-  $('#server-result').textContent = 'Server errors applied to the live form instance.'
+  $('#server-result').textContent = 'Example errors applied to the live form instance.'
   translatePage()
 })
 $('#clear-server-errors').addEventListener('click', () => {
-  profile.errors = {}
+  profile.clearErrors({sources: ['server'], recursive: true})
   serverErrorsApplied = false
   renderProfile()
   $('#server-result').className = 'form-result result-success'
-  $('#server-result').textContent = 'Server errors cleared. Run validation to refresh field validity.'
+  $('#server-result').textContent = 'Example errors cleared.'
   translatePage()
 })
 
 function renderMappedErrors(): void {
   const container = $('#mapped-errors')
-  const errors = profile.allErrors
+  const errors = profileErrors()
   const entries = Object.entries(errors).filter(([, messages]) => messages.length > 0)
   if (!serverErrorsApplied || entries.length === 0) {
     container.innerHTML = '<div class="empty-state">Apply the example payload to see mapped field and global errors.</div>'

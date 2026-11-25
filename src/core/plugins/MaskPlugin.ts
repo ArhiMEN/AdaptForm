@@ -1,3 +1,4 @@
+import {assertValidationMutationAllowed} from '../state/validationExecution'
 import {BasePlugin} from "@core/plugins/FieldPlugin"
 import {MaskPluginOptions, PluginOptions} from "@core/options"
 import {Field} from "@core/fields"
@@ -24,6 +25,7 @@ export class MaskPlugin extends BasePlugin {
   }
 
   init(_field: Field<any>): void {
+    assertValidationMutationAllowed()
     this.parseMask()
   }
 

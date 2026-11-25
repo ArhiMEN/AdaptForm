@@ -15,8 +15,8 @@ describe('HF-009 synchronous batch', () => {
     form.subscribe(listener)
     form.name.subscribe(fieldListener)
     const result = form.batch(() => {
-      form.setGlobalError('server', 'error')
-      form.clearGlobalErrors()
+      form.setErrors([...form.getOwnErrors(), {code: 'server', message: 'error'}])
+      form.clearErrors()
       form.name.rawValue = 'Alex'
       expect(form.getSnapshot()).toBe(before)
       expect(form.name.getSnapshot().valueClear).toBeNull()
@@ -35,7 +35,7 @@ describe('HF-009 synchronous batch', () => {
   it('coalesces nested batches and repeated assignments', () => {
     const form = new Example()
     const listener = vi.fn()
-    const validate = vi.fn(() => true)
+    const validate = vi.fn(() => [])
     form.name.options = {validate}
     form.subscribe(listener)
     form.batch(() => {
@@ -74,14 +74,14 @@ describe('HF-009 synchronous batch', () => {
   it('defers conditional validation until sibling values and collections are complete', () => {
     const observations: unknown[] = []
     class Conditional extends Form {
-      first = new Field(StringType, null, {validate: (_value, form) => {
+      first = new Field(StringType, null, {validate: (_value, form?: Conditional) => {
         observations.push(form?.fieldsValue)
-        return form?.fieldsValue.second === 'ready'
+        return form?.second.valueClear === 'ready' ? [] : [{code: 'custom'}]
       }})
       second = new Field(StringType)
       tags = new ArrayField(value => new Field(StringType, value), {validate: (_value, form) => {
         if (form) observations.push(form.fieldsValue)
-        return true
+        return []
       }})
     }
     const form = new Conditional()
@@ -97,7 +97,7 @@ describe('HF-009 synchronous batch', () => {
 
   it('preserves deferred assignment when no automatic validation was requested', () => {
     const form = new Example()
-    const validate = vi.fn(() => true)
+    const validate = vi.fn(() => [])
     form.name.options = {validate}
     form.batch(() => { form.setFields({name: 'Alex', age: 25}, false) })
     expect(validate).not.toHaveBeenCalled()
@@ -108,12 +108,12 @@ describe('HF-009 synchronous batch', () => {
   it('runs explicitly requested checks immediately, then checks the final state', () => {
     let checks = 0
     class Counted extends Example {
-      checkValid() { checks++; return super.checkValid() }
+      validate() { checks++; return super.validate() }
     }
     const form = new Counted()
     form.batch(() => {
       form.name.rawValue = 'Alex'
-      expect(form.checkValid()).toBe(false)
+      expect(form.validate().valid).toBe(false)
       expect(checks).toBe(1)
       form.age.rawValue = 25
     })
@@ -129,14 +129,14 @@ describe('HF-009 synchronous batch', () => {
     form.subscribe(listener)
     expect(() => form.batch(() => { form.name.rawValue = 'Alex' })).toThrow(failure)
     expect(listener).toHaveBeenCalledTimes(1)
-    form.name.options = {validate: () => true}
+    form.name.options = {validate: () => []}
     form.batch(() => { form.age.rawValue = 25 })
     expect(form.isValid).toBe(true)
     expect(listener).toHaveBeenCalledTimes(2)
   })
 
   it('keeps outside-batch setter validation synchronous', () => {
-    const validate = vi.fn(() => false)
+    const validate = vi.fn(() => [{code: 'custom'}])
     const field = new Field(StringType, null, {validate})
     field.rawValue = 'value'
     expect(validate).toHaveBeenCalledTimes(1)
@@ -145,7 +145,7 @@ describe('HF-009 synchronous batch', () => {
 
   it('validates unrelated mutated nodes instead of losing their deferred checks', () => {
     const form = new Example()
-    const validate = vi.fn(() => true)
+    const validate = vi.fn(() => [])
     const other = new Field(StringType, null, {validate})
     form.batch(() => { other.rawValue = 'other' })
     expect(validate).toHaveBeenCalledTimes(1)
@@ -179,7 +179,7 @@ describe('HF-009 synchronous batch', () => {
     expect(() => form.batch(() => { form.name.rawValue = 'Alex'; throw original })).toThrow(original)
     expect(form.name.valueClear).toBe('Alex')
     off()
-    form.name.options = {validate: () => true}
+    form.name.options = {validate: () => []}
     form.batch(() => { form.age.rawValue = 25 })
     expect(form.isValid).toBe(true)
   })

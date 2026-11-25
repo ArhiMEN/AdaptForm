@@ -39,7 +39,7 @@ describe('NumberType', () => {
       expect(type.cast(Infinity)).toBeNull()
       expect(type.cast(-Infinity)).toBeNull()
       expect(type.cast('Infinity')).toBeNull()
-      expect(type.validate(Infinity)).not.toEqual([])
+      expect(type.validateErrors(Infinity)).not.toEqual([])
     })
     it('should return null for NaN', () => {
       const type = new NumberType({})
@@ -47,70 +47,69 @@ describe('NumberType', () => {
     })
   })
 
-  describe('validate', () => {
+  describe('validateErrors', () => {
     it('should return empty errors for valid integer', () => {
       const type = new NumberType({})
-      const errors = type.validate(10)
+      const errors = type.validateErrors(10)
       expect(errors).toEqual([])
     })
 
     it('should return error for float', () => {
       const type = new NumberType({})
-      const errors = type.validate(10.5)
-      expect(errors).toContain('Значение должно быть целым числом')
+      const errors = type.validateErrors(10.5)
+      expect(errors).toContainEqual({code: 'integer'})
     })
 
     it('should return error for gt', () => {
       const type = new NumberType({ gt: 10 })
-      const errors = type.validate(5)
-      expect(errors).toContain('Значение должно быть больше 10')
+      const errors = type.validateErrors(5)
+      expect(errors).toContainEqual({code: 'min_value', params: {min: 10, exclusive: true}})
     })
 
     it('should return error for lt', () => {
       const type = new NumberType({ lt: 10 })
-      const errors = type.validate(15)
-      expect(errors).toContain('Значение должно быть меньше 10')
+      const errors = type.validateErrors(15)
+      expect(errors).toContainEqual({code: 'max_value', params: {max: 10, exclusive: true}})
     })
 
     it('should return error for ge', () => {
       const type = new NumberType({ ge: 10 })
-      const errors = type.validate(5)
-      expect(errors).toContain('Значение должно быть не менее 10')
+      const errors = type.validateErrors(5)
+      expect(errors).toContainEqual({code: 'min_value', params: {min: 10, exclusive: false}})
     })
 
     it('should return error for le', () => {
       const type = new NumberType({ le: 10 })
-      const errors = type.validate(15)
-      expect(errors).toContain('Значение должно быть не более 10')
+      const errors = type.validateErrors(15)
+      expect(errors).toContainEqual({code: 'max_value', params: {max: 10, exclusive: false}})
     })
 
-    it('should return custom errors', () => {
+    it('should emit structured data without generated messages', () => {
       const type = new NumberType({
         gt: 10,
-        messages: { gt: 'Must be greater than 10' }
       })
-      const errors = type.validate(5)
-      expect(errors).toContain('Must be greater than 10')
+      const errors = type.validateErrors(5)
+      expect(errors).toContainEqual({code: 'min_value', params: {min: 10, exclusive: true}})
     })
 
     it('should handle multiple conditions', () => {
       const type = new NumberType({ gt: 0, lt: 100 })
       
       // Valid
-      expect(type.validate(50)).toEqual([])
+      expect(type.validateErrors(50)).toEqual([])
       
       // Less than min
-      expect(type.validate(-5).length).toBe(1)
+      expect(type.validateErrors(-5).length).toBe(1)
       
       // Greater than max
-      expect(type.validate(150).length).toBe(1)
+      expect(type.validateErrors(150).length).toBe(1)
     })
   })
 
-  describe('getTypeName', () => {
+  describe('typeId', () => {
     it('should return correct type name', () => {
       const type = new NumberType({})
-      expect(type.getTypeName()).toBe('число')
+      expect(type.typeId).toBe('number')
     })
   })
 })

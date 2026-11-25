@@ -1,5 +1,6 @@
+import {errorMessages} from '../helpers/errorViews'
 import {describe, expect, it, vi, expectTypeOf} from 'vitest'
-import {Field, Form, StringType, DateType, ArrayField, type FormSnapshot, type FieldSnapshot} from '../../src'
+import {Field, Form, StringType, DateType, ArrayField, ArrayFormField, type FormSnapshot, type FieldSnapshot} from '../../src'
 import {FieldType} from '@core/types/FieldType'
 
 class Example extends Form {
@@ -35,16 +36,16 @@ describe('HF-008 snapshots and subscriptions', () => {
     field.isTouched = true
     field.isTouched = true
     expect(listener).toHaveBeenCalledTimes(1)
-    field.error = 'server'
+    field.setErrors([{code: 'manual', message: 'server'}])
     expect(listener).toHaveBeenCalledTimes(2)
     const previous = field.getSnapshot()
-    field.checkValid()
+    field.validate()
     expect(listener).toHaveBeenCalledTimes(3)
-    expect(field.isValid).toBe(false) // checkValid retains legacy validity assignment semantics.
-    expect(previous.errors).toEqual(['server'])
-    field.checkAndSetValid()
+    expect(field.isValid).toBe(false)
+    expect(errorMessages(previous)).toEqual(['server'])
+    field.validate()
     expect(listener).toHaveBeenCalledTimes(3)
-    field.isValid = true
+    field.clearErrors({sources: ['manual']})
     expect(listener).toHaveBeenCalledTimes(4)
     field.rawValue = 'changed'
     field.commitBaseline()
@@ -81,8 +82,8 @@ describe('HF-008 snapshots and subscriptions', () => {
     expect(snapshot.valueClear).toEqual({kind: 'Date', timestamp: 0})
     class Structured extends FieldType<unknown> {
       cast(value: unknown) { return value }
-      validate() { return [] }
-      getTypeName() { return 'structured' }
+      validateErrors() { return [] }
+      readonly typeId = 'structured'
     }
     const input = {items: [new Map([['key', new Set([1])]])]}
     const structured = new Field(Structured, input)
@@ -106,13 +107,52 @@ describe('HF-008 snapshots and subscriptions', () => {
   })
 
   it('does not validate or cast on snapshot reads', () => {
-    const validate = vi.fn(() => true)
+    const validate = vi.fn(() => [])
     const field = new Field(StringType, 'initial', {validate})
     const cast = vi.spyOn(StringType.prototype, 'cast')
     field.getSnapshot(); field.getSnapshot(); field.subscribe(() => {})
-    expect(validate).toHaveBeenCalledTimes(1)
+    expect(validate).not.toHaveBeenCalled()
     expect(cast).not.toHaveBeenCalled()
     cast.mockRestore()
+  })
+
+  it('commits all snapshots and notifies descendants first after parent-first batch writes', () => {
+    class Root extends Form {
+      rows = new ArrayFormField(Example, {}, [{}])
+    }
+    const root = new Root()
+    const row = root.rows.forms[0]
+    const before = root.getSnapshot()
+    const seen: Array<{name: string; snapshot: FormSnapshot}> = []
+    root.subscribe(() => seen.push({name: 'root', snapshot: root.getSnapshot()}))
+    root.rows.subscribe(() => seen.push({name: 'collection', snapshot: root.getSnapshot()}))
+    row.subscribe(() => seen.push({name: 'row', snapshot: root.getSnapshot()}))
+    row.name.subscribe(() => seen.push({name: 'field', snapshot: root.getSnapshot()}))
+
+    const apply = () => {
+      root.setErrors([{code: 'root'}])
+      root.rows.setErrors([{code: 'collection'}])
+      row.setErrors([{code: 'row'}])
+      row.name.setErrors([{code: 'field', params: {meta: [1, {value: 2}]}}])
+    }
+    root.batch(() => {
+      apply()
+      expect(root.getSnapshot()).toBe(before)
+      expect(seen).toEqual([])
+    })
+    const after = root.getSnapshot()
+    expect(seen.map(entry => entry.name)).toEqual(['field', 'row', 'collection', 'root'])
+    expect(seen.every(entry => entry.snapshot === after)).toBe(true)
+    expect(after.errors.map(error => error.code)).toEqual(['root'])
+    const collection = root.rows.getSnapshot()
+    expect(collection.errors.map(error => error.code)).toEqual(['collection'])
+    expect(collection.forms[0].errors.map(error => error.code)).toEqual(['row'])
+    expect(collection.forms[0].fields.name.errors.map(error => error.code)).toEqual(['field'])
+    expect(Object.isFrozen(collection.itemIds)).toBe(true)
+    expect(Object.isFrozen(row.name.errors[0].params?.meta)).toBe(true)
+    root.batch(apply)
+    expect(root.getSnapshot()).toBe(after)
+    expect(seen).toHaveLength(4)
   })
 
   it('finishes notifying other listeners when a listener throws', () => {
@@ -132,14 +172,14 @@ describe('HF-008 snapshots and subscriptions', () => {
     const form = new Example()
     const listener = vi.fn()
     form.subscribe(listener)
-    form.setGlobalError('server', 'failed')
+    form.setErrors([{code: 'server', message: 'failed'}])
     const snapshot = form.getSnapshot()
-    expect(snapshot.globalErrors).toEqual({server: 'failed'})
+    expect(snapshot.errors).toEqual([{code: 'server', message: 'failed', source: 'manual'}])
     expect(snapshot.isDirty).toBe(false)
-    form.setGlobalError('server', 'failed')
+    form.setErrors([{code: 'server', message: 'failed'}])
     expect(listener).toHaveBeenCalledTimes(1)
-    form.clearGlobalErrors()
+    form.clearErrors()
     expect(listener).toHaveBeenCalledTimes(2)
-    expect(snapshot.globalErrors).toEqual({server: 'failed'})
+    expect(snapshot.errors).toEqual([{code: 'server', message: 'failed', source: 'manual'}])
   })
 })

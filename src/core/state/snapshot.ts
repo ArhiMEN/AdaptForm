@@ -5,8 +5,8 @@ export type SnapshotValue = null | undefined | string | number | boolean | bigin
   readonly SnapshotValue[] | {readonly [key: string]: SnapshotValue}
 
 export interface NodeSnapshot {
-  /** Own errors only; descendants live in their node snapshots. Optional for legacy producers. */
-  readonly validationErrors?: readonly ValidationError[]
+  /** Own errors only; descendants live in their node snapshots. */
+  readonly errors: readonly ValidationError[]
   readonly isValid: boolean | null
   readonly isTouched: boolean
   readonly isDirty: boolean
@@ -14,26 +14,21 @@ export interface NodeSnapshot {
 export interface FieldSnapshot extends NodeSnapshot {
   readonly rawValue: SnapshotValue
   readonly valueClear: SnapshotValue
-  readonly errors: readonly string[]
 }
 export interface FormSnapshot extends NodeSnapshot {
   readonly fieldsValue: Readonly<Record<string, SnapshotValue>>
-  readonly allErrors: Readonly<Record<string, readonly string[]>>
-  readonly globalErrors: Readonly<Record<string, string>>
   readonly fields: Readonly<Record<string, FieldSnapshot | ArrayFieldSnapshot | ArrayFormSnapshot>>
 }
 export interface ArrayFieldSnapshot extends NodeSnapshot {
-  /** Present on engine snapshots; optional for compatibility with 2.2.0 producers. */
-  readonly itemIds?: readonly string[]
+  /** Ordered stable node identities. */
+  readonly itemIds: readonly string[]
   readonly itemsValue: readonly SnapshotValue[]
-  readonly errors: readonly string[]
   readonly items: readonly FieldSnapshot[]
 }
 export interface ArrayFormSnapshot extends NodeSnapshot {
   /** Ordered node identities, independent of current indexes and values. */
-  readonly itemIds?: readonly string[]
+  readonly itemIds: readonly string[]
   readonly formsFieldsValue: readonly Readonly<Record<string, SnapshotValue>>[]
-  readonly errors: readonly string[]
   readonly forms: readonly FormSnapshot[]
 }
 

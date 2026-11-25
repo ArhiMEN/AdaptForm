@@ -1,50 +1,40 @@
-import {ErrorState, customErrors, manualErrorSource, prefixErrors, type ValidationError, type ValidationErrorInput, type ValidationErrorSource} from '../ValidationError'
-import {ObservableNode} from "@core/state/ObservableNode"
+import {prefixErrors, type LocatedValidationError, type ValidationResult} from '../ValidationError'
+import {assertValidationAllowed, assertValidationMutationAllowed, duringValidationAssembly, evaluateRequired, validationCallback} from '../state/validationExecution'
+import {ErrorNode} from '../state/ErrorNode'
+import type {ObservableNode} from "@core/state/ObservableNode"
 import {hasStandardGetters, snapshotValue, type ArrayFormSnapshot} from "@core/state/snapshot"
 import {copyValue, equalValue} from "@core/state/value"
 import {Form, type FormFieldsValue} from "@core/Form"
 import {ArrayFormFieldOptions} from "@core/options"
 import {collectionItemId} from "@core/fields/collectionIdentity"
-import {isValidArrayIndex} from "@core/fields/arrayUtils"
+import {assembleCollection, collectionTypeErrors, isValidArrayIndex} from "@core/fields/arrayUtils"
 
-export class ArrayFormField<T extends Form = Form> extends ObservableNode<ArrayFormSnapshot> {
+export class ArrayFormField<T extends Form = Form> extends ErrorNode<ArrayFormSnapshot> {
   private _snapshot?: ArrayFormSnapshot
 
   protected captureState(): ArrayFormSnapshot {
+    this.syncErrorChildren(false, this._forms)
     const forms = this._forms.map(child => child.getSnapshot())
     const itemIds = this._forms.map(collectionItemId)
     const isValid = this.isValid, isTouched = this.isTouched, isDirty = this.isDirty
-    const validationErrors = this._errorState.getErrors(this._errors)
+    const errors = this.getOwnErrors()
     const previous = this._snapshot
     if (previous && this.captureState === ArrayFormField.prototype.captureState &&
       hasStandardGetters(this, ArrayFormField.prototype, ['formsFieldsValue']) &&
-      previous.validationErrors === validationErrors && previous.isValid === isValid && previous.isTouched === isTouched && previous.isDirty === isDirty &&
+      previous.errors === errors && previous.isValid === isValid && previous.isTouched === isTouched && previous.isDirty === isDirty &&
       previous.forms.length === forms.length && forms.every((child, index) => previous.forms[index] === child) &&
-      itemIds.every((id, index) => previous.itemIds?.[index] === id) &&
-      previous.errors.length === this._errors.length && previous.errors.every((error, index) => error === this._errors[index])) return previous
+      itemIds.every((id, index) => previous.itemIds[index] === id)) return previous
     return this._snapshot = {formsFieldsValue: snapshotValue(this.formsFieldsValue) as ArrayFormSnapshot['formsFieldsValue'],
-      itemIds, forms, errors: [...this._errors], validationErrors, isValid, isTouched, isDirty}
+      itemIds, forms, errors, isValid, isTouched, isDirty}
   }
 
   private _forms: T[] = []
-  private _errors: string[] = []
-  private readonly _errorState = new ErrorState(this._errors)
-
-  /** Own structured errors, without collection descendants. */
-  getOwnErrors(): readonly ValidationError[] { return this._errorState.getErrors(this._errors) }
+  protected clearsOnDescendantChange = true
 
   /** Structured errors relative to this node; collection indexes reflect current order. */
-  getErrors(): readonly ValidationError[] {
-    return Object.freeze([...this._errorState.getErrors(this._errors),
+  getErrors(): readonly LocatedValidationError[] {
+    return Object.freeze([...prefixErrors(this.getOwnErrors(), []),
       ...this._forms.flatMap((child, index) => prefixErrors(child.getErrors(), [index]))])
-  }
-
-  /** Replace this node's own errors; children are unaffected. */
-  setErrors(errors: readonly ValidationErrorInput[], source: ValidationErrorSource = 'external'): void {
-    this.update(() => {
-      this._errors = this._errorState.set(errors, source)
-      this._hasValidationResult = errors.length > 0
-    })
   }
 
   protected stateChildren(): readonly ObservableNode<unknown>[] {
@@ -52,7 +42,6 @@ export class ArrayFormField<T extends Form = Form> extends ObservableNode<ArrayF
   }
 
   private _baseline: unknown = []
-  private _hasValidationResult = false
 
   private _isTouched: boolean = false
 
@@ -63,17 +52,15 @@ export class ArrayFormField<T extends Form = Form> extends ObservableNode<ArrayF
 
   constructor(
     private FormConstructor: new () => T,
-    private options: ArrayFormFieldOptions = {},
+    private options: ArrayFormFieldOptions<T> = {},
     initial: unknown[] = []
   ) {
     super()
-    this._forms = initial.map(data => {
-      const form = new this.FormConstructor()
-      form.setFields(data as Record<string, unknown>, false)
-      return form
+    duringValidationAssembly(() => {
+      this._forms = assembleCollection(initial, data => this.createForm(data))
+      this.syncErrorChildren()
+      this.commitBaseline()
     })
-    this.validateAfterMutation(() => this.checkValid())
-    this.commitBaseline()
   }
 
   get isDirty(): boolean {
@@ -94,15 +81,14 @@ export class ArrayFormField<T extends Form = Form> extends ObservableNode<ArrayF
   }
 
   setForms(forms: unknown[], validate: boolean = true): void {
-    return this.update(() => {
-      this._forms = []
-
-      for (const formData of forms) {
-        this.add(formData, false)
-      }
-
-      if (validate) this.validateAfterMutation(() => this.checkValid())
-      })
+    this.update(() => {
+      if (!this._forms.length && forms.length === 0) return
+      this._forms = assembleCollection(forms, data => this.createForm(data, true))
+      if (this._forms.length) this.isTouched = true
+      this.syncErrorChildren(true, this._forms, true)
+      this.inputChanged(validate, true)
+      if (validate) this.validateAfterMutation(form => this.validate(form), undefined, true)
+    })
   }
 
   get forms(): T[] {
@@ -115,155 +101,117 @@ export class ArrayFormField<T extends Form = Form> extends ObservableNode<ArrayF
 
   // ===== actions =====
 
-  add(data?: unknown, force_check: boolean = true): T {
-    return this.insertAt(this._forms.length, data, force_check)
+  add(data?: unknown, validate: boolean = true): T {
+    return this.insertAt(this._forms.length, data, validate)
   }
 
   /** Insert before index (length appends). Invalid indexes do nothing. */
-  insert(index: number, data?: unknown, force_check: boolean = true): T | undefined {
+  insert(index: number, data?: unknown, validate: boolean = true): T | undefined {
+    assertValidationMutationAllowed()
     if (!isValidArrayIndex(index, this._forms.length + 1)) return undefined
-    return this.insertAt(index, data, force_check)
+    return this.insertAt(index, data, validate)
   }
 
-  private insertAt(index: number, data: unknown, force_check: boolean): T {
+  private createForm(data: unknown, captureBaseline = false): T {
+    const form = new this.FormConstructor()
+    if (data != null) form.setFields(data as Record<string, unknown>, false)
+    if (captureBaseline) form.commitBaseline()
+    return form
+  }
+
+  private insertAt(index: number, data: unknown, validate: boolean): T {
     return this.update(() => {
-      const form = new this.FormConstructor()
-
-      if (data !== undefined && data !== null) {
-        form.setFields(data as Record<string, unknown>, false)
-      }
-
-      form.commitBaseline()
+      const form = duringValidationAssembly(() => this.createForm(data, true))
       this.isTouched = true
       this._forms.splice(index, 0, form)
-
-      if (force_check) this.validateAfterMutation(() => this.checkValid())
-
+      this.syncErrorChildren(true, this._forms, true)
+      this.inputChanged(validate, true)
+      if (validate) {
+        this.requestOwnValidation()
+        this.validateNodeAfterMutation(form, () => form.validate())
+      }
       return form
-      })
+    })
   }
 
   /** Move a retained node to its final index; invalid/equal indexes do nothing. */
   move(from: number, to: number): void {
+    assertValidationMutationAllowed()
     if (!isValidArrayIndex(from, this._forms.length) ||
       !isValidArrayIndex(to, this._forms.length) || from === to) return
     this.update(() => {
       const [node] = this._forms.splice(from, 1)
       this._forms.splice(to, 0, node)
-      this.validateAfterMutation(() => this.checkValid())
+      this.syncErrorChildren(false, this._forms, true)
+      this.inputChanged(true, true)
+      this.requestOwnValidation()
     })
   }
 
   remove(index: number): void {
+    assertValidationMutationAllowed()
+    if (!isValidArrayIndex(index, this._forms.length)) return
     return this.update(() => {
-      if (!isValidArrayIndex(index, this._forms.length)) return
-
       this._forms.splice(index, 1)
-      this.validateAfterMutation(() => this.checkValid())
+      this.syncErrorChildren(false, this._forms, true)
+      this.inputChanged(true, true)
+      this.requestOwnValidation()
       })
   }
 
   clear(): void {
+    assertValidationMutationAllowed()
+    if (!this._forms.length) return
     return this.update(() => {
       this._forms = []
-      this.validateAfterMutation(() => this.checkValid())
+      this.syncErrorChildren(false, this._forms, true)
+      this.inputChanged(true, true)
+      this.requestOwnValidation()
       })
   }
 
   reset(): void {
     return this.update(() => {
+      this.resetErrorRevision()
       this._forms.forEach(form => form.reset())
-      this._errors = this._errorState.set([], 'external')
-      this._hasValidationResult = false
+      this.clearErrors()
+      this.clientChecked = false
       this.isTouched = false
       })
   }
 
   // ===== validation =====
 
-  private isRequired(form?: Form): boolean {
-    let isRequired
-    if (typeof this.options.isRequired === 'function') {
-      isRequired = this.options.isRequired(form ?? null)
-    } else {
-      isRequired = this.options.isRequired ?? false
-    }
-
-    return isRequired
+  validate(form?: Form): ValidationResult {
+    return this.validateSelection(form, () => {
+      for (const item of this._forms) item.validate()
+    })
   }
 
-  checkValid(form?: Form): boolean {
+  protected requestOwnValidation(): void {
+    this.validateOwnAfterMutation((form, visitChildren) => this.validateSelection(form, visitChildren))
+  }
+
+  private validateSelection(form: Form | undefined, visitChildren: () => void): ValidationResult {
+    assertValidationAllowed()
     return this.update(() => {
-      this._hasValidationResult = true
-      this._errors = this._errorState.set([], 'external')
-
-      if (this.isRequired(form) && this._forms.length === 0) {
-        this._errors = this._errorState.add({code: 'required', message: this.options.messages?.isRequired ??
-          "Добавьте хотя бы один элемент"}, 'client')
-        return false
-      }
-
-      if (this.options.minForms != null && this._forms.length < this.options.minForms) {
-        this._errors = this._errorState.add({code: 'min_items', message: this.options.messages?.minForms ??
-          `Значений должно быть не меньше ${this.options.minForms}`, params: {min: this.options.minForms}}, 'client')
-        return false
-      }
-
-      if (this.options.maxForms != null && this._forms.length > this.options.maxForms) {
-        this._errors = this._errorState.add({code: 'max_items', message: this.options.messages?.maxForms ??
-          `Значений должно быть не больше ${this.options.maxForms}`, params: {max: this.options.maxForms}}, 'client')
-        return false
-      }
-
-      let valid = true
-
-      for (const nestedForm of this._forms) {
-        const ok = nestedForm.checkValid(nestedForm)
-        if (!ok) valid = false
-      }
-
-      if (this.options.validate) {
-        const result = this.options.validate(this._forms, form)
-
-        const errors = customErrors(result, this.options.messages?.validate ?? 'Ошибка валидации')
-        if (errors.length) {
-          this._errors = this._errorState.set(errors, 'custom')
-          return false
-        }
-      }
-
-      return valid && this._errors.length === 0
-      })
-  }
-
-  checkAndSetValid(form?: Form): boolean {
-    return this.checkValid(form)
+      this.clientChecked = false
+      const type = collectionTypeErrors(this._forms.length, evaluateRequired(this.options, false, form),
+        this.options.minForms, this.options.maxForms)
+      visitChildren()
+      const validate = this.options.validate
+      const custom = !type.length && validate ? validationCallback(() => validate.call(this.options, [...this._forms], form)) : []
+      this.completeClientCheck(type, custom)
+      return {valid: this.isValid}
+    })
   }
 
   get isValid(): boolean {
-    if (!this._hasValidationResult) return false
-    if (this._errorState.getErrors(this._errors).length > 0) return false
+    if (this.clientChecked !== true) return false
+    if (this.errors.length > 0) return false
 
     return this._forms.every(form => form.isValid)
   }
 
-  get errors(): string[] {
-    return this._errors
-  }
 
-  get error(): string {
-    return this._errors[0] ?? ''
-  }
-
-  set error(message: string | null) {
-    this.update(() => {
-      if (message) {
-        this._errors = this._errorState.set([{code: manualErrorSource(this), message}], manualErrorSource(this))
-        this._hasValidationResult = true
-      } else {
-        this._errors = this._errorState.set([], 'external')
-        this._hasValidationResult = false
-      }
-      })
-  }
 }

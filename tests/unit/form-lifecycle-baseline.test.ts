@@ -1,3 +1,4 @@
+import {errorMessages, ownMessagesByCode} from '../helpers/errorViews'
 import { describe, expect, it, vi } from 'vitest'
 import { Form } from '@core/Form'
 import { Field } from '@core/fields/Field'
@@ -11,11 +12,11 @@ import { DecimalType } from '@core/types/DecimalType'
 describe('HF-001 form lifecycle baseline', () => {
   describe('deferred assignment', () => {
     it('casts and touches a field, clears errors, and leaves validation unset', () => {
-      const validate = vi.fn(() => false)
+      const validate = vi.fn(() => [{code: 'custom'}])
       const field = new Field(NumberType, null, { validate })
       field.rawValue = 1
       expect(field.isValid).toBe(false)
-      expect(field.errors).not.toEqual([])
+      expect(errorMessages(field)).not.toEqual([])
       validate.mockClear()
 
       field.setRawValue('42', false)
@@ -23,10 +24,10 @@ describe('HF-001 form lifecycle baseline', () => {
       expect(field.rawValue).toBe('42')
       expect(field.valueClear).toBe(42)
       expect(field.isTouched).toBe(true)
-      expect(field.errors).toEqual([])
+      expect(errorMessages(field)).toEqual([])
       expect(field.isValid).toBeNull()
       expect(validate).not.toHaveBeenCalled()
-      expect(field.checkAndSetValid()).toBe(false)
+      expect(field.validate().valid).toBe(false)
       expect(validate).toHaveBeenCalledExactlyOnceWith(42, undefined)
     })
 
@@ -36,35 +37,35 @@ describe('HF-001 form lifecycle baseline', () => {
         field.setRawValue(input, false)
         expect(field.valueClear).toBeNull()
         expect(field.isValid).toBeNull()
-        expect(field.errors).toEqual([])
-        expect(field.checkAndSetValid()).toBe(false)
-        expect(field.errors).toHaveLength(1)
+        expect(errorMessages(field)).toEqual([])
+        expect(field.validate().valid).toBe(false)
+        expect(errorMessages(field)).toHaveLength(1)
       }
     })
 
     it('defers direct fields, retains omitted state and global errors, then validates once', () => {
-      const validate = vi.fn(() => true)
+      const validate = vi.fn(() => [])
       class Example extends Form {
         value = new Field(NumberType, null, { validate })
         omitted = new Field(StringType, 'default')
       }
       const form = new Example()
-      form.value.error = 'previous error'
-      form.setGlobalError('server', 'server error')
+      form.value.setErrors([{code: 'manual', message: 'previous error'}])
+      form.setErrors([...form.getOwnErrors(), {code: 'server', message: 'server error'}])
       form.setFields({ value: '42', unknown: 'ignored' }, false)
 
       expect(form.toJSON()).toEqual({ value: 42, omitted: 'default' })
-      expect(form.value.errors).toEqual([])
+      expect(errorMessages(form.value)).toEqual([])
       expect(form.value.isValid).toBeNull()
-      expect(form.omitted.isValid).toBe(true)
+      expect(form.omitted.isValid).toBeNull()
       expect(form.omitted.isTouched).toBe(false)
       expect(form.isTouched).toBe(true)
       expect(form.isValid).toBe(false)
-      expect(form.globalErrors).toEqual({ server: 'server error' })
+      expect(ownMessagesByCode(form)).toEqual({ server: 'server error' })
       expect(validate).not.toHaveBeenCalled()
-      expect(form.checkValid()).toBe(false)
+      expect(form.validate().valid).toBe(false)
       expect(validate).toHaveBeenCalledExactlyOnceWith(42, form)
-      form.clearGlobalErrors()
+      form.clearErrors()
       expect(form.isValid).toBe(true)
       expect(validate).toHaveBeenCalledTimes(1)
     })
@@ -75,7 +76,7 @@ describe('HF-001 form lifecycle baseline', () => {
         first = new Field(StringType, null, {
           validate: (_value, form) => {
             observations.push(form?.fieldsValue)
-            return true
+            return []
           },
         })
         second = new Field(StringType)
@@ -89,9 +90,9 @@ describe('HF-001 form lifecycle baseline', () => {
   })
 
   describe('ArrayField assignment validation', () => {
-    it('validates only the replacement collection and validates new non-null items twice', () => {
-      const itemValidate = vi.fn(() => true)
-      const collectionValidate = vi.fn(() => true)
+    it('validates only the replacement collection and checks each new item once', () => {
+      const itemValidate = vi.fn(() => [])
+      const collectionValidate = vi.fn(() => [])
       const field = new ArrayField(
         (value?: string) => new Field(StringType, value, { validate: itemValidate }),
         { isRequired: false, validate: collectionValidate },
@@ -100,25 +101,23 @@ describe('HF-001 form lifecycle baseline', () => {
       field.itemsValue = ['new']
 
       expect(collectionValidate).toHaveBeenCalledExactlyOnceWith(['new'], undefined)
-      expect(itemValidate).toHaveBeenCalledTimes(2)
-      expect(itemValidate).toHaveBeenNthCalledWith(1, 'new', undefined)
-      expect(itemValidate).toHaveBeenNthCalledWith(2, 'new', undefined)
+      expect(itemValidate).toHaveBeenCalledExactlyOnceWith('new', undefined)
       expect(field.isTouched).toBe(true)
       expect(field.items[0].isTouched).toBe(false)
       expect(field.isValid).toBe(true)
     })
 
     it.each([false, true])('defers collection validation until the final check when setFields validate=%s', (validate) => {
-      const itemValidate = vi.fn(() => true)
+      const itemValidate = vi.fn(() => [])
       const observations: { values: unknown; sibling: unknown; hasParent: boolean }[] = []
       class Example extends Form {
         values = new ArrayField(
           (value?: string) => new Field(StringType, value, { validate: itemValidate }),
           {
             isRequired: false,
-            validate: (values, form) => {
+            validate: (values, form?: Example) => {
               observations.push({ values, sibling: form?.fieldsValue.sibling, hasParent: !!form })
-              return true
+              return []
             },
           },
         )
@@ -131,9 +130,8 @@ describe('HF-001 form lifecycle baseline', () => {
       expect(observations).toEqual([
         ...(validate ? [{ values: ['new'], sibling: 'ready', hasParent: true }] : []),
       ])
-      expect(itemValidate).toHaveBeenCalledTimes(validate ? 2 : 1)
-      expect(itemValidate).toHaveBeenNthCalledWith(1, 'new', undefined)
-      if (validate) expect(itemValidate).toHaveBeenNthCalledWith(2, 'new', form)
+      expect(itemValidate).toHaveBeenCalledTimes(validate ? 1 : 0)
+      if (validate) expect(itemValidate).toHaveBeenCalledExactlyOnceWith('new', form)
       expect(form.values.isValid).toBe(validate)
       expect(form.sibling.isValid).toBe(validate ? true : null)
       expect(form.isValid).toBe(validate)
@@ -152,7 +150,7 @@ describe('HF-001 form lifecycle baseline', () => {
 
   describe('nested form assignment and state', () => {
     it('defers null-default nested validators until the parent check', () => {
-      const validate = vi.fn(() => true)
+      const validate = vi.fn(() => [])
       class Child extends Form {
         name = new Field(StringType, null, { validate })
       }
@@ -168,19 +166,19 @@ describe('HF-001 form lifecycle baseline', () => {
       expect(parent.isTouched).toBe(true)
       expect(parent.isValid).toBe(false)
       expect(validate).not.toHaveBeenCalled()
-      expect(parent.checkValid()).toBe(true)
+      expect(parent.validate().valid).toBe(true)
       expect(validate).toHaveBeenCalledExactlyOnceWith('new', child)
       expect(parent.isValid).toBe(true)
     })
 
-    it('runs non-null constructor defaults even during deferred nested hydration', () => {
-      const validate = vi.fn(() => true)
+    it('skips non-null constructor defaults during deferred nested hydration', () => {
+      const validate = vi.fn(() => [])
       class Child extends Form {
         name = new Field(StringType, 'default', { validate })
       }
       const children = new ArrayFormField(Child)
       children.setForms([{ name: 'hydrated' }], false)
-      expect(validate).toHaveBeenCalledExactlyOnceWith('default', undefined)
+      expect(validate).not.toHaveBeenCalled()
       expect(children.forms[0].name.valueClear).toBe('hydrated')
       expect(children.forms[0].name.isValid).toBeNull()
     })
@@ -206,7 +204,7 @@ describe('HF-001 form lifecycle baseline', () => {
 
   describe('collection reset after structural changes', () => {
     it('keeps surviving and added fields, restoring their own constructor defaults', () => {
-      const validate = vi.fn(() => true)
+      const validate = vi.fn(() => [])
       const field = new ArrayField(
         (value?: string) => new Field(StringType, value, { validate }), {}, ['first', 'removed'],
       )
@@ -215,22 +213,22 @@ describe('HF-001 form lifecycle baseline', () => {
       const added = field.add('added')
       first.rawValue = 'edited first'
       added.rawValue = 'edited added'
-      field.error = 'server error'
+      field.setErrors([{code: 'manual', message: 'server error'}])
       validate.mockClear()
       field.reset()
       expect(field.items).toEqual([first, added])
       expect(field.itemsValue).toEqual(['first', 'added'])
-      expect(field.errors).toEqual([])
+      expect(errorMessages(field)).toEqual([])
       expect(field.isTouched).toBe(false)
       expect(field.isValid).toBe(false)
       expect(field.items.map(item => [item.isTouched, item.isValid])).toEqual([[false, null], [false, null]])
       expect(validate).not.toHaveBeenCalled()
-      expect(field.checkValid()).toBe(true)
+      expect(field.validate().valid).toBe(true)
       expect(validate).toHaveBeenCalledTimes(2)
     })
 
     it('keeps surviving and added forms, restoring class defaults rather than hydrated values', () => {
-      const validate = vi.fn(() => true)
+      const validate = vi.fn(() => [])
       class Child extends Form {
         name = new Field(StringType, 'class default', { validate })
         optional = new Field(StringType)
@@ -240,21 +238,21 @@ describe('HF-001 form lifecycle baseline', () => {
       field.remove(1)
       const added = field.add({ name: 'added' })
       first.name.rawValue = 'edited'
-      added.setGlobalError('server', 'server error')
-      field.error = 'collection error'
+      added.setErrors([...added.getOwnErrors(), {code: 'server', message: 'server error'}])
+      field.setErrors([{code: 'manual', message: 'collection error'}])
       validate.mockClear()
       field.reset()
       expect(field.forms).toEqual([first, added])
       expect(field.formsFieldsValue).toEqual([
         { name: 'class default', optional: null }, { name: 'class default', optional: null },
       ])
-      expect(field.errors).toEqual([])
-      expect(added.globalErrors).toEqual({})
+      expect(errorMessages(field)).toEqual([])
+      expect(ownMessagesByCode(added)).toEqual({})
       expect(field.isTouched).toBe(false)
       expect(field.isValid).toBe(false)
       expect(field.forms.map(form => [form.isTouched, form.name.isValid])).toEqual([[false, null], [false, null]])
       expect(validate).not.toHaveBeenCalled()
-      expect(field.checkValid()).toBe(false)
+      expect(field.validate().valid).toBe(false)
       expect(validate).toHaveBeenCalledTimes(2)
     })
   })
@@ -274,7 +272,7 @@ describe('HF-001 form lifecycle baseline', () => {
       expect(form.amount.valueClear).toBe(input)
       expect(form.amount.isValid).toBe(valid)
       expect(form.isValid).toBe(valid)
-      expect(form.checkValid()).toBe(valid)
+      expect(form.validate().valid).toBe(valid)
       expect(form.toJSON()).toEqual({ amount: input })
     })
 
@@ -290,15 +288,15 @@ describe('HF-001 form lifecycle baseline', () => {
       expect(form.amount.valueClear).toBe(clean)
       expect(form.amount.isValid).toBe(false)
       expect(form.isValid).toBe(false)
-      expect(form.checkValid()).toBe(false)
-      expect(form.amount.errors).toEqual(['После точки должен быть минимум 1 знак'])
+      expect(form.validate().valid).toBe(false)
+      expect(form.amount.getErrors()).toEqual([{code: 'pattern', source: 'type'}])
 
       form.setFields({ amount: '123.5' })
       expect(form.amount.rawValue).toBe('123.5')
       expect(form.amount.valueClear).toBe('123.5')
-      expect(form.amount.errors).toEqual([])
+      expect(errorMessages(form.amount)).toEqual([])
       expect(form.isValid).toBe(true)
-      expect(form.checkValid()).toBe(true)
+      expect(form.validate().valid).toBe(true)
     })
 
     it('defers field validation while retaining incomplete input until an explicit check', () => {
@@ -307,10 +305,10 @@ describe('HF-001 form lifecycle baseline', () => {
       expect(field.rawValue).toBe('123.')
       expect(field.valueClear).toBe('123.')
       expect(field.isValid).toBeNull()
-      expect(field.errors).toEqual([])
-      expect(field.checkAndSetValid()).toBe(false)
+      expect(errorMessages(field)).toEqual([])
+      expect(field.validate().valid).toBe(false)
       expect(field.isValid).toBe(false)
-      expect(field.errors).toEqual(['После точки должен быть минимум 1 знак'])
+      expect(field.getErrors()).toEqual([{code: 'pattern', source: 'type'}])
     })
 
     it('serializes deferred values without validation; applications must check before submission', () => {
@@ -320,23 +318,23 @@ describe('HF-001 form lifecycle baseline', () => {
       const form = new Example()
       form.setFields({ amount: '123.5' })
       expect(form.isValid).toBe(true)
-      const checkField = vi.spyOn(form.amount, 'checkAndSetValid')
+      const checkField = vi.spyOn(form.amount, 'validate')
 
       form.setFields({ amount: '123,' }, false)
       expect(form.amount.rawValue).toBe('123,')
       expect(form.amount.valueClear).toBe('123.')
       expect(form.amount.isValid).toBeNull()
-      expect(form.amount.errors).toEqual([])
+      expect(errorMessages(form.amount)).toEqual([])
       expect(form.isValid).toBe(false)
       expect(form.toJSON()).toEqual({ amount: '123.' })
       expect(checkField).not.toHaveBeenCalled()
       expect(form.amount.isValid).toBeNull()
-      expect(form.amount.errors).toEqual([])
+      expect(errorMessages(form.amount)).toEqual([])
 
       // Serialization does not authorize submission; the application must run this final check.
-      expect(form.checkValid()).toBe(false)
+      expect(form.validate().valid).toBe(false)
       expect(form.amount.isValid).toBe(false)
-      expect(form.amount.errors).toEqual(['После точки должен быть минимум 1 знак'])
+      expect(form.amount.getErrors()).toEqual([{code: 'pattern', source: 'type'}])
       expect(form.toJSON()).toEqual({ amount: '123.' })
       expect(checkField).toHaveBeenCalledTimes(1)
     })
@@ -352,7 +350,7 @@ describe('HF-001 form lifecycle baseline', () => {
       expect(field.rawValue).toBe(input)
       expect(field.valueClear).toBe(clean)
       expect(field.isValid).toBe(valid)
-      expect(field.errors.length > 0).toBe(!valid)
+      expect(errorMessages(field).length > 0).toBe(!valid)
     })
 
     it.each([123, '123'])('accepts inclusive bounds and rejects exclusive bounds for %j', (input) => {
@@ -362,7 +360,7 @@ describe('HF-001 form lifecycle baseline', () => {
       exclusive.setRawValue(input)
       expect(inclusive.isValid).toBe(true)
       expect(exclusive.isValid).toBe(false)
-      expect(exclusive.errors).toHaveLength(2)
+      expect(errorMessages(exclusive)).toHaveLength(2)
     })
   })
 })

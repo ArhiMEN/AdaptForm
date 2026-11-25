@@ -1,3 +1,4 @@
+import {errorMessages} from '../../helpers/errorViews'
 import { describe, it, expect, vi } from 'vitest'
 import { ArrayField } from '@core/fields/ArrayField'
 import { Field } from '@core/fields/Field'
@@ -27,7 +28,7 @@ describe('ArrayField', () => {
 
   describe('itemsValue setter', () => {
     it.each([{ value: [] }, { value: ['new'] }, { value: [null] }])('should check only the final replacement $value', ({ value }) => {
-      const validate = vi.fn(() => true)
+      const validate = vi.fn(() => [])
       const isRequired = vi.fn(() => false)
       const arrayField = new ArrayField(
         (value?: string) => new Field(StringType, value, { isRequired: false }),
@@ -39,7 +40,7 @@ describe('ArrayField', () => {
 
       arrayField.itemsValue = value
 
-      expect(isRequired).toHaveBeenCalledExactlyOnceWith(null)
+      expect(isRequired).toHaveBeenCalledExactlyOnceWith(undefined)
       expect(validate).toHaveBeenCalledExactlyOnceWith(value, undefined)
       expect(arrayField.isValid).toBe(true)
     })
@@ -63,7 +64,7 @@ describe('ArrayField', () => {
     it('should validate on set', () => {
       const factory = (value?: number) => new Field(NumberType, value, { gt: 0 })
       const arrayField = new ArrayField(factory, {}, [1, 2])
-      expect(arrayField.isValid).toBe(true)
+      expect(arrayField.validate().valid).toBe(true)
       
       arrayField.itemsValue = [-1, 2]
       expect(arrayField.isValid).toBe(false)
@@ -112,6 +113,7 @@ describe('ArrayField', () => {
     it('should validate after remove', () => {
       const factory = (value?: number) => new Field(NumberType, value, { gt: 0 })
       const arrayField = new ArrayField(factory, { minItems: 2 }, [1, 2, 3])
+      arrayField.validate()
       arrayField.remove(2)
       expect(arrayField.isValid).toBe(true)
     })
@@ -137,7 +139,7 @@ describe('ArrayField', () => {
     it('should validate all items', () => {
       const factory = (value?: number) => new Field(NumberType, value, { gt: 0 })
       const arrayField = new ArrayField(factory, {}, [1, 2])
-      expect(arrayField.isValid).toBe(true)
+      expect(arrayField.validate().valid).toBe(true)
       
       arrayField.add(-1)
       expect(arrayField.isValid).toBe(false)
@@ -157,11 +159,11 @@ describe('ArrayField', () => {
       expect(arrayField.isValid).toBe(false)
       
       arrayField.add('a')
-      arrayField.checkValid()
+      arrayField.validate()
       expect(arrayField.isValid).toBe(false)
       
       arrayField.add('b')
-      arrayField.checkValid()
+      arrayField.validate()
       expect(arrayField.isValid).toBe(true)
     })
 
@@ -175,15 +177,15 @@ describe('ArrayField', () => {
     it('should support custom validation', () => {
       const factory = (value?: string) => new Field(StringType, value)
       const arrayField = new ArrayField(factory, {
-        validate: (values) => values.includes('admin') || 'Must contain admin'
+        validate: (values) => values.includes('admin') ? [] : [{code: 'custom', message: 'Must contain admin'}]
       })
       
       arrayField.add('user')
-      arrayField.checkValid()
+      arrayField.validate()
       expect(arrayField.isValid).toBe(false)
       
       arrayField.add('admin')
-      arrayField.checkValid()
+      arrayField.validate()
       expect(arrayField.isValid).toBe(true)
     })
   })
@@ -213,15 +215,16 @@ describe('ArrayField', () => {
       )
 
       expect(arrayField.isValid).toBe(false)
-      expect(arrayField.errors).not.toEqual([])
+      arrayField.validate()
+      expect(errorMessages(arrayField)).not.toEqual([])
 
       arrayField.reset()
 
-      expect(arrayField.errors).toEqual([])
+      expect(errorMessages(arrayField)).toEqual([])
       expect(arrayField.isValid).toBe(false)
 
-      expect(arrayField.checkValid()).toBe(false)
-      expect(arrayField.errors).not.toEqual([])
+      expect(arrayField.validate().valid).toBe(false)
+      expect(errorMessages(arrayField)).not.toEqual([])
     })
   })
 })

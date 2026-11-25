@@ -1,10 +1,12 @@
 import type {ValidationErrorInput} from '../ValidationError'
-import type {Form} from '../Form'
+import type {BuiltinValidationErrorInput} from '../BuiltinValidationError'
 import {FieldType} from "@core/types/FieldType"
 import {BooleanOptions} from "@core/options"
 
 export class BooleanType extends FieldType<boolean, BooleanOptions> {
-  cast(rawValue: any): boolean | null {
+  readonly typeId = 'boolean'
+
+  cast(rawValue: unknown): boolean | null {
     if (rawValue === null || rawValue === undefined) return null
     if (typeof rawValue === 'boolean') return rawValue
 
@@ -21,31 +23,18 @@ export class BooleanType extends FieldType<boolean, BooleanOptions> {
     return null
   }
 
-  validate(value: boolean): string[] {
-    return this.validateRules(value).map(error => error.message!)
-  }
-
-  validateErrors(value: boolean, form?: Form): readonly ValidationErrorInput[] {
-    // Preserve subclasses that override the historical string validator.
-    return this.validate === BooleanType.prototype.validate
-      ? this.validateRules(value) : super.validateErrors(value, form)
-  }
-
-  private validateRules(value: boolean): ValidationErrorInput[] {
-    const errors: ValidationErrorInput[] = []
+  validateErrors(value: boolean): ValidationErrorInput[] {
+    const errors: BuiltinValidationErrorInput[] = []
 
     if (this.options.mustBeTrue && value !== true) {
-      errors.push({code: 'must_be_true', message: this.options.messages?.mustBeTrue ?? 'Значение должно быть true'})
+      errors.push({code: 'must_be_true'})
     }
 
     if (this.options.mustBeFalse && value !== false) {
-      errors.push({code: 'must_be_false', message: this.options.messages?.mustBeFalse ?? 'Значение должно быть false'})
+      errors.push({code: 'must_be_false'})
     }
 
     return errors
   }
 
-  getTypeName(): string {
-    return 'логическое значение'
-  }
 }

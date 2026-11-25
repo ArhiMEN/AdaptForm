@@ -1,6 +1,6 @@
 {
   "name": "adaptform",
-  "version": "2.2.0",
+  "version": "3.0.0",
   "description": "Library of adaptive forms of validation",
   "keywords": [
     "form",
@@ -21,24 +21,24 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./luxon": {
-      "types": "./dist/luxon.d.ts",
-      "import": "./dist/luxon.mjs",
-      "require": "./dist/luxon.cjs"
-    }
-  },
-  "typesVersions": {
-    "*": {
-      ".": [
-        "./dist/index.d.ts"
-      ],
-      "luxon": [
-        "./dist/luxon.d.ts"
-      ]
+      "import": {
+        "types": "./dist/luxon.d.ts",
+        "default": "./dist/luxon.mjs"
+      },
+      "require": {
+        "types": "./dist/luxon.d.cts",
+        "default": "./dist/luxon.cjs"
+      }
     }
   },
   "files": [

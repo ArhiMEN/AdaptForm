@@ -55,10 +55,10 @@ describe('BooleanType', () => {
     })
   })
 
-  describe('validate', () => {
+  describe('validateErrors', () => {
     it('should return empty errors for valid boolean', () => {
       const type = new BooleanType({})
-      const errors = type.validate(true)
+      const errors = type.validateErrors(true)
       expect(errors).toEqual([])
     })
 
@@ -66,38 +66,37 @@ describe('BooleanType', () => {
       const type = new BooleanType({ mustBeTrue: true })
       
       // Valid
-      expect(type.validate(true)).toEqual([])
+      expect(type.validateErrors(true)).toEqual([])
       
       // Invalid
-      const errors = type.validate(false)
-      expect(errors).toContain('Значение должно быть true')
+      const errors = type.validateErrors(false)
+      expect(errors).toContainEqual({code: 'must_be_true'})
     })
 
     it('should return error for mustBeFalse', () => {
       const type = new BooleanType({ mustBeFalse: true })
       
       // Valid
-      expect(type.validate(false)).toEqual([])
+      expect(type.validateErrors(false)).toEqual([])
       
       // Invalid
-      const errors = type.validate(true)
-      expect(errors).toContain('Значение должно быть false')
+      const errors = type.validateErrors(true)
+      expect(errors).toContainEqual({code: 'must_be_false'})
     })
 
-    it('should return custom errors', () => {
+    it('should emit structured data without generated messages', () => {
       const type = new BooleanType({
         mustBeTrue: true,
-        messages: { mustBeTrue: 'Must agree!' }
       })
-      const errors = type.validate(false)
-      expect(errors).toContain('Must agree!')
+      const errors = type.validateErrors(false)
+      expect(errors).toContainEqual({code: 'must_be_true'})
     })
   })
 
-  describe('getTypeName', () => {
+  describe('typeId', () => {
     it('should return correct type name', () => {
       const type = new BooleanType({})
-      expect(type.getTypeName()).toBe('логическое значение')
+      expect(type.typeId).toBe('boolean')
     })
   })
 })
